@@ -7,13 +7,28 @@ import (
 )
 
 func main() {
-	consumerConfig := &kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
-		"group.id":          "myGroup",
-		"auto.offset.reset": "earliest",
-	}
-	ziggurat.StartConsumers(consumerConfig, []string{"test-topic"}, 3, func(message *kafka.Message) {
-		fmt.Printf("Recevied message [ %s %s ]\n", message.Key, message.Value)
+	sr := ziggurat.NewStreamRouter()
+	sr.HandlerFunc("test-entity", func(message *kafka.Message) {
+		fmt.Printf("Received message for test-entity1 [%s %s]\n", message.Key, message.Value)
+	})
+
+	sr.HandlerFunc("test-entity2", func(message *kafka.Message) {
+		fmt.Printf("Recevied message for test-entity2 [%s %s]\n", message.Key, message.Value)
+	})
+
+	sr.Start(ziggurat.StreamRouterConfigMap{
+		"test-entity": ziggurat.StreamRouterConfig{
+			InstanceCount:    2,
+			BootstrapServers: []string{"localhost:9092"},
+			OriginTopics:     []string{"test-topic"},
+			GroupID:          "testGroup",
+		},
+		"test-entity2": ziggurat.StreamRouterConfig{
+			InstanceCount:    2,
+			BootstrapServers: []string{"localhost:9092"},
+			OriginTopics:     []string{"test-topic2"},
+			GroupID:          "testGroup",
+		},
 	})
 
 }
