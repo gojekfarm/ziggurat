@@ -1,29 +1,33 @@
 package ziggurat
 
 import (
+	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
 	"sync"
 )
 
-type HandlerFunc func(message *kafka.Message)
+func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
+	consumer, _ := kafka.NewConsumer(consumerConfig)
+	_ = consumer.SubscribeTopics(topics, nil)
+	return consumer
+}
 
-func StartConsumers(consumerConfig *kafka.ConfigMap, topics []string, instances int, handlerFunc HandlerFunc) {
-	var wg sync.WaitGroup
+func StartConsumers(consumerConfig *kafka.ConfigMap, topicEntity TopicEntityName, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
 	for i := 0; i < instances; i++ {
-		consumer, _ := kafka.NewConsumer(consumerConfig)
-		_ = consumer.SubscribeTopics(topics, nil)
+		consumer := createConsumer(consumerConfig, topics)
 		groupID, _ := consumerConfig.Get("group.id", "")
-		log.Printf("starting consumer %s-%d\n", groupID, i)
 		wg.Add(1)
-		go func(c *kafka.Consumer, instanceID int) {
+		go func(c *kafka.Consumer, instanceID int, waitGroup *sync.WaitGroup) {
+			log.Printf("starting consumer %s-%s-%d\n", topicEntity, groupID, instanceID)
 			for {
 				msg, err := c.ReadMessage(-1)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
+					fmt.Printf("error: %v ", err.(kafka.Error).Code())
 					break
 				}
 				if msg != nil {
-					log.Printf("Received message by %s-%d on partition %d\n", groupID, instanceID, msg.TopicPartition.Partition)
+					log.Printf("Received message by %s-%d on partition %v-%d\n", groupID, instanceID, *msg.TopicPartition.Topic, msg.TopicPartition.Partition)
 					handlerFunc(msg)
 					_, commitErr := c.CommitMessage(msg)
 					if commitErr != nil {
@@ -33,7 +37,6 @@ func StartConsumers(consumerConfig *kafka.ConfigMap, topics []string, instances 
 				}
 			}
 			wg.Done()
-		}(consumer, i)
+		}(consumer, i, wg)
 	}
-	wg.Wait()
 }
