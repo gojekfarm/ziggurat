@@ -1,4 +1,4 @@
-module zigg_go
+module github.com/gojek
 
 go 1.14
 
