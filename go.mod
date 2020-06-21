@@ -1,4 +1,4 @@
-module zigg_go_spike
+module zigg_go
 
 go 1.14
 
