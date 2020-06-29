@@ -9,11 +9,11 @@ import (
 func main() {
 	sr := ziggurat.NewStreamRouter()
 	sr.HandlerFunc("test-entity", func(message *kafka.Message) {
-		fmt.Printf("Received message for test-entity1 [%s %s]\n", message.Key, message.Value)
+		fmt.Printf("[handlerFunc]: Received message for test-entity1 [%s %s]\n", message.Key, message.Value)
 	})
 
 	sr.HandlerFunc("test-entity2", func(message *kafka.Message) {
-		fmt.Printf("Recevied message for test-entity2 [%s %s]\n", message.Key, message.Value)
+		fmt.Printf("[handlerFunc]: Recevied message for test-entity2 [%s %s]\n", message.Key, message.Value)
 	})
 
 	sr.Start(ziggurat.StreamRouterConfigMap{
