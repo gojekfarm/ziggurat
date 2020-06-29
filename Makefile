@@ -13,3 +13,4 @@ setup:
 
 run-spike: setup
 	./produce_messages
+	docker-compose down
