@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"strings"
+	"sync"
 )
 
 type topicEntity struct {
@@ -46,6 +47,7 @@ func makeKV(key string, value string) string {
 
 func (sr *StreamRouter) Start(srConfig StreamRouterConfigMap) {
 	hfMap := sr.handlerFunctionMap
+	var wg sync.WaitGroup
 	for topicEntityName, topicEntity := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		consumerConfig := newConsumerConfig()
@@ -54,6 +56,7 @@ func (sr *StreamRouter) Start(srConfig StreamRouterConfigMap) {
 
 		consumerConfig.Set(bootstrapServers)
 		consumerConfig.Set(groupID)
-		StartConsumers(consumerConfig, topicEntityName, streamRouterCfg.OriginTopics, streamRouterCfg.InstanceCount, topicEntity.handlerFunc)
+		StartConsumers(consumerConfig, topicEntityName, streamRouterCfg.OriginTopics, streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
 	}
+	wg.Wait()
 }
