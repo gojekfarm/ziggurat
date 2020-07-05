@@ -5,6 +5,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
 	"sync"
+	"time"
 )
 
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
@@ -13,36 +14,34 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Con
 	return consumer
 }
 
-func startConsumer(topicEntity TopicEntityName, handlerFunc HandlerFunc, wg *sync.WaitGroup, consumer *kafka.Consumer, instanceID string) {
+func startConsumer(handlerFunc HandlerFunc, consumer *kafka.Consumer, instanceID string, wg *sync.WaitGroup) {
 	go func(c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
-		wg.Add(1)
-		defer wg.Done()
-		log.Printf("starting consumer %s %s\n", topicEntity, instanceID)
 		for {
-			msg, err := c.ReadMessage(-1)
-			if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
-				fmt.Printf("[%s] error: %v\n ", instanceID, err.(kafka.Error).Code())
-				break
+			msg, err := c.ReadMessage(10 * time.Second)
+			if err != nil {
+				log.Printf("err on instance %s -> %v", instanceID, err)
 			}
 			if msg != nil {
-				log.Printf("Received message by %s on partition %s-%d\n", instanceID, *msg.TopicPartition.Topic, msg.TopicPartition.Partition)
+				log.Printf("Message received by: %s for %v\n", instanceID, msg.TopicPartition)
 				handlerFunc(msg)
-				_, commitErr := c.CommitMessage(msg)
-				if commitErr != nil {
-					log.Printf("error committing message %v\n", commitErr)
+				_, cmtErr := consumer.CommitMessage(msg)
+				if cmtErr != nil {
+					break
 				}
-				log.Printf("committed message successfully\n")
 			}
 		}
-		consumer.Close()
+		wg.Done()
 	}(consumer, instanceID, wg)
 }
 
-func StartConsumers(consumerConfig *kafka.ConfigMap, topicEntity TopicEntityName, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+func StartConsumers(consumerConfig *kafka.ConfigMap, topicEntity TopicEntityName, topics []string, instances int, handlerFunc HandlerFunc) {
+	var wg sync.WaitGroup
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s-%s-%d", topicEntity, groupID, i)
-		startConsumer(topicEntity, handlerFunc, wg, consumer, instanceID)
+		wg.Add(1)
+		startConsumer(handlerFunc, consumer, instanceID, &wg)
 	}
+	wg.Wait()
 }
