@@ -11,8 +11,8 @@
 
 #### How to run the spike
 
-- Run the command `make run-spike` in a different terminal OR tab
--   Run the driver file `main.go`
+- Run the command `make setup-spike`
+-   Run the driver file `main.go` in a new terminal OR tab
 ```shell script
 go run main.go
 ```
