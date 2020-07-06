@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const defaultPollTimeout = 10*time.Second
+const defaultPollTimeout = 10 * time.Second
 
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, _ := kafka.NewConsumer(consumerConfig)
@@ -25,7 +25,7 @@ func startConsumer(handlerFunc HandlerFunc, consumer *kafka.Consumer, instanceID
 				log.Printf("err on instance %s -> %v", instanceID, err)
 			}
 			if msg != nil {
-				log.Printf("Message received by: %s for %v\n", instanceID, msg.TopicPartition)
+				log.Printf("Message received by [CONSUMER: %s TOPIC: %s PARTITION: %d]\n", instanceID, *msg.TopicPartition.Topic, msg.TopicPartition.Partition)
 				handlerFunc(msg)
 				_, cmtErr := consumer.CommitMessage(msg)
 				if cmtErr != nil {
