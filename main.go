@@ -20,7 +20,7 @@ func main() {
 		"test-entity": ziggurat.StreamRouterConfig{
 			InstanceCount:    2,
 			BootstrapServers: []string{"localhost:9092"},
-			OriginTopics:     []string{"test-topic"},
+			OriginTopics:     []string{"test-topic1"},
 			GroupID:          "testGroup",
 		},
 		"test-entity2": ziggurat.StreamRouterConfig{
