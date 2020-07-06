@@ -37,12 +37,15 @@ func startConsumer(handlerFunc HandlerFunc, consumer *kafka.Consumer, instanceID
 	}(consumer, instanceID, wg)
 }
 
-func StartConsumers(consumerConfig *kafka.ConfigMap, topicEntity TopicEntityName, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+func StartConsumers(consumerConfig *kafka.ConfigMap, topicEntity TopicEntityName, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
+		consumers = append(consumers, consumer)
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s-%s-%d", topicEntity, groupID, i)
 		wg.Add(1)
 		startConsumer(handlerFunc, consumer, instanceID, wg)
 	}
+	return consumers
 }

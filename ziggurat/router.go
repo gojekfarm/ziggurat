@@ -9,9 +9,8 @@ import (
 )
 
 type topicEntity struct {
-	groupId          string
 	handlerFunc      HandlerFunc
-	consumer         *kafka.Consumer
+	consumers        []*kafka.Consumer
 	bootstrapServers string
 	originTopics     []string
 }
@@ -60,7 +59,10 @@ func (sr *StreamRouter) Start(srConfig StreamRouterConfigMap) {
 
 		consumerConfig.Set(bootstrapServers)
 		consumerConfig.Set(groupID)
-		StartConsumers(consumerConfig, topicEntityName, streamRouterCfg.OriginTopics, streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
+		consumers := StartConsumers(consumerConfig, topicEntityName, streamRouterCfg.OriginTopics, streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
+		
+		topicEntity.originTopics = streamRouterCfg.OriginTopics
+		topicEntity.consumers = consumers
 	}
 	wg.Wait()
 }
