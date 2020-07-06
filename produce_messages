@@ -2,6 +2,6 @@
 
 for i in $(seq 1 10); do
   echo "producing message $i"
-  echo "$i:message-$i-test-topic" | docker exec -i go_ziggurat_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --property key.separator=":" --property parse.key=true --topic "test-topic"
-  echo "$i:message-$i-test-topic2" | docker exec -i go_ziggurat_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --property key.separator=":" --property parse.key=true --topic "test-topic2"
+  echo "$i:message-$i-test-topic" | docker exec -i ziggurat_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --property key.separator=":" --property parse.key=true --topic "test-topic"
+  echo "$i:message-$i-test-topic2" | docker exec -i ziggurat_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --property key.separator=":" --property parse.key=true --topic "test-topic2"
 done
