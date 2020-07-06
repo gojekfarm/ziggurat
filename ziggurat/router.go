@@ -3,6 +3,7 @@ package ziggurat
 import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"log"
 	"strings"
 	"sync"
 )
@@ -47,6 +48,9 @@ func makeKV(key string, value string) string {
 
 func (sr *StreamRouter) Start(srConfig StreamRouterConfigMap) {
 	hfMap := sr.handlerFunctionMap
+	if len(hfMap) == 0 {
+		log.Fatal("unable to start stream-router, no handler functions registered")
+	}
 	var wg sync.WaitGroup
 	for topicEntityName, topicEntity := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
