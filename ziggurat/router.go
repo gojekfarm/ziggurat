@@ -48,7 +48,7 @@ func makeKV(key string, value string) string {
 func (sr *StreamRouter) Start(srConfig StreamRouterConfigMap) {
 	hfMap := sr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		log.Fatal("unable to start stream-router, no handler functions registered")
+		log.Fatal("error: unable to start stream-router, no handler functions registered")
 	}
 	var wg sync.WaitGroup
 	for topicEntityName, topicEntity := range hfMap {
@@ -60,7 +60,7 @@ func (sr *StreamRouter) Start(srConfig StreamRouterConfigMap) {
 		consumerConfig.Set(bootstrapServers)
 		consumerConfig.Set(groupID)
 		consumers := StartConsumers(consumerConfig, topicEntityName, streamRouterCfg.OriginTopics, streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
-		
+
 		topicEntity.originTopics = streamRouterCfg.OriginTopics
 		topicEntity.consumers = consumers
 	}
