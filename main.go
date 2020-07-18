@@ -16,19 +16,6 @@ func main() {
 		fmt.Printf("[handlerFunc]: Recevied message for test-entity2 [key: %s value: %s]\n", message.Key, message.Value)
 	})
 
-	sr.Start(ziggurat.StreamRouterConfigMap{
-		"test-entity": ziggurat.StreamRouterConfig{
-			InstanceCount:    2,
-			BootstrapServers: []string{"localhost:9092"},
-			OriginTopics:     []string{"test-topic1"},
-			GroupID:          "testGroup",
-		},
-		"test-entity2": ziggurat.StreamRouterConfig{
-			InstanceCount:    2,
-			BootstrapServers: []string{"localhost:9092"},
-			OriginTopics:     []string{"test-topic2"},
-			GroupID:          "testGroup",
-		},
-	})
+	sr.Start()
 
 }

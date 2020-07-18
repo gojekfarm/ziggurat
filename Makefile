@@ -13,6 +13,6 @@ setup-spike:
 	@echo 'Please run `go run main.go` in a new tab or terminal'
 	sleep 5
 	./produce_messages
-	docker-compose down
-	docker-compose rm -fv
+#	docker-compose down
+#	docker-compose rm -fv
 

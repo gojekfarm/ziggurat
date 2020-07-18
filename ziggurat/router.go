@@ -3,9 +3,6 @@ package ziggurat
 import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"log"
-	"strings"
-	"sync"
 )
 
 type topicEntity struct {
@@ -46,24 +43,24 @@ func makeKV(key string, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func (sr *StreamRouter) Start(srConfig StreamRouterConfigMap) {
-	hfMap := sr.handlerFunctionMap
-	if len(hfMap) == 0 {
-		log.Fatal("error: unable to start stream-router, no handler functions registered")
-	}
-	var wg sync.WaitGroup
-	for topicEntityName, topicEntity := range hfMap {
-		streamRouterCfg := srConfig[topicEntityName]
-		consumerConfig := newConsumerConfig()
-		bootstrapServers := makeKV("bootstrap.servers", strings.Join(streamRouterCfg.BootstrapServers, ","))
-		groupID := makeKV("group.id", streamRouterCfg.GroupID)
-
-		consumerConfig.Set(bootstrapServers)
-		consumerConfig.Set(groupID)
-		consumers := StartConsumers(consumerConfig, topicEntityName, streamRouterCfg.OriginTopics, streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
-
-		topicEntity.originTopics = streamRouterCfg.OriginTopics
-		topicEntity.consumers = consumers
-	}
-	wg.Wait()
+func (sr *StreamRouter) Start() {
+	config, _ := ReadConfig()
+	fmt.Println(config)
+	//hfMap := sr.handlerFunctionMap
+	//if len(hfMap) == 0 {
+	//	log.Fatal("error: unable to start stream-router, no handler functions registered")
+	//}
+	//var wg sync.WaitGroup
+	//for topicEntityName, topicEntity := range hfMap {
+	//	streamRouterCfg := srConfig[topicEntityName]
+	//	consumerConfig := newConsumerConfig()
+	//	bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
+	//	groupID := makeKV("group.id", streamRouterCfg.GroupID)
+	//
+	//	consumerConfig.Set(bootstrapServers)
+	//	consumerConfig.Set(groupID)
+	//	StartConsumers(consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
+	//
+	//}
+	//wg.Wait()
 }

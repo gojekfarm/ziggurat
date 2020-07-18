@@ -23,10 +23,14 @@ func startConsumer(handlerFunc HandlerFunc, consumer *kafka.Consumer, instanceID
 			msg, err := c.ReadMessage(defaultPollTimeout)
 			if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				log.Printf("err on instance %s -> %v", instanceID, err)
+			} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
+				break
 			}
+
 			if msg != nil {
 				log.Printf("Message received by [CONSUMER: %s TOPIC: %s PARTITION: %d]\n", instanceID, *msg.TopicPartition.Topic, msg.TopicPartition.Partition)
 				handlerFunc(msg)
+				fmt.Println(msg.TopicPartition.Offset)
 				_, cmtErr := consumer.CommitMessage(msg)
 				if cmtErr != nil {
 					break
