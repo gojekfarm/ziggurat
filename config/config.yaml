@@ -1,10 +1,10 @@
 stream-router:
-  - topic-entity: "topic-entity2"
+  - topic-entity: "test-entity2"
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "topic1"
     groupID: "test-group"
-  - topic-entity: "topic-entity"
+  - topic-entity: "test-entity"
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "topic2"

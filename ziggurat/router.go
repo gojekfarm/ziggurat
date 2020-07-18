@@ -61,17 +61,16 @@ func (sr *StreamRouter) Start() {
 	if len(hfMap) == 0 {
 		log.Fatal("error: unable to start stream-router, no handler functions registered")
 	}
+
 	var wg sync.WaitGroup
 	for topicEntityName, topicEntity := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
-
 		consumerConfig.Set(bootstrapServers)
 		consumerConfig.Set(groupID)
 		StartConsumers(consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
-
 	}
 	wg.Wait()
 }
