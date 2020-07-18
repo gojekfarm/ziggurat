@@ -20,7 +20,7 @@ type ZigguratConfig struct {
 	StreamRouters []StreamRouterConfig `mapstructure:"stream-router"`
 }
 
-func ReadConfig() (*ZigguratConfig, error) {
+func ParseConfig() (*ZigguratConfig, error) {
 	viper.SetConfigFile(defaultPath)
 	viper.SetEnvPrefix("ZIGGURAT")
 	var zigguratConfig ZigguratConfig
