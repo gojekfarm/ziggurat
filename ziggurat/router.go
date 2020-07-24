@@ -1,11 +1,15 @@
 package ziggurat
 
 import (
+	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 )
 
 type topicEntity struct {
@@ -62,7 +66,18 @@ func (sr *StreamRouter) Start() {
 		log.Fatal("error: unable to start stream-router, no handler functions registered")
 	}
 
+	routerCtx, cancelFn := context.WithCancel(context.Background())
+	intrCh := make(chan os.Signal)
+	signal.Notify(intrCh, os.Interrupt, syscall.SIGTERM)
+
+	go func(intrCh chan os.Signal) {
+		<-intrCh
+		log.Printf("Terminating app, CTRL+C Interrupt recevied")
+		cancelFn()
+	}(intrCh)
+
 	var wg sync.WaitGroup
+	var consumers []*kafka.Consumer
 	for topicEntityName, topicEntity := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		consumerConfig := newConsumerConfig()
@@ -70,7 +85,14 @@ func (sr *StreamRouter) Start() {
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
 		consumerConfig.Set(bootstrapServers)
 		consumerConfig.Set(groupID)
-		StartConsumers(consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
+		fmt.Println(consumerConfig)
+		consumers = StartConsumers(routerCtx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
 	}
 	wg.Wait()
+	for i, _ := range consumers {
+		closeErr := consumers[i].Close()
+		if closeErr != nil {
+			fmt.Printf("error closing consumer: %v\n", closeErr)
+		}
+	}
 }

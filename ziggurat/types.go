@@ -1,8 +1,6 @@
 package ziggurat
 
-import "github.com/confluentinc/confluent-kafka-go/kafka"
-
-type HandlerFunc func(message *kafka.Message)
+type HandlerFunc func(message interface{})
 
 type TopicEntityName string
 

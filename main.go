@@ -2,18 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojek/ziggurat"
 )
 
 func main() {
 	sr := ziggurat.NewStreamRouter()
-	sr.HandlerFunc("test-entity", func(message *kafka.Message) {
-		fmt.Printf("[handlerFunc]: Received message for test-entity1 [key: %s value: %s]\n", message.Key, message.Value)
+	sr.HandlerFunc("test-entity", func(message interface{}) {
+		fmt.Printf("[handlerFunc]: Received message for test-entity1 %v\n", message)
 	})
 
-	sr.HandlerFunc("test-entity2", func(message *kafka.Message) {
-		fmt.Printf("[handlerFunc]: Recevied message for test-entity2 [key: %s value: %s]\n", message.Key, message.Value)
+	sr.HandlerFunc("test-entity2", func(message interface{}) {
+		fmt.Printf("[handlerFunc]: Received message for test-entity2 %v\n", message)
 	})
 
 	sr.Start()
