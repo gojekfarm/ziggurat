@@ -15,6 +15,13 @@ func main() {
 		fmt.Printf("[handlerFunc]: Received message for test-entity2 %v\n", message)
 	})
 
-	sr.Start()
+	ziggurat.Start(sr, ziggurat.LifeCycleHooks{
+		StartFunction: func(config ziggurat.ZigguratConfig) {
+			fmt.Printf("Starting app...\n")
+		},
+		StopFunction: func(config ziggurat.ZigguratConfig) {
+			fmt.Printf("Stopping app...\n")
+		},
+	})
 
 }

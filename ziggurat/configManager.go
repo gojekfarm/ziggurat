@@ -1,9 +1,8 @@
 package ziggurat
 
 import (
-	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"log"
 )
 
 const defaultPath = "./config/config.yaml"
@@ -18,25 +17,25 @@ type StreamRouterConfig struct {
 
 type ZigguratConfig struct {
 	StreamRouters []StreamRouterConfig `mapstructure:"stream-router"`
+	LogLevel      string               `mapstructure:"log-level"`
 }
 
-func ParseConfig() (*ZigguratConfig, error) {
+var zigguratConfig ZigguratConfig
+
+func parseConfig() {
 	viper.SetConfigFile(defaultPath)
 	viper.SetEnvPrefix("ZIGGURAT")
-	var zigguratConfig ZigguratConfig
 	if err := viper.ReadInConfig(); err != nil {
 		if err, ok := err.(viper.ConfigFileNotFoundError); ok {
-			errStr := fmt.Sprintf("error: config file not found %v", err)
-			log.Fatal(errStr)
-		} else {
-			log.Printf("config error: %v", err)
-			return nil, err
+			log.Fatal().Err(err)
 		}
 	}
 
-	err := viper.Unmarshal(&zigguratConfig)
-	if err != nil {
-		fmt.Printf("config error: %v\n", err)
+	if err := viper.Unmarshal(&zigguratConfig); err != nil {
+		log.Fatal().Err(err)
 	}
-	return &zigguratConfig, nil
+}
+
+func GetConfig() ZigguratConfig {
+	return zigguratConfig
 }

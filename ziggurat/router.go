@@ -4,12 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"log"
-	"os"
-	"os/signal"
+	"github.com/rs/zerolog/log"
 	"strings"
 	"sync"
-	"syscall"
 )
 
 type topicEntity struct {
@@ -58,41 +55,27 @@ func streamRoutesToMap(streamRoutes []StreamRouterConfig) map[string]StreamRoute
 	return streamRouteMap
 }
 
-func (sr *StreamRouter) Start() {
-	config, _ := ParseConfig()
+func (sr *StreamRouter) Start(ctx context.Context, config ZigguratConfig) {
+
 	srConfig := streamRoutesToMap(config.StreamRouters)
 	hfMap := sr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		log.Fatal("error: unable to start stream-router, no handler functions registered")
+		log.Error().Err(ErrNoHandlersRegistered)
 	}
 
-	routerCtx, cancelFn := context.WithCancel(context.Background())
-	intrCh := make(chan os.Signal)
-	signal.Notify(intrCh, os.Interrupt, syscall.SIGTERM)
-
-	go func(intrCh chan os.Signal) {
-		<-intrCh
-		log.Printf("Terminating app, CTRL+C Interrupt recevied")
-		cancelFn()
-	}(intrCh)
-
 	var wg sync.WaitGroup
-	var consumers []*kafka.Consumer
 	for topicEntityName, topicEntity := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
-		consumerConfig.Set(bootstrapServers)
-		consumerConfig.Set(groupID)
-		fmt.Println(consumerConfig)
-		consumers = StartConsumers(routerCtx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
+		if setErr := consumerConfig.Set(bootstrapServers); setErr != nil {
+			log.Error().Err(setErr)
+		}
+		if setErr := consumerConfig.Set(groupID); setErr != nil {
+			log.Error().Err(setErr)
+		}
+		StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
 	}
 	wg.Wait()
-	for i, _ := range consumers {
-		closeErr := consumers[i].Close()
-		if closeErr != nil {
-			fmt.Printf("error closing consumer: %v\n", closeErr)
-		}
-	}
 }

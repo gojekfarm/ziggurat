@@ -14,4 +14,4 @@ stream-router:
     instance-count: 1
     origin-topics: "json-test"
     group-id: "json-group"
-
+log-level: "debug"

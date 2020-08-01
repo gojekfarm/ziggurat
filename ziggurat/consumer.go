@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"log"
+	"github.com/rs/zerolog/log"
+
 	"sync"
 	"time"
 )
 
-const defaultPollTimeout = 10 * time.Second
+const defaultPollTimeout = 100 * time.Millisecond
 
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, _ := kafka.NewConsumer(consumerConfig)
@@ -18,24 +19,26 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Con
 }
 
 func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer *kafka.Consumer, instanceID string, wg *sync.WaitGroup) {
-	log.Printf("starting consumer instance: %s", instanceID)
+	log.Info().Msgf("starting consumer with instance-id: %s", instanceID)
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
 		for {
 			select {
 			case <-doneCh:
-				log.Printf("Stopping consumer: %s\n", instanceID)
+				log.Info().Msgf("Stopping consumer: %s", instanceID)
+				if err := consumer.Close(); err != nil {
+					log.Err(err)
+				}
 				wg.Done()
 				return
 			default:
 				msg, err := c.ReadMessage(defaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
-					log.Printf("err on instance %s -> %v", instanceID, err)
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
 					return
 				}
 				if msg != nil {
-					log.Printf("Message received by [CONSUMER: %s TOPIC: %s PARTITION: %d]\n", instanceID, *msg.TopicPartition.Topic, msg.TopicPartition.Partition)
+					log.Info().Msgf("processing message for consumer %s", instanceID)
 					handlerFunc(msg)
 					fmt.Println(msg.TopicPartition.Offset)
 					_, cmtErr := consumer.CommitMessage(msg)
