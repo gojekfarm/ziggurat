@@ -55,15 +55,15 @@ func streamRoutesToMap(streamRoutes []StreamRouterConfig) map[string]StreamRoute
 	return streamRouteMap
 }
 
-func (sr *StreamRouter) Start(ctx context.Context, config ZigguratConfig) {
+func (sr *StreamRouter) Start(ctx context.Context, config Config) {
 
+	var wg sync.WaitGroup
 	srConfig := streamRoutesToMap(config.StreamRouters)
 	hfMap := sr.handlerFunctionMap
 	if len(hfMap) == 0 {
 		log.Error().Err(ErrNoHandlersRegistered)
 	}
 
-	var wg sync.WaitGroup
 	for topicEntityName, topicEntity := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		consumerConfig := newConsumerConfig()
@@ -78,4 +78,5 @@ func (sr *StreamRouter) Start(ctx context.Context, config ZigguratConfig) {
 		StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
 	}
 	wg.Wait()
+
 }

@@ -15,12 +15,12 @@ type StreamRouterConfig struct {
 	TopicEntity      string `mapstructure:"topic-entity"`
 }
 
-type ZigguratConfig struct {
+type Config struct {
 	StreamRouters []StreamRouterConfig `mapstructure:"stream-router"`
 	LogLevel      string               `mapstructure:"log-level"`
 }
 
-var zigguratConfig ZigguratConfig
+var zigguratConfig Config
 
 func parseConfig() {
 	viper.SetConfigFile(defaultPath)
@@ -36,6 +36,6 @@ func parseConfig() {
 	}
 }
 
-func GetConfig() ZigguratConfig {
+func GetConfig() Config {
 	return zigguratConfig
 }

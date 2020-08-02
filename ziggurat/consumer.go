@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/rs/zerolog/log"
-
 	"sync"
 	"time"
 )
@@ -13,8 +12,13 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
-	consumer, _ := kafka.NewConsumer(consumerConfig)
-	_ = consumer.SubscribeTopics(topics, nil)
+	consumer, err := kafka.NewConsumer(consumerConfig)
+	if err != nil {
+		log.Error().Err(err)
+	}
+	if subscribeErr := consumer.SubscribeTopics(topics, nil); subscribeErr != nil {
+		log.Error().Err(subscribeErr)
+	}
 	return consumer
 }
 
@@ -25,9 +29,8 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 		for {
 			select {
 			case <-doneCh:
-				log.Info().Msgf("Stopping consumer: %s", instanceID)
 				if err := consumer.Close(); err != nil {
-					log.Err(err)
+					log.Error().Err(err)
 				}
 				wg.Done()
 				return
@@ -35,15 +38,17 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 				msg, err := c.ReadMessage(defaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
+					log.Error().Err(err)
 					return
 				}
 				if msg != nil {
 					log.Info().Msgf("processing message for consumer %s", instanceID)
-					handlerFunc(msg)
+					messageEvent := NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, int(msg.TopicPartition.Partition), instanceID)
+					handlerFunc(messageEvent)
 					fmt.Println(msg.TopicPartition.Offset)
 					_, cmtErr := consumer.CommitMessage(msg)
 					if cmtErr != nil {
-						log.Printf("error committing message: %v", cmtErr)
+						log.Error().Err(cmtErr)
 					}
 				}
 			}
