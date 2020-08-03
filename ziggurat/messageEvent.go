@@ -23,7 +23,7 @@ func NewMessageEvent(key []byte, value []byte, topic string, partition int, cons
 	}
 }
 
-func (m *MessageEvent) GetMessageAttribute(key string) interface{} {
+func (m MessageEvent) GetMessageAttribute(key string) interface{} {
 	return m.Attributes[key]
 }
 

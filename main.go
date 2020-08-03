@@ -13,6 +13,9 @@ type TestEntity struct {
 func main() {
 
 	sr := ziggurat.NewStreamRouter()
+	jsonHandler := ziggurat.JSONDeserializer(func(messageEvent ziggurat.MessageEvent) {
+		fmt.Printf("json msg: %+v", messageEvent.MessageValue)
+	}, &TestEntity{})
 	sr.HandlerFunc("test-entity", func(message ziggurat.MessageEvent) {
 		fmt.Printf("[handlerFunc]: Received message for test-entity1 %v\n", message)
 	})
@@ -20,6 +23,8 @@ func main() {
 	sr.HandlerFunc("test-entity2", func(message ziggurat.MessageEvent) {
 		fmt.Printf("[handlerFunc]: Received message for test-entity2 %v\n", message)
 	})
+
+	sr.HandlerFunc("json-entity", jsonHandler)
 
 	ziggurat.Start(sr, ziggurat.LifeCycleHooks{
 		StartFunction: func(config ziggurat.Config) {
