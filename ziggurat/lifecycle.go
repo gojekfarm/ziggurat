@@ -8,29 +8,30 @@ import (
 	"syscall"
 )
 
-type LifeCycleHooks struct {
+type StartupOptions struct {
 	StartFunction StartFunction
 	StopFunction  StopFunction
+	Retrier       MessageRetrier
 }
 
-func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, hooks LifeCycleHooks) {
+func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, stopFunction StopFunction) {
 	<-interruptCh
-	log.Info().Msg("sigterm received, stopping consumers")
+	log.Info().Msg("sigterm received")
 	cancelFn()
-	hooks.StopFunction()
+	stopFunction()
 }
 
-func Start(router *StreamRouter, lifeCycleHooks LifeCycleHooks) {
+func Start(router *StreamRouter, options StartupOptions) {
 	interruptChan := make(chan os.Signal)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	ctx, cancelFn := context.WithCancel(context.Background())
 
-	go interruptHandler(interruptChan, cancelFn, lifeCycleHooks)
+	go interruptHandler(interruptChan, cancelFn, options.StopFunction)
 
 	parseConfig()
 	log.Info().Msg("successfully parsed config")
 	config := GetConfig()
 	ConfigureLogger(config.LogLevel)
-	lifeCycleHooks.StartFunction(config)
-	router.Start(ctx, config)
+	options.StartFunction(config)
+	<-router.Start(ctx, config)
 }

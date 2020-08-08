@@ -32,6 +32,7 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 				if err := consumer.Close(); err != nil {
 					log.Error().Err(err)
 				}
+				log.Info().Str("consumer-instance-id", instanceID).Msg("stopping consumer...")
 				wg.Done()
 				return
 			default:
@@ -45,7 +46,6 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 					log.Info().Msgf("processing message for consumer %s", instanceID)
 					messageEvent := NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, int(msg.TopicPartition.Partition), instanceID)
 					handlerFunc(messageEvent)
-					fmt.Println(msg.TopicPartition.Offset)
 					_, cmtErr := consumer.CommitMessage(msg)
 					if cmtErr != nil {
 						log.Error().Err(cmtErr)

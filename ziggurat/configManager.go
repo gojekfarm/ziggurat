@@ -22,6 +22,12 @@ type Config struct {
 
 var zigguratConfig Config
 
+func (config *Config) Validate() {
+	if len(config.StreamRouters) == 0 {
+		log.Fatal().Str("stream-router-count", "0").Msg("no stream routers specified, exiting app...")
+	}
+}
+
 func parseConfig() {
 	viper.SetConfigFile(defaultPath)
 	viper.SetEnvPrefix("ZIGGURAT")

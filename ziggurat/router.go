@@ -55,8 +55,8 @@ func streamRoutesToMap(streamRoutes []StreamRouterConfig) map[string]StreamRoute
 	return streamRouteMap
 }
 
-func (sr *StreamRouter) Start(ctx context.Context, config Config) {
-
+func (sr *StreamRouter) Start(ctx context.Context, config Config) chan int {
+	stopNotifierCh := make(chan int)
 	var wg sync.WaitGroup
 	srConfig := streamRoutesToMap(config.StreamRouters)
 	hfMap := sr.handlerFunctionMap
@@ -64,7 +64,7 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config) {
 		log.Error().Err(ErrNoHandlersRegistered)
 	}
 
-	for topicEntityName, topicEntity := range hfMap {
+	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
@@ -75,8 +75,11 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config) {
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
 			log.Error().Err(setErr)
 		}
-		StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, topicEntity.handlerFunc, &wg)
+		go func(te *topicEntity, topicEntityName string, wg *sync.WaitGroup) {
+			StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, wg)
+			wg.Wait()
+			close(stopNotifierCh)
+		}(te, topicEntityName, &wg)
 	}
-	wg.Wait()
-
+	return stopNotifierCh
 }
