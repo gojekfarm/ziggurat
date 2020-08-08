@@ -22,7 +22,7 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Con
 	return consumer
 }
 
-func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer *kafka.Consumer, instanceID string, wg *sync.WaitGroup) {
+func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer *kafka.Consumer, instanceID string, retrier MessageRetrier, wg *sync.WaitGroup) {
 	log.Info().Msgf("starting consumer with instance-id: %s", instanceID)
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
@@ -45,7 +45,13 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 				if msg != nil {
 					log.Info().Msgf("processing message for consumer %s", instanceID)
 					messageEvent := NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, int(msg.TopicPartition.Partition), instanceID)
-					handlerFunc(messageEvent)
+					status := handlerFunc(messageEvent)
+					if status == RetryMessage {
+						log.Info().Msg("retrying message")
+						if retryErr := retrier.Retry(RetryPayload{MessageValueBytes: msg.Value, MessageKeyBytes: msg.Key}); retryErr != nil {
+							log.Error().Err(retryErr)
+						}
+					}
 					_, cmtErr := consumer.CommitMessage(msg)
 					if cmtErr != nil {
 						log.Error().Err(cmtErr)
@@ -56,7 +62,7 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 	}(routerCtx, consumer, instanceID, wg)
 }
 
-func StartConsumers(routerCtx context.Context, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+func StartConsumers(routerCtx context.Context, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, retrier MessageRetrier, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
@@ -64,7 +70,7 @@ func StartConsumers(routerCtx context.Context, consumerConfig *kafka.ConfigMap, 
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s-%s-%d", topicEntity, groupID, i)
 		wg.Add(1)
-		startConsumer(routerCtx, handlerFunc, consumer, instanceID, wg)
+		startConsumer(routerCtx, handlerFunc, consumer, instanceID, retrier, wg)
 	}
 	return consumers
 }

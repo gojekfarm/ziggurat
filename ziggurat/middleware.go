@@ -6,12 +6,12 @@ import (
 )
 
 func JSONDeserializer(handlerFn HandlerFunc, structValue interface{}) HandlerFunc {
-	return func(message MessageEvent) {
+	return func(message MessageEvent) ProcessStatus {
 		messageValueBytes := message.MessageValueBytes
 		if err := json.Unmarshal(messageValueBytes, structValue); err != nil {
 			log.Error().Err(err)
 		}
 		message.MessageValue = structValue
-		handlerFn(message)
+		return handlerFn(message)
 	}
 }

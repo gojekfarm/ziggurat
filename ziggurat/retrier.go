@@ -12,4 +12,3 @@ type MessageRetrier interface {
 	Consume(handlerFunc HandlerFunc)
 	Stop() error
 }
-

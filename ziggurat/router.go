@@ -55,7 +55,7 @@ func streamRoutesToMap(streamRoutes []StreamRouterConfig) map[string]StreamRoute
 	return streamRouteMap
 }
 
-func (sr *StreamRouter) Start(ctx context.Context, config Config) chan int {
+func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier MessageRetrier) chan int {
 	stopNotifierCh := make(chan int)
 	var wg sync.WaitGroup
 	srConfig := streamRoutesToMap(config.StreamRouters)
@@ -76,7 +76,7 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config) chan int {
 			log.Error().Err(setErr)
 		}
 		go func(te *topicEntity, topicEntityName string, wg *sync.WaitGroup) {
-			StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, wg)
+			StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, retrier, wg)
 			wg.Wait()
 			close(stopNotifierCh)
 		}(te, topicEntityName, &wg)
