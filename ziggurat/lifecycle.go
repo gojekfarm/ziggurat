@@ -14,18 +14,21 @@ type StartupOptions struct {
 	Retrier       MessageRetrier
 }
 
-func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, stopFunction StopFunction) {
+func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, options *StartupOptions) {
 	<-interruptCh
 	log.Info().Msg("sigterm received")
 	cancelFn()
-	stopFunction()
+	if err := options.Retrier.Stop(); err != nil {
+		log.Error().Err(err).Msg("error stopping retrier")
+	}
+	options.StopFunction()
 }
 
 func Start(router *StreamRouter, options StartupOptions) {
 	interruptChan := make(chan os.Signal)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	ctx, cancelFn := context.WithCancel(context.Background())
-	go interruptHandler(interruptChan, cancelFn, options.StopFunction)
+	go interruptHandler(interruptChan, cancelFn, &options)
 
 	if options.Retrier == nil {
 		options.Retrier = &RabbitRetrier{}
@@ -40,6 +43,5 @@ func Start(router *StreamRouter, options StartupOptions) {
 	if retrierErr := options.Retrier.Start(config); retrierErr != nil {
 		log.Error().Err(retrierErr).Msg("error starting retrier")
 	}
-
 	<-router.Start(ctx, config, options.Retrier)
 }

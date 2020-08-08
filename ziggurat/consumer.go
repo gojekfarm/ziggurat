@@ -49,7 +49,7 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 					if status == RetryMessage {
 						log.Info().Msg("retrying message")
 						if retryErr := retrier.Retry(RetryPayload{MessageValueBytes: msg.Value, MessageKeyBytes: msg.Key}); retryErr != nil {
-							log.Error().Err(retryErr)
+							log.Error().Err(retryErr).Msg("error retrying message")
 						}
 					}
 					_, cmtErr := consumer.CommitMessage(msg)
