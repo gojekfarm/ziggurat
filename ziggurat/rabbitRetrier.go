@@ -22,6 +22,7 @@ func publishMessage(channel *amqp.Channel, exchangeName string, payload RetryPay
 }
 
 func createExchange(channel *amqp.Channel, exchangeName string) error {
+
 	log.Info().Str("exchange-name", exchangeName).Msg("creating exchange")
 	err := channel.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil)
 	return err
@@ -38,6 +39,36 @@ func createExchanges(channel *amqp.Channel, topicEntities []string, exchangeType
 	}
 }
 
+func createAndBindQueue(channel *amqp.Channel, queueName string, exchangeName string, queueType string) error {
+	var args amqp.Table
+	if queueType == "dead_letter" {
+		args = amqp.Table{
+			"x-dead-letter-exchange": exchangeName,
+		}
+	} else {
+		args = nil
+	}
+	_, queueErr := channel.QueueDeclare(queueName, true, false, false, false, args)
+	if queueErr != nil {
+		return queueErr
+	}
+	bindErr := channel.QueueBind(queueName, "", exchangeName, false, nil)
+	return bindErr
+}
+
+func createAndBindQueues(channel *amqp.Channel, topicEntities []string, queueTypes []string) {
+	for _, te := range topicEntities {
+		for _, qt := range queueTypes {
+			queueName := te + "_" + qt + "_" + "queue"
+			exchangeName := te + "_" + qt + "_" + "exchange"
+			log.Info().Str("queue-name", queueName).Str("exchange-name", exchangeName).Msg("binding queue to exchange")
+			if err := createAndBindQueue(channel, queueName, exchangeName, qt); err != nil {
+				log.Error().Err(err).Msg("error creating queues")
+			}
+		}
+	}
+}
+
 func (r *RabbitRetrier) Start(config Config, streamRoutes TopicEntityHandlerMap) error {
 	connection, err := amqp.Dial("amqp://user:bitnami@localhost:5672/")
 	if err != nil {
@@ -49,14 +80,14 @@ func (r *RabbitRetrier) Start(config Config, streamRoutes TopicEntityHandlerMap)
 	}
 	r.connection = connection
 	channel, openErr := connection.Channel()
-	createExchanges(channel, topicEntities, []string{"instant", "delay", "dead_letter"})
 	if openErr != nil {
 		return openErr
 	}
+	createExchanges(channel, topicEntities, []string{"instant", "delay", "dead_letter"})
+	createAndBindQueues(channel, topicEntities, []string{"instant", "delay", "dead_letter"})
 	if closeErr := channel.Close(); closeErr != nil {
 		return closeErr
 	}
-
 	return nil
 }
 
