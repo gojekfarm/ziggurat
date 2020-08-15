@@ -16,12 +16,13 @@ type topicEntity struct {
 	originTopics     []string
 }
 
-type TopicEntityHandlerMap = map[string]topicEntity
+type TopicEntityHandlerMap = map[string]*topicEntity
 
 type InstanceCount = map[string]int
 
 type StreamRouter struct {
-	handlerFunctionMap map[string]*topicEntity
+	handlerFunctionMap TopicEntityHandlerMap
+	messageRetrier     MessageRetrier
 }
 
 func newConsumerConfig() *kafka.ConfigMap {
@@ -37,6 +38,10 @@ func NewStreamRouter() *StreamRouter {
 	return &StreamRouter{
 		handlerFunctionMap: make(map[string]*topicEntity),
 	}
+}
+
+func (sr *StreamRouter) GetStreamRoutes() map[string]*topicEntity {
+	return sr.handlerFunctionMap
 }
 
 func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc) {
@@ -55,7 +60,10 @@ func streamRoutesToMap(streamRoutes []StreamRouterConfig) map[string]StreamRoute
 	return streamRouteMap
 }
 
-
+func notifyRouterStop(stopChannel chan<- int, wg *sync.WaitGroup) {
+	wg.Wait()
+	close(stopChannel)
+}
 
 func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier MessageRetrier) chan int {
 	stopNotifierCh := make(chan int)
@@ -79,9 +87,12 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 		}
 		StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, retrier, &wg)
 	}
-	go func() {
-		wg.Wait()
-		close(stopNotifierCh)
-	}()
+
+	log.Info().Msg("starting retrier...")
+	retrierStartErr := retrier.Start(config, hfMap)
+	log.Error().Err(retrierStartErr).Msg("unable to start retrier")
+
+	go notifyRouterStop(stopNotifierCh, &wg)
+
 	return stopNotifierCh
 }

@@ -38,10 +38,5 @@ func Start(router *StreamRouter, options StartupOptions) {
 	log.Info().Msg("successfully parsed config")
 	config := GetConfig()
 	ConfigureLogger(config.LogLevel)
-	options.StartFunction(config)
-	log.Info().Msg("starting retrier...")
-	if retrierErr := options.Retrier.Start(config); retrierErr != nil {
-		log.Error().Err(retrierErr).Msg("error starting retrier")
-	}
 	<-router.Start(ctx, config, options.Retrier)
 }

@@ -30,7 +30,7 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 			select {
 			case <-doneCh:
 				if err := consumer.Close(); err != nil {
-					log.Error().Err(err)
+					log.Error().Err(err).Msg("error closing consumer")
 				}
 				log.Info().Str("consumer-instance-id", instanceID).Msg("stopping consumer...")
 				wg.Done()
@@ -39,7 +39,7 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 				msg, err := c.ReadMessage(defaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					log.Error().Err(err)
+					log.Error().Err(err).Msg("terminating application, all brokers down")
 					return
 				}
 				if msg != nil {
@@ -54,7 +54,7 @@ func startConsumer(routerCtx context.Context, handlerFunc HandlerFunc, consumer 
 					}
 					_, cmtErr := consumer.CommitMessage(msg)
 					if cmtErr != nil {
-						log.Error().Err(cmtErr)
+						log.Error().Err(cmtErr).Msg("commit error")
 					}
 				}
 			}
