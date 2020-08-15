@@ -89,8 +89,9 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 	}
 
 	log.Info().Msg("starting retrier...")
-	retrierStartErr := retrier.Start(config, hfMap)
-	log.Error().Err(retrierStartErr).Msg("unable to start retrier")
+	if retrierStartErr := retrier.Start(config, hfMap); retrierStartErr != nil {
+		log.Error().Err(retrierStartErr).Msg("unable to start retrier")
+	}
 
 	go notifyRouterStop(stopNotifierCh, &wg)
 
