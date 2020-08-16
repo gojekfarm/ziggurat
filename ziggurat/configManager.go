@@ -18,6 +18,7 @@ type StreamRouterConfig struct {
 type Config struct {
 	StreamRouters []StreamRouterConfig `mapstructure:"stream-router"`
 	LogLevel      string               `mapstructure:"log-level"`
+	ServiceName   string               `mapstructure:"service-name"`
 }
 
 var zigguratConfig Config
