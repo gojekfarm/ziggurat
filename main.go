@@ -5,11 +5,6 @@ import (
 	"github.com/gojek/ziggurat"
 )
 
-type TestEntity struct {
-	TestKey   string `json:"key"`
-	TestValue string `json:"value"`
-}
-
 func main() {
 
 	sr := ziggurat.NewStreamRouter()
