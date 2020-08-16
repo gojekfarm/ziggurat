@@ -27,6 +27,9 @@ func (config *Config) Validate() {
 	if len(config.StreamRouters) == 0 {
 		log.Fatal().Str("stream-router-count", "0").Msg("no stream routers specified, exiting app...")
 	}
+	if config.ServiceName == "" {
+		log.Fatal().Str("service-name", "").Msg("service name cannot be empty")
+	}
 }
 
 func parseConfig() {
