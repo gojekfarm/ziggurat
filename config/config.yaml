@@ -1,3 +1,4 @@
+service-name: "test-service"
 stream-router:
   - topic-entity: "test-entity2"
     bootstrap-servers: "localhost:9092"
