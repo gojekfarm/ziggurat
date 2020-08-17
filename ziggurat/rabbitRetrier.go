@@ -78,8 +78,9 @@ func createDelayQueues(channel *amqp.Channel, topicEntities []string, serviceNam
 	for _, te := range topicEntities {
 		queueName := constructQueueName(serviceName, te, DelayType)
 		exchangeName := constructExchangeName(serviceName, te, DelayType)
+		deadLetterExchangeName:=constructExchangeName(serviceName,te,DeadLetterType)
 		args := amqp.Table{
-			"x-dead-letter-exchange": exchangeName,
+			"x-dead-letter-exchange": deadLetterExchangeName,
 		}
 		if bindErr := createAndBindQueue(channel, queueName, exchangeName, args); bindErr != nil {
 			log.Error().Err(bindErr).Msg("queue bind error")
