@@ -1,18 +1,34 @@
 package ziggurat
 
 import (
+	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 )
+
+const DelayType = "delay"
+const InstantType = "instant"
+const DeadLetterType = "dead_letter"
 
 type RabbitRetrier struct {
 	connection *amqp.Connection
 }
 
-func publishMessage(channel *amqp.Channel, exchangeName string, payload RetryPayload) error {
+func constructQueueName(serviceName string, topicEntity string, queueType string) string {
+	return fmt.Sprintf("%s_%s_%s_queue", topicEntity, serviceName, queueType)
+}
+
+func constructExchangeName(serviceName string, topicEntity string, exchangeType string) string {
+	return fmt.Sprintf("%s_%s_%s_exchange", topicEntity, serviceName, exchangeType)
+}
+
+func publishMessage(channel *amqp.Channel, exchangeName string, payload RetryPayload, expirationInMS string) error {
 	publishing := amqp.Publishing{
 		Body:        payload.MessageValueBytes,
 		ContentType: "text/plain",
+	}
+	if expirationInMS != "" {
+		publishing.Expiration = expirationInMS
 	}
 	if publishErr := channel.Publish(exchangeName, "", true, false, publishing); publishErr != nil {
 		return publishErr
@@ -22,16 +38,15 @@ func publishMessage(channel *amqp.Channel, exchangeName string, payload RetryPay
 }
 
 func createExchange(channel *amqp.Channel, exchangeName string) error {
-
 	log.Info().Str("exchange-name", exchangeName).Msg("creating exchange")
 	err := channel.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil)
 	return err
 }
 
-func createExchanges(channel *amqp.Channel, topicEntities []string, exchangeTypes []string) {
+func createExchanges(channel *amqp.Channel, serviceName string, topicEntities []string, exchangeTypes []string) {
 	for _, te := range topicEntities {
 		for _, exchangeType := range exchangeTypes {
-			exchangeName := te + "_" + exchangeType + "_" + "exchange"
+			exchangeName := constructExchangeName(serviceName, te, exchangeType)
 			if err := createExchange(channel, exchangeName); err != nil {
 				log.Err(err).Msg("error creating exchange")
 			}
@@ -39,32 +54,45 @@ func createExchanges(channel *amqp.Channel, topicEntities []string, exchangeType
 	}
 }
 
-func createAndBindQueue(channel *amqp.Channel, queueName string, exchangeName string, queueType string) error {
-	var args amqp.Table
-	if queueType == "dead_letter" {
-		args = amqp.Table{
-			"x-dead-letter-exchange": exchangeName,
-		}
-	} else {
-		args = nil
-	}
+func createAndBindQueue(channel *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
 	_, queueErr := channel.QueueDeclare(queueName, true, false, false, false, args)
 	if queueErr != nil {
 		return queueErr
 	}
+	log.Info().Str("queue-name", queueName).Str("exchange-name", exchangeName).Msg("binding queue to exchange")
 	bindErr := channel.QueueBind(queueName, "", exchangeName, false, nil)
 	return bindErr
 }
 
-func createAndBindQueues(channel *amqp.Channel, topicEntities []string, queueTypes []string) {
+func createInstantQueues(channel *amqp.Channel, topicEntities []string, serviceName string) {
 	for _, te := range topicEntities {
-		for _, qt := range queueTypes {
-			queueName := te + "_" + qt + "_" + "queue"
-			exchangeName := te + "_" + qt + "_" + "exchange"
-			log.Info().Str("queue-name", queueName).Str("exchange-name", exchangeName).Msg("binding queue to exchange")
-			if err := createAndBindQueue(channel, queueName, exchangeName, qt); err != nil {
-				log.Error().Err(err).Msg("error creating queues")
-			}
+		queueName := constructQueueName(serviceName, te, InstantType)
+		exchangeName := constructExchangeName(serviceName, te, InstantType)
+		if bindErr := createAndBindQueue(channel, queueName, exchangeName, nil); bindErr != nil {
+			log.Error().Err(bindErr).Msg("queue bind error")
+		}
+	}
+}
+
+func createDelayQueues(channel *amqp.Channel, topicEntities []string, serviceName string) {
+	for _, te := range topicEntities {
+		queueName := constructQueueName(serviceName, te, DelayType)
+		exchangeName := constructExchangeName(serviceName, te, DelayType)
+		args := amqp.Table{
+			"x-dead-letter-exchange": exchangeName,
+		}
+		if bindErr := createAndBindQueue(channel, queueName, exchangeName, args); bindErr != nil {
+			log.Error().Err(bindErr).Msg("queue bind error")
+		}
+	}
+}
+
+func createDeadLetterQueues(channel *amqp.Channel, topicEntities []string, serviceName string) {
+	for _, te := range topicEntities {
+		queueName := constructQueueName(serviceName, te, DeadLetterType)
+		exchangeName := constructExchangeName(serviceName, te, DeadLetterType)
+		if bindErr := createAndBindQueue(channel, queueName, exchangeName, nil); bindErr != nil {
+			log.Error().Err(bindErr).Msg("queue bind error")
 		}
 	}
 }
@@ -83,8 +111,10 @@ func (r *RabbitRetrier) Start(config Config, streamRoutes TopicEntityHandlerMap)
 	if openErr != nil {
 		return openErr
 	}
-	createExchanges(channel, topicEntities, []string{"instant", "delay", "dead_letter"})
-	createAndBindQueues(channel, topicEntities, []string{"instant", "delay", "dead_letter"})
+	createExchanges(channel, config.ServiceName, topicEntities, []string{DelayType, InstantType, DeadLetterType})
+	createInstantQueues(channel, topicEntities, config.ServiceName)
+	createDelayQueues(channel, topicEntities, config.ServiceName)
+	createDeadLetterQueues(channel, topicEntities, config.ServiceName)
 	if closeErr := channel.Close(); closeErr != nil {
 		return closeErr
 	}
@@ -96,9 +126,10 @@ func (r *RabbitRetrier) Stop() error {
 	return closeErr
 }
 
-func (r *RabbitRetrier) Retry(payload RetryPayload) error {
+func (r *RabbitRetrier) Retry(config Config, payload RetryPayload) error {
 	channel, err := r.connection.Channel()
-	err = publishMessage(channel, "test_exchange", payload)
+	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
+	err = publishMessage(channel, exchangeName, payload, "1000")
 	err = channel.Close()
 	return err
 }
