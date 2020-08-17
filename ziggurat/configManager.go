@@ -23,13 +23,14 @@ type Config struct {
 
 var zigguratConfig Config
 
-func (config *Config) Validate() {
+func (config *Config) Validate() error {
 	if len(config.StreamRouters) == 0 {
-		log.Fatal().Str("stream-router-count", "0").Msg("no stream routers specified, exiting app...")
+		return ErrStreamRouteValidation
 	}
 	if config.ServiceName == "" {
-		log.Fatal().Str("service-name", "").Msg("service name cannot be empty")
+		return ErrServiceNameValidation
 	}
+	return nil
 }
 
 func parseConfig() {
