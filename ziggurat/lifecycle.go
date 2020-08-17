@@ -37,7 +37,10 @@ func Start(router *StreamRouter, options StartupOptions) {
 	parseConfig()
 	log.Info().Msg("successfully parsed config")
 	config := GetConfig()
-	config.Validate()
+	if validationErr := config.Validate(); validationErr != nil {
+		log.Fatal().Err(validationErr).Msg("config validation error")
+	}
+
 	ConfigureLogger(config.LogLevel)
 	<-router.Start(ctx, config, options.Retrier)
 }
