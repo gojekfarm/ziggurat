@@ -85,7 +85,7 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
 			log.Error().Err(setErr)
 		}
-		StartConsumers(ctx, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, retrier, &wg)
+		StartConsumers(ctx, config, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, retrier, &wg)
 	}
 
 	log.Info().Msg("starting retrier...")
