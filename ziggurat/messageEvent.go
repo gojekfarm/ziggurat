@@ -10,7 +10,8 @@ type MessageEvent struct {
 	ConsumerInstanceId string
 	Topic              string
 	Partition          int
-	Attributes         map[string]interface{}
+	Attributes         map[string]interface {
+	}
 }
 
 func NewMessageEvent(key []byte, value []byte, topic string, partition int, consumerInstanceId string) MessageEvent {
