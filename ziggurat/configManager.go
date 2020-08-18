@@ -23,12 +23,26 @@ type Config struct {
 
 var zigguratConfig Config
 
+var configValidationRuleMapping = map[string]func(c *Config) error{
+	"streamRouteValidation": func(c *Config) error {
+		if len(c.StreamRouters) == 0 {
+			return ErrStreamRouteValidation
+		}
+		return nil
+	},
+	"serviceNameValidation": func(c *Config) error {
+		if c.ServiceName == "" {
+			return ErrServiceNameValidation
+		}
+		return nil
+	},
+}
+
 func (config *Config) Validate() error {
-	if len(config.StreamRouters) == 0 {
-		return ErrStreamRouteValidation
-	}
-	if config.ServiceName == "" {
-		return ErrServiceNameValidation
+	for _, validationFn := range configValidationRuleMapping {
+		if err:=validationFn(config);err!=nil{
+			return err
+		}
 	}
 	return nil
 }

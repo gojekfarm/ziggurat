@@ -40,8 +40,16 @@ func NewStreamRouter() *StreamRouter {
 	}
 }
 
-func (sr *StreamRouter) GetStreamRoutes() map[string]*topicEntity {
+func (sr *StreamRouter) GetHandlerFunctionMap() map[string]*topicEntity {
 	return sr.handlerFunctionMap
+}
+
+func (sr *StreamRouter) GetTopicEntities() []*topicEntity {
+	var topicEntities []*topicEntity
+	for _, te := range sr.handlerFunctionMap {
+		topicEntities = append(topicEntities, te)
+	}
+	return topicEntities
 }
 
 func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc) {
@@ -85,7 +93,8 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
 			log.Error().Err(setErr)
 		}
-		StartConsumers(ctx, config, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, retrier, &wg)
+		consumers := StartConsumers(ctx, config, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, retrier, &wg)
+		te.consumers = consumers
 	}
 
 	log.Info().Msg("starting retrier...")
