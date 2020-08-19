@@ -78,7 +78,7 @@ func createDelayQueues(channel *amqp.Channel, topicEntities []string, serviceNam
 	for _, te := range topicEntities {
 		queueName := constructQueueName(serviceName, te, DelayType)
 		exchangeName := constructExchangeName(serviceName, te, DelayType)
-		deadLetterExchangeName:=constructExchangeName(serviceName,te,DeadLetterType)
+		deadLetterExchangeName := constructExchangeName(serviceName, te, InstantType)
 		args := amqp.Table{
 			"x-dead-letter-exchange": deadLetterExchangeName,
 		}
