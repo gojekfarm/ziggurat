@@ -44,14 +44,16 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 				}
 				if msg != nil {
 					log.Info().Msgf("processing message for consumer %s", instanceID)
-					messageEvent := NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, int(msg.TopicPartition.Partition), instanceID)
-					status := handlerFunc(messageEvent)
-					if status == RetryMessage {
-						log.Info().Msg("retrying message")
-						if retryErr := retrier.Retry(config, RetryPayload{MessageValueBytes: msg.Value, MessageKeyBytes: msg.Key, TopicEntity: topicEntity}); retryErr != nil {
-							log.Error().Err(retryErr).Msg("error retrying message")
-						}
+					messageEvent := MessageEvent{
+						MessageKey:        nil,
+						MessageValue:      nil,
+						MessageValueBytes: msg.Key,
+						MessageKeyBytes:   msg.Value,
+						Topic:             *msg.TopicPartition.Topic,
+						TopicEntity:       topicEntity,
+						attributes:        nil,
 					}
+					MessageHandler(config, handlerFunc, retrier)(messageEvent)
 					_, cmtErr := consumer.CommitMessage(msg)
 					if cmtErr != nil {
 						log.Error().Err(cmtErr).Msg("commit error")
@@ -63,6 +65,7 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 }
 
 func StartConsumers(routerCtx context.Context, config Config, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, retrier MessageRetrier, wg *sync.WaitGroup) []*kafka.Consumer {
+	fmt.Println("topic entity: ", topicEntity)
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
