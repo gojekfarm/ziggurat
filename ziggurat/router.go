@@ -102,6 +102,9 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 		log.Fatal().Err(retrierStartErr).Msg("unable to start retrier")
 	}
 
+	retrier.Consume(config, hfMap)
+	log.Info().Msg("starting retrier consumer")
+
 	go notifyRouterStop(stopNotifierCh, &wg)
 
 	return stopNotifierCh
