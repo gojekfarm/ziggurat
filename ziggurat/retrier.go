@@ -10,7 +10,7 @@ type RetryPayload struct {
 
 type MessageRetrier interface {
 	Start(config Config, streamRoutes TopicEntityHandlerMap) error
-	Retry(config Config, payload RetryPayload) error
+	Retry(config Config, payload MessageEvent) error
 	Stop() error
 	Consume(config Config, streamRoutes TopicEntityHandlerMap)
 }
