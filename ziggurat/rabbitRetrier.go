@@ -1,6 +1,8 @@
 package ziggurat
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
@@ -22,9 +24,14 @@ func constructExchangeName(serviceName string, topicEntity string, exchangeType 
 	return fmt.Sprintf("%s_%s_%s_exchange", topicEntity, serviceName, exchangeType)
 }
 
-func publishMessage(channel *amqp.Channel, exchangeName string, payload RetryPayload, expirationInMS string) error {
+func publishMessage(channel *amqp.Channel, exchangeName string, payload MessageEvent, expirationInMS string) error {
+	buff := bytes.Buffer{}
+	encoder := gob.NewEncoder(&buff)
+	if encodeErr := encoder.Encode(payload); encodeErr != nil {
+		return encodeErr
+	}
 	publishing := amqp.Publishing{
-		Body:        payload.MessageValueBytes,
+		Body:        buff.Bytes(),
 		ContentType: "text/plain",
 	}
 	if expirationInMS != "" {
@@ -127,7 +134,7 @@ func (r *RabbitRetrier) Stop() error {
 	return closeErr
 }
 
-func (r *RabbitRetrier) Retry(config Config, payload RetryPayload) error {
+func (r *RabbitRetrier) Retry(config Config, payload MessageEvent) error {
 	channel, err := r.connection.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
 	err = publishMessage(channel, exchangeName, payload, "1000")
@@ -136,5 +143,22 @@ func (r *RabbitRetrier) Retry(config Config, payload RetryPayload) error {
 }
 
 func (r *RabbitRetrier) Consume(config Config, streamRoutes TopicEntityHandlerMap) {
+	consumerChan, _ := r.connection.Channel()
+	instantQueueName := "test-entity2_test-service_instant_queue"
+	deliveryChan, _ := consumerChan.Consume(instantQueueName, "test-consumer-tag", false, false, false, false, nil)
+	go func(delCh <-chan amqp.Delivery) {
+		for del := range delCh {
+			buff := bytes.Buffer{}
+			buff.Write(del.Body)
+			decoder := gob.NewDecoder(&buff)
+			messageEvent := &MessageEvent{}
+			if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
+				log.Error().Err(decodeErr).Msg("error decoding rabbitmq message payload")
+				continue
+			}
+			te := streamRoutes["test-entity2"]
+			MessageHandler(config, te.handlerFunc, r)(*messageEvent)
+		}
+	}(deliveryChan)
 
 }
