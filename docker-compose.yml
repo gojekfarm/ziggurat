@@ -17,3 +17,8 @@ services:
       - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
       - ALLOW_PLAINTEXT_LISTENER=yes
+  rabbitmq:
+    image: 'bitnami/rabbitmq:latest'
+    ports:
+      - '15672:15672'
+      - '5672:5672'
