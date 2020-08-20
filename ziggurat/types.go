@@ -7,3 +7,4 @@ type ProcessStatus int
 
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1
+const SkipMessage ProcessStatus = 2
