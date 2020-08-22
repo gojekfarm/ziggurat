@@ -16,3 +16,9 @@ stream-router:
     origin-topics: "json-test"
     group-id: "json-group"
 log-level: "debug"
+retry:
+  enabled: true
+  count: 5
+rabbitmq:
+  host: "amqp://user:bitnami@localhost:5672/"
+  delay-queue-expiration: "1000"
