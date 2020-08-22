@@ -51,7 +51,7 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 						MessageKeyBytes:   msg.Value,
 						Topic:             *msg.TopicPartition.Topic,
 						TopicEntity:       topicEntity,
-						attributes:        nil,
+						Attributes:        make(map[string]interface{}),
 					}
 					MessageHandler(config, handlerFunc, retrier)(messageEvent)
 					_, cmtErr := consumer.CommitMessage(msg)

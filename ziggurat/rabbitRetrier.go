@@ -2,15 +2,18 @@ package ziggurat
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
+	"sync"
 )
 
 const DelayType = "delay"
 const InstantType = "instant"
 const DeadLetterType = "dead_letter"
+const RetryCount = "retryCount"
 
 type RabbitRetrier struct {
 	connection *amqp.Connection
@@ -22,6 +25,23 @@ func constructQueueName(serviceName string, topicEntity string, queueType string
 
 func constructExchangeName(serviceName string, topicEntity string, exchangeType string) string {
 	return fmt.Sprintf("%s_%s_%s_exchange", topicEntity, serviceName, exchangeType)
+}
+
+func setRetryCount(m *MessageEvent) {
+	value := m.GetMessageAttribute(RetryCount)
+	if value == nil {
+		m.SetMessageAttribute(RetryCount, 1)
+		return
+	}
+	m.SetMessageAttribute(RetryCount, value.(int)+1)
+}
+
+func getRetryCount(m *MessageEvent) int {
+	if value := m.GetMessageAttribute(RetryCount); value == nil {
+		return 0
+	}
+
+	return m.GetMessageAttribute(RetryCount).(int)
 }
 
 func publishMessage(channel *amqp.Channel, exchangeName string, payload MessageEvent, expirationInMS string) error {
@@ -132,33 +152,63 @@ func (r *RabbitRetrier) Start(config Config, streamRoutes TopicEntityHandlerMap)
 func (r *RabbitRetrier) Stop() error {
 	closeErr := r.connection.Close()
 	return closeErr
+
 }
 
 func (r *RabbitRetrier) Retry(config Config, payload MessageEvent) error {
 	channel, err := r.connection.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
-	err = publishMessage(channel, exchangeName, payload, "1000")
+	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DeadLetterType)
+	retryCount := getRetryCount(&payload)
+	if retryCount == 5 {
+		err = publishMessage(channel, deadLetterExchangeName, payload, "1000")
+		err = channel.Close()
+		return err
+	}
+	setRetryCount(&payload)
+	err = publishMessage(channel, exchangeName, payload, "")
 	err = channel.Close()
 	return err
 }
 
-func (r *RabbitRetrier) Consume(config Config, streamRoutes TopicEntityHandlerMap) {
-	consumerChan, _ := r.connection.Channel()
-	instantQueueName := "test-entity2_test-service_instant_queue"
-	deliveryChan, _ := consumerChan.Consume(instantQueueName, "test-consumer-tag", false, false, false, false, nil)
-	go func(delCh <-chan amqp.Delivery) {
-		for del := range delCh {
+func handleDelivery(ctx context.Context, ctag string, delivery <-chan amqp.Delivery, config Config, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+	doneCh := ctx.Done()
+	for {
+		select {
+		case <-doneCh:
+			log.Info().Str("consumer-tag", ctag).Msg("stopping rabbit consumer")
+			wg.Done()
+			return
+		case del := <-delivery:
 			buff := bytes.Buffer{}
 			buff.Write(del.Body)
 			decoder := gob.NewDecoder(&buff)
-			messageEvent := &MessageEvent{}
+			messageEvent := &MessageEvent{Attributes: map[string]interface{}{}}
 			if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
 				log.Error().Err(decodeErr).Msg("error decoding rabbitmq message payload")
 				continue
 			}
-			te := streamRoutes["test-entity2"]
-			MessageHandler(config, te.handlerFunc, r)(*messageEvent)
+			log.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
+			MessageHandler(config, handlerFunc, r)(*messageEvent)
 		}
-	}(deliveryChan)
+	}
+}
 
+func startRabbitConsumers(ctx context.Context, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
+	channel, _ := connection.Channel()
+	instantQueueName := constructQueueName(config.ServiceName, topicEntity, InstantType)
+	ctag := topicEntity + "_amqp_consumer"
+	deliveryChan, _ := channel.Consume(instantQueueName, ctag, false, false, false, false, nil)
+	log.Info().Str("consumer-tag", ctag).Msg("starting Rabbit consumer")
+	wg.Add(1)
+	go handleDelivery(ctx, ctag, deliveryChan, config, r, handlerFunc, wg)
+
+}
+
+func (r *RabbitRetrier) Consume(ctx context.Context, config Config, streamRoutes TopicEntityHandlerMap) {
+	var wg sync.WaitGroup
+	for teName, te := range streamRoutes {
+		go startRabbitConsumers(ctx, r.connection, config, teName, te.handlerFunc, r, &wg)
+	}
+	wg.Wait()
 }
