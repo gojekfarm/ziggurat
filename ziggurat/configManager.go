@@ -15,10 +15,16 @@ type StreamRouterConfig struct {
 	TopicEntity      string `mapstructure:"topic-entity"`
 }
 
+type RetryConfig struct {
+	Enabled bool `mapstructure:"enabled"`
+	Count   int  `mapstructure:"count"`
+}
+
 type Config struct {
 	StreamRouters []StreamRouterConfig `mapstructure:"stream-router"`
 	LogLevel      string               `mapstructure:"log-level"`
 	ServiceName   string               `mapstructure:"service-name"`
+	Retry         RetryConfig          `mapstructure:"retry"`
 }
 
 var zigguratConfig Config
@@ -40,11 +46,15 @@ var configValidationRuleMapping = map[string]func(c *Config) error{
 
 func (config *Config) Validate() error {
 	for _, validationFn := range configValidationRuleMapping {
-		if err:=validationFn(config);err!=nil{
+		if err := validationFn(config); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (config *Config) GetByKey(key string) interface{} {
+	return viper.Get(key)
 }
 
 func parseConfig() {
