@@ -16,7 +16,13 @@ const DeadLetterType = "dead_letter"
 const RetryCount = "retryCount"
 
 type RabbitRetrier struct {
-	connection *amqp.Connection
+	connection     *amqp.Connection
+	rabbitmqConfig *RabbitMQConfig
+}
+
+type RabbitMQConfig struct {
+	host                 string
+	delayQueueExpiration string
 }
 
 func constructQueueName(serviceName string, topicEntity string, queueType string) string {
@@ -125,8 +131,19 @@ func createDeadLetterQueues(channel *amqp.Channel, topicEntities []string, servi
 	}
 }
 
+func setRabbitMQConfig(config Config, r *RabbitRetrier) {
+	rawConfig := config.GetByKey("rabbitmq")
+	sanitizedConfig := rawConfig.(map[string]interface{})
+	r.rabbitmqConfig = &RabbitMQConfig{
+		host:                 sanitizedConfig["host"].(string),
+		delayQueueExpiration: sanitizedConfig["delay-queue-expiration"].(string),
+	}
+
+}
+
 func (r *RabbitRetrier) Start(config Config, streamRoutes TopicEntityHandlerMap) error {
-	connection, err := amqp.Dial("amqp://user:bitnami@localhost:5672/")
+	setRabbitMQConfig(config, r)
+	connection, err := amqp.Dial(r.rabbitmqConfig.host)
 	if err != nil {
 		return err
 	}
@@ -150,9 +167,11 @@ func (r *RabbitRetrier) Start(config Config, streamRoutes TopicEntityHandlerMap)
 }
 
 func (r *RabbitRetrier) Stop() error {
-	closeErr := r.connection.Close()
-	return closeErr
-
+	if r.connection != nil {
+		closeErr := r.connection.Close()
+		return closeErr
+	}
+	return nil
 }
 
 func (r *RabbitRetrier) Retry(config Config, payload MessageEvent) error {
@@ -160,13 +179,13 @@ func (r *RabbitRetrier) Retry(config Config, payload MessageEvent) error {
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
 	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DeadLetterType)
 	retryCount := getRetryCount(&payload)
-	if retryCount == 5 {
-		err = publishMessage(channel, deadLetterExchangeName, payload, "1000")
+	if retryCount == config.Retry.Count {
+		err = publishMessage(channel, deadLetterExchangeName, payload, "")
 		err = channel.Close()
 		return err
 	}
 	setRetryCount(&payload)
-	err = publishMessage(channel, exchangeName, payload, "")
+	err = publishMessage(channel, exchangeName, payload, r.rabbitmqConfig.delayQueueExpiration)
 	err = channel.Close()
 	return err
 }
@@ -187,6 +206,9 @@ func handleDelivery(ctx context.Context, ctag string, delivery <-chan amqp.Deliv
 			if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
 				log.Error().Err(decodeErr).Msg("error decoding rabbitmq message payload")
 				continue
+			}
+			if ackErr := del.Ack(false); ackErr != nil {
+				log.Error().Err(ackErr).Msg("rabbit retrier ack error")
 			}
 			log.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
 			MessageHandler(config, handlerFunc, r)(*messageEvent)
