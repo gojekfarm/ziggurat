@@ -234,3 +234,7 @@ func (r *RabbitRetrier) Consume(ctx context.Context, config Config, streamRoutes
 	}
 	wg.Wait()
 }
+
+func (r *RabbitRetrier) Replay(config Config, streamRoutes TopicEntityHandlerMap) {
+
+}
