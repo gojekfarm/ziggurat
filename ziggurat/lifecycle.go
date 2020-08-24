@@ -40,7 +40,7 @@ func Start(router *StreamRouter, options StartupOptions) {
 	if validationErr := config.Validate(); validationErr != nil {
 		log.Fatal().Err(validationErr).Msg("config validation error")
 	}
-
+	options.StartFunction(config)
 	ConfigureLogger(config.LogLevel)
 	<-router.Start(ctx, config, options.Retrier)
 }
