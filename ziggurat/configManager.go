@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const defaultPath = "./config/config.sample.yaml"
+const DefaultPath = "./config/config.yaml"
 
 type StreamRouterConfig struct {
 	InstanceCount    int    `mapstructure:"instance-count"`
@@ -58,7 +58,7 @@ func (config *Config) GetByKey(key string) interface{} {
 }
 
 func parseConfig() {
-	viper.SetConfigFile(defaultPath)
+	viper.SetConfigFile(DefaultPath)
 	viper.SetEnvPrefix("ZIGGURAT")
 	if err := viper.ReadInConfig(); err != nil {
 		if err, ok := err.(viper.ConfigFileNotFoundError); ok {
