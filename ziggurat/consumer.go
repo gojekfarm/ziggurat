@@ -41,8 +41,6 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
 					log.Error().Err(err).Msg("terminating application, all brokers down")
 					return
-				} else if err != nil {
-					log.Error().Str("consumer-instance-id", instanceID).Err(err).Msg("kafka client error")
 				}
 				if msg != nil {
 					log.Info().Msgf("processing message for consumer %s", instanceID)
