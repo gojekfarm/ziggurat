@@ -31,6 +31,7 @@ func newConsumerConfig() *kafka.ConfigMap {
 		"group.id":           "myGroup",
 		"auto.offset.reset":  "earliest",
 		"enable.auto.commit": false,
+		"debug":              "all",
 	}
 }
 
