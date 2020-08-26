@@ -84,6 +84,9 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
+		if topicEntityName != streamRouterCfg.TopicEntity {
+			log.Fatal().Err(ErrTopicEntityMismatch).Msg("router error")
+		}
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)

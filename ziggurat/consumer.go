@@ -65,7 +65,6 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 }
 
 func StartConsumers(routerCtx context.Context, config Config, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, retrier MessageRetrier, wg *sync.WaitGroup) []*kafka.Consumer {
-	fmt.Println("topic entity: ", topicEntity)
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
