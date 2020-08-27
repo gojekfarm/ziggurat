@@ -22,22 +22,10 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Con
 	return consumer
 }
 
-func logConsumer(ctx context.Context, logChan chan kafka.LogEvent) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case logEvt := <-logChan:
-			log.Info().Msg(logEvt.Message)
-		}
-	}
-}
-
 func startConsumer(routerCtx context.Context, config Config, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, retrier MessageRetrier, wg *sync.WaitGroup) {
 	log.Info().Msgf("starting consumer with instance-id: %s", instanceID)
 
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
-		go logConsumer(routerCtx, c.Logs())
 		doneCh := routerCtx.Done()
 		for {
 			select {
