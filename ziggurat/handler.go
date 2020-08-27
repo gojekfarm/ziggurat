@@ -7,11 +7,11 @@ func MessageHandler(config Config, handlerFunc HandlerFunc, retrier MessageRetri
 		status := handlerFunc(event)
 		switch status {
 		case ProcessingSuccess:
-			log.Info().Msgf("successfully processed message %v", event)
+			log.Info().Msg("successfully processed message")
 		case SkipMessage:
-			log.Info().Msgf("skipping message %v", event)
+			log.Info().Msg("skipping message")
 		case RetryMessage:
-			log.Info().Msgf("retrying message %v", event)
+			log.Info().Msgf("retrying message")
 			if retryErr := retrier.Retry(config, event); retryErr != nil {
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}
