@@ -1,4 +1,4 @@
-module github.com/gojek
+module source.golabs.io/lambda/zigg-go
 
 go 1.14
 
