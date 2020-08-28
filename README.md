@@ -101,3 +101,4 @@ func main() {
 - [ ] Replay RabbitMQ deadset messages
 - [ ] Log formatting
 - [ ] Configurable RabbitMQ consumer count
+- [ ] Unit tests
