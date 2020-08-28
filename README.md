@@ -93,7 +93,7 @@ func main() {
 
 
 #### TODO
-- [x] Consumer groups
+- [x] Balanced Consumer groups
 - [x] RabbitMQ retries
 - [x] Retry interface
 - [ ] Default middleware to deserialize messages
