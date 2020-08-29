@@ -1,9 +1,5 @@
 package ziggurat
 
-import (
-	"github.com/rs/zerolog/log"
-)
-
 type MessageEvent struct {
 	MessageKey        interface{}
 	MessageValue      interface{}
@@ -20,7 +16,6 @@ func (m MessageEvent) GetMessageAttribute(key string) interface{} {
 
 func (m *MessageEvent) SetMessageAttribute(key string, value interface{}) {
 	if m.Attributes[key] != nil {
-		log.Warn().Msgf("key %s already exists and will be overwritten", key)
 		m.Attributes[key] = value
 		return
 	}
