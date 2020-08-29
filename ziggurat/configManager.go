@@ -62,12 +62,12 @@ func parseConfig() {
 	viper.SetEnvPrefix("ZIGGURAT")
 	if err := viper.ReadInConfig(); err != nil {
 		if err, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Fatal().Err(err)
+			log.Fatal().Err(err).Msg("config parse error")
 		}
 	}
 
 	if err := viper.Unmarshal(&zigguratConfig); err != nil {
-		log.Fatal().Err(err)
+		log.Fatal().Err(err).Msg("config parse error")
 	}
 }
 
