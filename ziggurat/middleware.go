@@ -2,8 +2,8 @@ package ziggurat
 
 import (
 	"encoding/json"
+	"github.com/golang/protobuf/proto"
 	"github.com/rs/zerolog/log"
-	"google.golang.org/protobuf/proto"
 )
 
 func JSONDeserializer(handlerFn HandlerFunc, structValue interface{}) HandlerFunc {
