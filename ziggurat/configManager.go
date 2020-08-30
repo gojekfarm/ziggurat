@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const DefaultPath = "./config/config.sample.yaml"
+const DefaultPath = "./config/config.yaml"
 
 type StreamRouterConfig struct {
 	InstanceCount    int    `mapstructure:"instance-count"`
