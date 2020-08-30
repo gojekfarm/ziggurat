@@ -78,7 +78,7 @@ func main() {
 - [x] RabbitMQ retries
 - [x] Retry interface
 - [x] Default middleware to deserialize messages
-- [ ] Env vars Config override
+- [x] Env vars Config override
 - [ ] Replay RabbitMQ deadset messages
 - [ ] Log formatting
 - [ ] Configurable RabbitMQ consumer count
