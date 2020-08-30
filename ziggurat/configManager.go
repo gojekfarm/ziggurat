@@ -3,6 +3,7 @@ package ziggurat
 import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"strings"
 )
 
 const DefaultPath = "./config/config.yaml"
@@ -59,7 +60,8 @@ func (config *Config) GetByKey(key string) interface{} {
 
 func parseConfig() {
 	viper.SetConfigFile(DefaultPath)
-	viper.SetEnvPrefix("ZIGGURAT")
+	viper.SetEnvPrefix("ziggurat")
+	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
 		if err, ok := err.(viper.ConfigFileNotFoundError); ok {
@@ -67,6 +69,8 @@ func parseConfig() {
 		}
 	}
 
+	var replacer = strings.NewReplacer("-", "_", ".", "_")
+	viper.SetEnvKeyReplacer(replacer)
 	if err := viper.Unmarshal(&zigguratConfig); err != nil {
 		log.Fatal().Err(err).Msg("config parse error")
 	}
