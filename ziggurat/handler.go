@@ -1,6 +1,8 @@
 package ziggurat
 
-import "github.com/rs/zerolog/log"
+import (
+	"github.com/rs/zerolog/log"
+)
 
 func MessageHandler(config Config, handlerFunc HandlerFunc, retrier MessageRetrier) func(event MessageEvent) {
 	return func(event MessageEvent) {
