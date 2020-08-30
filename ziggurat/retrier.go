@@ -7,5 +7,5 @@ type MessageRetrier interface {
 	Retry(config Config, payload MessageEvent) error
 	Stop() error
 	Consume(ctx context.Context, config Config, streamRoutes TopicEntityHandlerMap)
-	Replay(config Config, streamRoutes TopicEntityHandlerMap)
+	Replay(config Config, streamRoutes TopicEntityHandlerMap, topicEntity string)
 }

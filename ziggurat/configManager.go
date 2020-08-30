@@ -60,6 +60,7 @@ func (config *Config) GetByKey(key string) interface{} {
 func parseConfig() {
 	viper.SetConfigFile(DefaultPath)
 	viper.SetEnvPrefix("ZIGGURAT")
+	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
 		if err, ok := err.(viper.ConfigFileNotFoundError); ok {
 			log.Fatal().Err(err).Msg("config parse error")
