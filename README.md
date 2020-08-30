@@ -74,8 +74,8 @@ func main() {
 
 #### TODO
 - [x] Balanced Consumer groups
-- [ ] Async offset commits
 - [x] RabbitMQ retries
+- [ ] Atleast once delivery semantics
 - [x] Retry interface
 - [x] Default middleware to deserialize messages
 - [x] Env vars Config override
