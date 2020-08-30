@@ -61,14 +61,6 @@ func makeKV(key string, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func streamRoutesToMap(streamRoutes []StreamRouterConfig) map[string]StreamRouterConfig {
-	streamRouteMap := make(map[string]StreamRouterConfig)
-	for _, streamRoute := range streamRoutes {
-		streamRouteMap[streamRoute.TopicEntity] = streamRoute
-	}
-	return streamRouteMap
-}
-
 func notifyRouterStop(stopChannel chan<- int, wg *sync.WaitGroup) {
 	wg.Wait()
 	close(stopChannel)
@@ -77,7 +69,7 @@ func notifyRouterStop(stopChannel chan<- int, wg *sync.WaitGroup) {
 func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier MessageRetrier) chan int {
 	stopNotifierCh := make(chan int)
 	var wg sync.WaitGroup
-	srConfig := streamRoutesToMap(config.StreamRouters)
+	srConfig := config.StreamRouter
 	hfMap := sr.handlerFunctionMap
 	if len(hfMap) == 0 {
 		log.Error().Err(ErrNoHandlersRegistered)

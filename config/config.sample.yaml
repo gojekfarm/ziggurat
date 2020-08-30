@@ -1,20 +1,23 @@
 service-name: "test-service"
 stream-router:
-  - topic-entity: "test-entity2"
+  test-entity2:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "test-topic1"
     group-id: "test-group"
-  - topic-entity: "test-entity"
+    topic-entity: "topic-entiy2"
+  test-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "test-topic2"
     group-id: "test-group2"
-  - topic-entity: "json-entity"
+    topic-entity: "test-entity"
+  json-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 1
     origin-topics: "json-test"
     group-id: "json-group"
+    topic-entity: "json-entity"
 log-level: "debug"
 retry:
   enabled: true

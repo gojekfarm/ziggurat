@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-const DefaultPath = "./config/config.yaml"
+const DefaultPath = "./config/config.sample.yaml"
 
 type StreamRouterConfig struct {
 	InstanceCount    int    `mapstructure:"instance-count"`
@@ -21,17 +21,17 @@ type RetryConfig struct {
 }
 
 type Config struct {
-	StreamRouters []StreamRouterConfig `mapstructure:"stream-router"`
-	LogLevel      string               `mapstructure:"log-level"`
-	ServiceName   string               `mapstructure:"service-name"`
-	Retry         RetryConfig          `mapstructure:"retry"`
+	StreamRouter map[string]StreamRouterConfig `mapstructure:"stream-router"`
+	LogLevel     string                        `mapstructure:"log-level"`
+	ServiceName  string                        `mapstructure:"service-name"`
+	Retry        RetryConfig                   `mapstructure:"retry"`
 }
 
 var zigguratConfig Config
 
 var configValidationRuleMapping = map[string]func(c *Config) error{
 	"streamRouteValidation": func(c *Config) error {
-		if len(c.StreamRouters) == 0 {
+		if len(c.StreamRouter) == 0 {
 			return ErrStreamRouteValidation
 		}
 		return nil
