@@ -77,7 +77,7 @@ func main() {
 - [ ] Async offset commits
 - [x] RabbitMQ retries
 - [x] Retry interface
-- [ ] Default middleware to deserialize messages
+- [x] Default middleware to deserialize messages
 - [ ] Env vars Config override
 - [ ] Replay RabbitMQ deadset messages
 - [ ] Log formatting
