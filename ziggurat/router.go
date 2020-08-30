@@ -72,7 +72,7 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 	srConfig := config.StreamRouter
 	hfMap := sr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		log.Error().Err(ErrNoHandlersRegistered)
+		log.Fatal().Err(ErrNoHandlersRegistered).Msg("router error")
 	}
 
 	for topicEntityName, te := range hfMap {
