@@ -22,6 +22,18 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Con
 	return consumer
 }
 
+func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) error {
+	if partition.Error != nil {
+		return ErrOffsetCommit
+	}
+	offsets := []kafka.TopicPartition{partition}
+	offsets[0].Offset++
+	if _, err := consumer.StoreOffsets(offsets); err != nil {
+		return err
+	}
+	return nil
+}
+
 func startConsumer(routerCtx context.Context, config Config, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, retrier MessageRetrier, wg *sync.WaitGroup) {
 	log.Info().Msgf("starting consumer with instance-id: %s", instanceID)
 
@@ -55,10 +67,7 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 						Attributes:        make(map[string]interface{}),
 					}
 					MessageHandler(config, handlerFunc, retrier)(messageEvent)
-					_, cmtErr := consumer.CommitMessage(msg)
-					if cmtErr != nil {
-						log.Error().Err(cmtErr).Msg("commit error")
-					}
+					log.Error().Err(storeOffsets(consumer, msg.TopicPartition)).Msg("offset commit error")
 				}
 			}
 		}
