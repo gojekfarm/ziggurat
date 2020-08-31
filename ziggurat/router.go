@@ -27,12 +27,13 @@ type StreamRouter struct {
 
 func newConsumerConfig() *kafka.ConfigMap {
 	return &kafka.ConfigMap{
-		"bootstrap.servers":       "localhost:9092",
-		"group.id":                "myGroup",
-		"auto.offset.reset":       "earliest",
-		"enable.auto.commit":      true,
-		"auto.commit.interval.ms": 2000,
-		"debug":                   "consumer,broker",
+		"bootstrap.servers":        "localhost:9092",
+		"group.id":                 "myGroup",
+		"auto.offset.reset":        "earliest",
+		"enable.auto.commit":       true,
+		"auto.commit.interval.ms":  2000,
+		"debug":                    "consumer,broker",
+		"enable.auto.offset.store": false,
 	}
 }
 
