@@ -42,6 +42,12 @@ rabbitmq:
   host: "amqp://user:bitnami@localhost:5672/"
   delay-queue-expiration: "1000"
 ```
+#### Overriding the config using ENV variables
+- To override the boostrap-servers under test-entity2
+```shell script
+export ZIGGURAT_STREAM_ROUTER_TEST_ENTITY2_BOOTSTRAP_SERVERS="localhost:9094"
+```
+
 
 - sample `main.go`
 
