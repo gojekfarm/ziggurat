@@ -67,7 +67,10 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 						Attributes:        make(map[string]interface{}),
 					}
 					MessageHandler(config, handlerFunc, retrier)(messageEvent)
-					log.Error().Err(storeOffsets(consumer, msg.TopicPartition)).Msg("offset commit error")
+					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
+						log.Error().Err(commitErr).Msg("offset commit error")
+					}
+
 				}
 			}
 		}
