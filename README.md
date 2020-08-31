@@ -14,23 +14,26 @@ go get -v -u source.golabs.io/lambda/zigg-go/ziggurat
 - create a `config/config.yaml` in your project root
 - sample `config.yaml`
 ```yaml
-service-name: "test-app"
+service-name: "test-service"
 stream-router:
-  - topic-entity: "booking"
-    bootstrap-servers: "g-gojek-id-mainstream.golabs.io:6668"
+  test-entity2:
+    bootstrap-servers: "localhost:9092"
     instance-count: 2
-    origin-topics: "^.*-booking-log"
-    group-id: "booking-group-go"
-  - topic-entity: "test-entity"
+    origin-topics: "test-topic1"
+    group-id: "test-group"
+    topic-entity: "topic-entiy2"
+  test-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "test-topic2"
     group-id: "test-group2"
-  - topic-entity: "json-entity"
+    topic-entity: "test-entity"
+  json-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 1
     origin-topics: "json-test"
     group-id: "json-group"
+    topic-entity: "json-entity"
 log-level: "debug"
 retry:
   enabled: true
