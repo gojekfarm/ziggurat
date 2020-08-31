@@ -22,7 +22,7 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Con
 	return consumer
 }
 
-func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) error {
+func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) error { // atleast once delivery
 	if partition.Error != nil {
 		return ErrOffsetCommit
 	}
