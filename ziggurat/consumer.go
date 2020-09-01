@@ -64,6 +64,8 @@ func startConsumer(routerCtx context.Context, config Config, handlerFunc Handler
 						MessageKeyBytes:   msg.Value,
 						Topic:             *msg.TopicPartition.Topic,
 						TopicEntity:       topicEntity,
+						TimestampType:     msg.TimestampType.String(),
+						KafkaTimestamp:    msg.Timestamp,
 						Attributes:        make(map[string]interface{}),
 					}
 					MessageHandler(config, handlerFunc, retrier)(messageEvent)
