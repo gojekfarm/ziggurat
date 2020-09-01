@@ -1,5 +1,9 @@
 package ziggurat
 
+import (
+	"time"
+)
+
 type MessageEvent struct {
 	MessageKey        interface{}
 	MessageValue      interface{}
@@ -7,6 +11,8 @@ type MessageEvent struct {
 	MessageKeyBytes   []byte
 	Topic             string
 	TopicEntity       string
+	KafkaTimestamp    time.Time
+	TimestampType     string
 	Attributes        map[string]interface{}
 }
 
