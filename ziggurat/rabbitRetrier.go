@@ -199,19 +199,15 @@ func handleDelivery(ctx context.Context, ctag string, delivery <-chan amqp.Deliv
 			wg.Done()
 			return
 		case del := <-delivery:
-			buff := bytes.Buffer{}
-			buff.Write(del.Body)
-			decoder := gob.NewDecoder(&buff)
-			messageEvent := &MessageEvent{Attributes: map[string]interface{}{}}
-			if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
-				log.Error().Err(decodeErr).Msg("error decoding rabbitmq message payload")
-				continue
+			messageEvent, decodeErr := decodeMessage(del.Body)
+			if decodeErr != nil {
+				log.Error().Err(decodeErr).Msg("retrier decode error")
 			}
 			if ackErr := del.Ack(false); ackErr != nil {
 				log.Error().Err(ackErr).Msg("rabbit retrier ack error")
 			}
 			log.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
-			MessageHandler(config, handlerFunc, r)(*messageEvent)
+			MessageHandler(config, handlerFunc, r)(messageEvent)
 		}
 	}
 }
@@ -235,6 +231,45 @@ func (r *RabbitRetrier) Consume(ctx context.Context, config Config, streamRoutes
 	wg.Wait()
 }
 
-func (r *RabbitRetrier) Replay(config Config, streamRoutes TopicEntityHandlerMap, topicEntity string) {
-	
+func decodeMessage(body []byte) (MessageEvent, error) {
+	buff := bytes.Buffer{}
+	buff.Write(body)
+	decoder := gob.NewDecoder(&buff)
+	messageEvent := &MessageEvent{Attributes: map[string]interface{}{}}
+	if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
+		return *messageEvent, decodeErr
+	}
+	return *messageEvent, nil
+}
+
+func handleReplayDelivery(deliveryChan <-chan amqp.Delivery, handlerFunc HandlerFunc) {
+	for delivery := range deliveryChan {
+		messageEvent, decodeErr := decodeMessage(delivery.Body)
+		if decodeErr != nil {
+			log.Error().Err(decodeErr).Msg("replay decode error")
+		} else {
+			handlerFunc(messageEvent)
+		}
+	}
+}
+
+func (r *RabbitRetrier) Replay(config Config, streamRoutes TopicEntityHandlerMap, topicEntity string, count int) {
+	if count == 0 {
+		log.Error().Err(ErrReplayCountZero).Msg("retrier replay error")
+		return
+	}
+	if _, ok := streamRoutes[topicEntity]; !ok {
+		log.Error().Err(ErrTopicEntityMismatch).Msg("no topic entity found")
+		return
+	}
+	te, _ := streamRoutes[topicEntity]
+	queueName := constructQueueName(config.ServiceName, topicEntity, DeadLetterType)
+	channel, _ := r.connection.Channel()
+	deliveryChan := make(chan amqp.Delivery, count)
+	go handleReplayDelivery(deliveryChan, te.handlerFunc)
+	for i := 0; i < count; i++ {
+		delivery, _, _ := channel.Get(queueName, false)
+		deliveryChan <- delivery
+	}
+	close(deliveryChan)
 }
