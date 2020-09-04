@@ -8,4 +8,5 @@ var (
 	ErrServiceNameValidation = errors.New("config validation error, service-name is empty")
 	ErrTopicEntityMismatch   = errors.New("topic entity mismatch")
 	ErrOffsetCommit          = errors.New("cannot commit errored message")
+	ErrReplayCountZero       = errors.New("replay count is 0, cannot 0 messages")
 )
