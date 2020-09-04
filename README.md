@@ -84,7 +84,7 @@ func main() {
 #### TODO
 - [x] Balanced Consumer groups
 - [x] RabbitMQ retries
-- [x] Atleast once delivery semantics
+- [x] At least once delivery semantics
 - [x] Retry interface
 - [x] Default middleware to deserialize messages
 - [x] Env vars Config override
