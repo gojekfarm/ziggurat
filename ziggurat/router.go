@@ -68,7 +68,7 @@ func notifyRouterStop(stopChannel chan<- int, wg *sync.WaitGroup) {
 	close(stopChannel)
 }
 
-func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier MessageRetrier) chan int {
+func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier MessageRetrier, server Http) chan int {
 	stopNotifierCh := make(chan int)
 	var wg sync.WaitGroup
 	srConfig := config.StreamRouter
@@ -103,6 +103,12 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 
 		retrier.Consume(ctx, config, hfMap)
 		log.Info().Msg("starting retrier consumer")
+	}
+
+	if serverErr := server.Start(config, hfMap); serverErr != nil {
+		log.Error().Err(serverErr).Msg("http server error")
+	} else {
+		log.Info().Msg("started http server...")
 	}
 
 	go notifyRouterStop(stopNotifierCh, &wg)

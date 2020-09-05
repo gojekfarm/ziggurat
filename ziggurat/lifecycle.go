@@ -12,6 +12,7 @@ type StartupOptions struct {
 	StartFunction StartFunction
 	StopFunction  StopFunction
 	Retrier       MessageRetrier
+	HTTPServer    Http
 }
 
 func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, options *StartupOptions) {
@@ -34,6 +35,10 @@ func Start(router *StreamRouter, options StartupOptions) {
 		options.Retrier = &RabbitRetrier{}
 	}
 
+	if options.HTTPServer == nil {
+		options.HTTPServer = &HttpServer{}
+	}
+
 	parseConfig()
 	log.Info().Msg("successfully parsed config")
 	config := GetConfig()
@@ -42,5 +47,5 @@ func Start(router *StreamRouter, options StartupOptions) {
 	}
 	options.StartFunction(config)
 	ConfigureLogger(config.LogLevel)
-	<-router.Start(ctx, config, options.Retrier)
+	<-router.Start(ctx, config, options.Retrier, options.HTTPServer)
 }
