@@ -1,23 +1,21 @@
-service-name: "test-service"
+service-name: "test-app"
 stream-router:
-  test-entity2:
-    bootstrap-servers: "localhost:9092"
+  booking:
+    bootstrap-servers: "g-gojek-id-mainstream.golabs.io:6668"
     instance-count: 2
-    origin-topics: "test-topic1"
-    group-id: "test-group"
-    topic-entity: "topic-entiy2"
+    origin-topics: "^.*-booking-log"
+    group-id: "booking-group-go"
+    topic-entity: booking
   test-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "test-topic2"
     group-id: "test-group2"
-    topic-entity: "test-entity"
   json-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 1
     origin-topics: "json-test"
     group-id: "json-group"
-    topic-entity: "json-entity"
 log-level: "debug"
 retry:
   enabled: true
