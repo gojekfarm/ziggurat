@@ -105,11 +105,8 @@ func (sr *StreamRouter) Start(ctx context.Context, config Config, retrier Messag
 		log.Info().Msg("starting retrier consumer")
 	}
 
-	if serverErr := server.Start(config, hfMap); serverErr != nil {
-		log.Error().Err(serverErr).Msg("http server error")
-	} else {
-		log.Info().Msg("started http server...")
-	}
+	server.Start(ctx, config, retrier, hfMap)
+	log.Info().Msg("http server started...")
 
 	go notifyRouterStop(stopNotifierCh, &wg)
 
