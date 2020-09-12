@@ -1,6 +1,8 @@
 package ziggurat
 
+import "context"
+
 type Http interface {
-	Start(config Config, handlerFuncMap TopicEntityHandlerMap) error
+	Start(ctx context.Context, config Config, retrier MessageRetrier, handlerFuncMap TopicEntityHandlerMap)
 	Stop() error
 }
