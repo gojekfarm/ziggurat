@@ -242,15 +242,29 @@ func decodeMessage(body []byte) (MessageEvent, error) {
 	return *messageEvent, nil
 }
 
-func handleReplayDelivery(deliveryChan <-chan amqp.Delivery, handlerFunc HandlerFunc) {
+func handleReplayDelivery(r *RabbitRetrier, config Config, te *topicEntity, topicEntity string, deliveryChan <-chan amqp.Delivery, doneChan chan int) {
+	channel, openErr := r.connection.Channel()
+	if openErr != nil {
+		log.Error().Err(openErr)
+		return
+	}
+	exchangeName := constructExchangeName(config.ServiceName, topicEntity, InstantType)
+	defer channel.Close()
 	for delivery := range deliveryChan {
 		messageEvent, decodeErr := decodeMessage(delivery.Body)
 		if decodeErr != nil {
-			log.Error().Err(decodeErr).Msg("replay decode error")
-		} else {
-			handlerFunc(messageEvent)
+			log.Error().Err(decodeErr).Msg("rabbit retrier replay decode error")
 		}
+		publishErr := publishMessage(channel, exchangeName, messageEvent, r.rabbitmqConfig.delayQueueExpiration)
+		if publishErr != nil {
+			log.Error().Err(publishErr).Msg("error publishing message")
+		}
+		if ackErr := delivery.Ack(false); ackErr != nil {
+			log.Error().Err(ackErr)
+		}
+
 	}
+	close(doneChan)
 }
 
 func (r *RabbitRetrier) Replay(config Config, streamRoutes TopicEntityHandlerMap, topicEntity string, count int) {
@@ -266,10 +280,12 @@ func (r *RabbitRetrier) Replay(config Config, streamRoutes TopicEntityHandlerMap
 	queueName := constructQueueName(config.ServiceName, topicEntity, DeadLetterType)
 	channel, _ := r.connection.Channel()
 	deliveryChan := make(chan amqp.Delivery, count)
-	go handleReplayDelivery(deliveryChan, te.handlerFunc)
+	doneCh := make(chan int)
+	go handleReplayDelivery(r, config, te, topicEntity, deliveryChan, doneCh)
 	for i := 0; i < count; i++ {
 		delivery, _, _ := channel.Get(queueName, false)
 		deliveryChan <- delivery
 	}
 	close(deliveryChan)
+	<-doneCh
 }
