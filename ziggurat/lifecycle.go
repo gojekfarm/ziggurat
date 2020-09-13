@@ -12,7 +12,7 @@ type StartupOptions struct {
 	StartFunction StartFunction
 	StopFunction  StopFunction
 	Retrier       MessageRetrier
-	HTTPServer    Http
+	HTTPServer    HttpServer
 }
 
 func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, options *StartupOptions) {

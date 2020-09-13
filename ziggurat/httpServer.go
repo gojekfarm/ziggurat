@@ -9,16 +9,16 @@ import (
 	"strconv"
 )
 
-type HttpServer struct {
+type DefaultHttpServer struct {
 	server  *http.Server
 	retrier MessageRetrier
 }
 
-func (s *HttpServer) Start(ctx context.Context, config Config, retrier MessageRetrier, handlerMap TopicEntityHandlerMap) {
+func (s *DefaultHttpServer) Start(ctx context.Context, applicationContext ApplicationContext) {
 	router := httprouter.New()
 	router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
-		retrier.Replay(config, handlerMap, params.ByName("topic_entity"), count)
+		applicationContext.Retrier.Replay(applicationContext, params.ByName("topic_entity"), count)
 		_, err := fmt.Fprintf(writer, "successfully replayed %d messages", count)
 		if err != nil {
 			writer.WriteHeader(500)
@@ -36,6 +36,6 @@ func (s *HttpServer) Start(ctx context.Context, config Config, retrier MessageRe
 
 }
 
-func (s *HttpServer) Stop() error {
+func (s *DefaultHttpServer) Stop() error {
 	return s.server.Shutdown(context.Background())
 }

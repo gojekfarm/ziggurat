@@ -1,7 +1,7 @@
 package ziggurat
 
 type ApplicationContext struct {
-	HttpServer   Http
+	HttpServer   HttpServer
 	Retrier      MessageRetrier
 	Config       Config
 	StreamRouter *StreamRouter
