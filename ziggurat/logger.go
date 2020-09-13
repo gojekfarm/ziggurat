@@ -16,9 +16,18 @@ var logLevelMapping = map[string]zerolog.Level{
 	"panic": zerolog.PanicLevel,
 }
 
+var RouterLogger zerolog.Logger
+var ConsumerLogger zerolog.Logger
+var ServerLogger zerolog.Logger
+var RetrierLogger zerolog.Logger
+
 func ConfigureLogger(logLevel string) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	logLevelInt := logLevelMapping[logLevel]
 	zerolog.SetGlobalLevel(logLevelInt)
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	RouterLogger = log.With().Str("component", "router").Logger()
+	ConsumerLogger = log.With().Str("component", "consumer").Logger()
+	ServerLogger = log.With().Str("component", "http-server").Logger()
+	RetrierLogger = log.With().Str("component", "retrier").Logger()
 }

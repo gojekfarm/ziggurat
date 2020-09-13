@@ -13,7 +13,7 @@ func MessageHandler(applicationContext ApplicationContext, handlerFunc HandlerFu
 		case SkipMessage:
 			log.Info().Msg("skipping message")
 		case RetryMessage:
-			log.Info().Msgf("retrying message ")
+			log.Info().Msgf("retrying message")
 			if retryErr := retrier.Retry(applicationContext, event); retryErr != nil {
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}

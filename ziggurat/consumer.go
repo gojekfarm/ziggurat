@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/rs/zerolog/log"
 	"sync"
 	"time"
 )
@@ -14,10 +13,10 @@ const defaultPollTimeout = 100 * time.Millisecond
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
 	if err != nil {
-		log.Error().Err(err)
+		ConsumerLogger.Error().Err(err)
 	}
 	if subscribeErr := consumer.SubscribeTopics(topics, nil); subscribeErr != nil {
-		log.Error().Err(subscribeErr)
+		ConsumerLogger.Error().Err(subscribeErr)
 	}
 	return consumer
 }
@@ -35,7 +34,7 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 }
 
 func startConsumer(routerCtx context.Context, applicationContext ApplicationContext, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
-	log.Info().Msgf("starting consumer with instance-id: %s", instanceID)
+	ConsumerLogger.Info().Msgf("starting consumer with instance-id: %s", instanceID)
 
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
@@ -43,20 +42,20 @@ func startConsumer(routerCtx context.Context, applicationContext ApplicationCont
 			select {
 			case <-doneCh:
 				if err := consumer.Close(); err != nil {
-					log.Error().Err(err).Msg("error closing consumer")
+					ConsumerLogger.Error().Err(err).Msg("error closing consumer")
 				}
-				log.Info().Str("consumer-instance-id", instanceID).Msg("stopping consumer...")
+				ConsumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("stopping consumer...")
 				wg.Done()
 				return
 			default:
 				msg, err := c.ReadMessage(defaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					log.Error().Err(err).Msg("terminating application, all brokers down")
+					ConsumerLogger.Error().Err(err).Msg("terminating application, all brokers down")
 					return
 				}
 				if msg != nil {
-					log.Info().Msgf("processing message for consumer %s", instanceID)
+					ConsumerLogger.Info().Msgf("processing message for consumer %s", instanceID)
 					messageEvent := MessageEvent{
 						MessageKey:        nil,
 						MessageValue:      nil,
@@ -70,7 +69,7 @@ func startConsumer(routerCtx context.Context, applicationContext ApplicationCont
 					}
 					MessageHandler(applicationContext, handlerFunc, applicationContext.Retrier)(messageEvent)
 					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
-						log.Error().Err(commitErr).Msg("offset commit error")
+						ConsumerLogger.Error().Err(commitErr).Msg("offset commit error")
 					}
 
 				}

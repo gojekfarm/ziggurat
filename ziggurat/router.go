@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/rs/zerolog/log"
 	"strings"
 	"sync"
 )
@@ -75,22 +74,22 @@ func (sr *StreamRouter) Start(ctx context.Context, applicationContext Applicatio
 	srConfig := config.StreamRouter
 	hfMap := sr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		log.Fatal().Err(ErrNoHandlersRegistered).Msg("router error")
+		RouterLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("")
 	}
 
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		if topicEntityName != streamRouterCfg.TopicEntity {
-			log.Fatal().Err(ErrTopicEntityMismatch).Msg("router error")
+			RouterLogger.Fatal().Err(ErrTopicEntityMismatch).Msg("")
 		}
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
 		if setErr := consumerConfig.Set(bootstrapServers); setErr != nil {
-			log.Error().Err(setErr)
+			RouterLogger.Error().Err(setErr)
 		}
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
-			log.Error().Err(setErr)
+			RouterLogger.Error().Err(setErr)
 		}
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
 		consumers := StartConsumers(ctx, applicationContext, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.handlerFunc, &wg)
@@ -98,17 +97,17 @@ func (sr *StreamRouter) Start(ctx context.Context, applicationContext Applicatio
 	}
 
 	if config.Retry.Enabled {
-		log.Info().Msg("starting retrier...")
+		RouterLogger.Info().Msg("starting retrier...")
 		if retrierStartErr := applicationContext.Retrier.Start(ctx, applicationContext); retrierStartErr != nil {
-			log.Fatal().Err(retrierStartErr).Msg("unable to start retrier")
+			RouterLogger.Fatal().Err(retrierStartErr).Msg("unable to start retrier")
 		}
 
 		applicationContext.Retrier.Consume(ctx, applicationContext)
-		log.Info().Msg("starting retrier consumer")
+		RouterLogger.Info().Msg("starting retrier consumer")
 	}
 
 	applicationContext.HttpServer.Start(ctx, applicationContext)
-	log.Info().Msg("http server started...")
+	RouterLogger.Info().Msg("http server started...")
 
 	go notifyRouterStop(stopNotifierCh, &wg)
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/julienschmidt/httprouter"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"strconv"
 )
@@ -29,7 +28,7 @@ func (s *DefaultHttpServer) Start(ctx context.Context, applicationContext Applic
 	server := &http.Server{Addr: ":8080", Handler: router}
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
-			log.Fatal().Err(err)
+			ServerLogger.Fatal().Err(err)
 		}
 	}(server)
 
