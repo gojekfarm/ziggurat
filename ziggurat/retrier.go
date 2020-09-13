@@ -7,5 +7,5 @@ type MessageRetrier interface {
 	Retry(applicationContext ApplicationContext, payload MessageEvent) error
 	Stop() error
 	Consume(ctx context.Context, applicationContext ApplicationContext)
-	Replay(applicationContext ApplicationContext, topicEntity string, count int)
+	Replay(applicationContext ApplicationContext, topicEntity string, count int) error
 }
