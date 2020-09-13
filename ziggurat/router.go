@@ -92,7 +92,8 @@ func (sr *StreamRouter) Start(ctx context.Context, applicationContext Applicatio
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
 			log.Error().Err(setErr)
 		}
-		consumers := StartConsumers(ctx, config, consumerConfig, topicEntityName, strings.Split(streamRouterCfg.OriginTopics, ","), streamRouterCfg.InstanceCount, te.handlerFunc, applicationContext.Retrier, &wg)
+		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
+		consumers := StartConsumers(ctx, applicationContext, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.handlerFunc, &wg)
 		te.consumers = consumers
 	}
 
