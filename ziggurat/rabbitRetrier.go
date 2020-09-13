@@ -282,7 +282,6 @@ func (r *RabbitRetrier) Replay(applicationContext ApplicationContext, topicEntit
 		log.Error().Err(ErrTopicEntityMismatch).Msg("no topic entity found")
 		return ErrTopicEntityMismatch
 	}
-	te, _ := streamRoutes[topicEntity]
 	queueName := constructQueueName(config.ServiceName, topicEntity, DeadLetterType)
 	channel, _ := r.connection.Channel()
 	deliveryChan := make(chan amqp.Delivery, count)
