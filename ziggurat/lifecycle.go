@@ -30,7 +30,7 @@ func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, a
 	options.StopFunction()
 }
 
-func initializeAppContext(applicationContext *ApplicationContext, options *StartupOptions) {
+func initializeComponents(applicationContext *ApplicationContext, options *StartupOptions) {
 	if options.Retrier == nil {
 		applicationContext.Retrier = &RabbitRetrier{}
 	}
@@ -43,7 +43,7 @@ func initializeAppContext(applicationContext *ApplicationContext, options *Start
 func Start(router *StreamRouter, options StartupOptions) {
 	interruptChan := make(chan os.Signal)
 	applicationContext := ApplicationContext{}
-	initializeAppContext(&applicationContext, &options)
+	initializeComponents(&applicationContext, &options)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	ctx, cancelFn := context.WithCancel(context.Background())
 	go interruptHandler(interruptChan, cancelFn, applicationContext, &options)
@@ -55,6 +55,7 @@ func Start(router *StreamRouter, options StartupOptions) {
 		log.Fatal().Err(validationErr).Msg("config validation error")
 	}
 	applicationContext.Config = config
+	applicationContext.StreamRouter = router
 	options.StartFunction(config)
 	ConfigureLogger(config.LogLevel)
 	<-router.Start(ctx, applicationContext)
