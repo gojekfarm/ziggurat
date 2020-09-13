@@ -90,6 +90,6 @@ func main() {
 - [x] Env vars Config override
 - [x] HTTP server
 - [x] Replay RabbitMQ deadset messages
-- [ ] Log formatting
+- [x] Log formatting
 - [ ] Configurable RabbitMQ consumer count
 - [ ] Unit tests
