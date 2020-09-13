@@ -1,6 +1,7 @@
 package ziggurat
 
 import (
+	"flag"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"strings"
@@ -58,8 +59,15 @@ func (config *Config) GetByKey(key string) interface{} {
 	return viper.Get(key)
 }
 
+func getConfigPath() string {
+	configFilePath := ""
+	flag.StringVar(&configFilePath, "config", DefaultPath, "")
+	flag.Parse()
+	return configFilePath
+}
+
 func parseConfig() {
-	viper.SetConfigFile(DefaultPath)
+	viper.SetConfigFile(getConfigPath())
 	viper.SetEnvPrefix("ziggurat")
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
