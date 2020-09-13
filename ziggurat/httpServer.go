@@ -18,11 +18,12 @@ func (s *DefaultHttpServer) Start(ctx context.Context, applicationContext Applic
 	router := httprouter.New()
 	router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
-		applicationContext.Retrier.Replay(applicationContext, params.ByName("topic_entity"), count)
-		_, err := fmt.Fprintf(writer, "successfully replayed %d messages", count)
-		if err != nil {
-			writer.WriteHeader(500)
+		if replayErr := applicationContext.Retrier.Replay(applicationContext, params.ByName("topic_entity"), count); replayErr != nil {
+			http.Error(writer, replayErr.Error(), 500)
+			return
 		}
+		writer.WriteHeader(200)
+		fmt.Fprintf(writer, "succesfully replayed %d messages", count)
 	})
 
 	server := &http.Server{Addr: ":8080", Handler: router}
