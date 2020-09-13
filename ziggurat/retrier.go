@@ -3,9 +3,9 @@ package ziggurat
 import "context"
 
 type MessageRetrier interface {
-	Start(config Config, streamRoutes TopicEntityHandlerMap) error
-	Retry(config Config, payload MessageEvent) error
+	Start(ctx context.Context, applicationContext ApplicationContext) error
+	Retry(applicationContext ApplicationContext, payload MessageEvent) error
 	Stop() error
-	Consume(ctx context.Context, config Config, streamRoutes TopicEntityHandlerMap)
-	Replay(config Config, streamRoutes TopicEntityHandlerMap, topicEntity string, count int)
+	Consume(ctx context.Context, applicationContext ApplicationContext)
+	Replay(applicationContext ApplicationContext, topicEntity string, count int)
 }

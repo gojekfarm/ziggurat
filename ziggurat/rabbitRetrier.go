@@ -141,7 +141,9 @@ func setRabbitMQConfig(config Config, r *RabbitRetrier) {
 
 }
 
-func (r *RabbitRetrier) Start(config Config, streamRoutes TopicEntityHandlerMap) error {
+func (r *RabbitRetrier) Start(ctx context.Context, applicationContext ApplicationContext) error {
+	config := applicationContext.Config
+	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
 	setRabbitMQConfig(config, r)
 	connection, err := amqp.Dial(r.rabbitmqConfig.host)
 	if err != nil {
@@ -174,7 +176,8 @@ func (r *RabbitRetrier) Stop() error {
 	return nil
 }
 
-func (r *RabbitRetrier) Retry(config Config, payload MessageEvent) error {
+func (r *RabbitRetrier) Retry(applicationContext ApplicationContext, payload MessageEvent) error {
+	config := applicationContext.Config
 	channel, err := r.connection.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
 	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DeadLetterType)
@@ -223,7 +226,9 @@ func startRabbitConsumers(ctx context.Context, connection *amqp.Connection, conf
 
 }
 
-func (r *RabbitRetrier) Consume(ctx context.Context, config Config, streamRoutes TopicEntityHandlerMap) {
+func (r *RabbitRetrier) Consume(ctx context.Context, applicationContext ApplicationContext) {
+	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
+	config := applicationContext.Config
 	var wg sync.WaitGroup
 	for teName, te := range streamRoutes {
 		go startRabbitConsumers(ctx, r.connection, config, teName, te.handlerFunc, r, &wg)
@@ -267,7 +272,9 @@ func handleReplayDelivery(r *RabbitRetrier, config Config, te *topicEntity, topi
 	close(doneChan)
 }
 
-func (r *RabbitRetrier) Replay(config Config, streamRoutes TopicEntityHandlerMap, topicEntity string, count int) {
+func (r *RabbitRetrier) Replay(applicationContext ApplicationContext, topicEntity string, count int) {
+	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
+	config := applicationContext.Config
 	if count == 0 {
 		log.Error().Err(ErrReplayCountZero).Msg("retrier replay error")
 		return
