@@ -193,7 +193,7 @@ func (r *RabbitRetrier) Retry(applicationContext ApplicationContext, payload Mes
 	return err
 }
 
-func handleDelivery(ctx context.Context, ctag string, delivery <-chan amqp.Delivery, config Config, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+func handleDelivery(ctx context.Context, applicationContext ApplicationContext, ctag string, delivery <-chan amqp.Delivery, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
 	doneCh := ctx.Done()
 	for {
 		select {
@@ -210,19 +210,19 @@ func handleDelivery(ctx context.Context, ctag string, delivery <-chan amqp.Deliv
 				log.Error().Err(ackErr).Msg("rabbit retrier ack error")
 			}
 			log.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
-			MessageHandler(config, handlerFunc, r)(messageEvent)
+			MessageHandler(applicationContext, handlerFunc, r)(messageEvent)
 		}
 	}
 }
 
-func startRabbitConsumers(ctx context.Context, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
+func startRabbitConsumers(ctx context.Context, applicationContext ApplicationContext, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
 	channel, _ := connection.Channel()
 	instantQueueName := constructQueueName(config.ServiceName, topicEntity, InstantType)
 	ctag := topicEntity + "_amqp_consumer"
 	deliveryChan, _ := channel.Consume(instantQueueName, ctag, false, false, false, false, nil)
 	log.Info().Str("consumer-tag", ctag).Msg("starting Rabbit consumer")
 	wg.Add(1)
-	go handleDelivery(ctx, ctag, deliveryChan, config, r, handlerFunc, wg)
+	go handleDelivery(ctx, applicationContext, ctag, deliveryChan, r, handlerFunc, wg)
 
 }
 
@@ -231,7 +231,7 @@ func (r *RabbitRetrier) Consume(ctx context.Context, applicationContext Applicat
 	config := applicationContext.Config
 	var wg sync.WaitGroup
 	for teName, te := range streamRoutes {
-		go startRabbitConsumers(ctx, r.connection, config, teName, te.handlerFunc, r, &wg)
+		go startRabbitConsumers(ctx, applicationContext, r.connection, config, teName, te.handlerFunc, r, &wg)
 	}
 	wg.Wait()
 }

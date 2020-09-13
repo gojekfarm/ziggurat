@@ -15,30 +15,38 @@ type StartupOptions struct {
 	HTTPServer    HttpServer
 }
 
-func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, options *StartupOptions) {
+func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, appContext ApplicationContext, options *StartupOptions) {
 	<-interruptCh
 	log.Info().Msg("sigterm received")
 	cancelFn()
-	if err := options.Retrier.Stop(); err != nil {
+	if err := appContext.Retrier.Stop(); err != nil {
 		log.Error().Err(err).Msg("error stopping retrier")
 	}
+
+	if err := appContext.HttpServer.Stop(); err != nil {
+		log.Error().Err(err).Msg("error stopping http server")
+	}
+
 	options.StopFunction()
 }
 
-func Start(router *StreamRouter, options StartupOptions) {
-	interruptChan := make(chan os.Signal)
-	applicationContext := ApplicationContext{}
-	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
-	ctx, cancelFn := context.WithCancel(context.Background())
-	go interruptHandler(interruptChan, cancelFn, &options)
-
+func initializeAppContext(applicationContext *ApplicationContext, options *StartupOptions) {
 	if options.Retrier == nil {
 		applicationContext.Retrier = &RabbitRetrier{}
 	}
 
 	if options.HTTPServer == nil {
-		applicationContext.HttpServer = &HttpServer{}
+		applicationContext.HttpServer = &DefaultHttpServer{}
 	}
+}
+
+func Start(router *StreamRouter, options StartupOptions) {
+	interruptChan := make(chan os.Signal)
+	applicationContext := ApplicationContext{}
+	initializeAppContext(&applicationContext, &options)
+	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
+	ctx, cancelFn := context.WithCancel(context.Background())
+	go interruptHandler(interruptChan, cancelFn, applicationContext, &options)
 
 	parseConfig()
 	log.Info().Msg("successfully parsed config")

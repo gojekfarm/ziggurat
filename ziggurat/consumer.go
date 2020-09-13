@@ -68,7 +68,7 @@ func startConsumer(routerCtx context.Context, applicationContext ApplicationCont
 						KafkaTimestamp:    msg.Timestamp,
 						Attributes:        make(map[string]interface{}),
 					}
-					MessageHandler(applicationContext.Config, handlerFunc, applicationContext.Retrier)(messageEvent)
+					MessageHandler(applicationContext, handlerFunc, applicationContext.Retrier)(messageEvent)
 					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
 						log.Error().Err(commitErr).Msg("offset commit error")
 					}
