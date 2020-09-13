@@ -2,6 +2,8 @@ package ziggurat
 
 import (
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	"os"
 )
 
 var logLevelMapping = map[string]zerolog.Level{
@@ -18,4 +20,5 @@ func ConfigureLogger(logLevel string) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	logLevelInt := logLevelMapping[logLevel]
 	zerolog.SetGlobalLevel(logLevelInt)
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 }
