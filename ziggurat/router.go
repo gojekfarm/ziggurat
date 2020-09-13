@@ -99,11 +99,11 @@ func (sr *StreamRouter) Start(ctx context.Context, applicationContext Applicatio
 
 	if config.Retry.Enabled {
 		log.Info().Msg("starting retrier...")
-		if retrierStartErr := applicationContext.Retrier.Start(config, hfMap); retrierStartErr != nil {
+		if retrierStartErr := applicationContext.Retrier.Start(ctx, applicationContext); retrierStartErr != nil {
 			log.Fatal().Err(retrierStartErr).Msg("unable to start retrier")
 		}
 
-		applicationContext.Retrier.Consume(ctx, config, hfMap)
+		applicationContext.Retrier.Consume(ctx, applicationContext)
 		log.Info().Msg("starting retrier consumer")
 	}
 
