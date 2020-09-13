@@ -27,16 +27,17 @@ func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, o
 
 func Start(router *StreamRouter, options StartupOptions) {
 	interruptChan := make(chan os.Signal)
+	applicationContext := ApplicationContext{}
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	ctx, cancelFn := context.WithCancel(context.Background())
 	go interruptHandler(interruptChan, cancelFn, &options)
 
 	if options.Retrier == nil {
-		options.Retrier = &RabbitRetrier{}
+		applicationContext.Retrier = &RabbitRetrier{}
 	}
 
 	if options.HTTPServer == nil {
-		options.HTTPServer = &HttpServer{}
+		applicationContext.HttpServer = &HttpServer{}
 	}
 
 	parseConfig()
@@ -45,7 +46,8 @@ func Start(router *StreamRouter, options StartupOptions) {
 	if validationErr := config.Validate(); validationErr != nil {
 		log.Fatal().Err(validationErr).Msg("config validation error")
 	}
+	applicationContext.Config = config
 	options.StartFunction(config)
 	ConfigureLogger(config.LogLevel)
-	<-router.Start(ctx, config, options.Retrier, options.HTTPServer)
+	<-router.Start(ctx, applicationContext)
 }
