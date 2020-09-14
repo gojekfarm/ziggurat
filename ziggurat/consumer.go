@@ -34,7 +34,7 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 }
 
 func startConsumer(routerCtx context.Context, applicationContext ApplicationContext, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
-	ConsumerLogger.Info().Msgf("starting consumer with instance-id: %s", instanceID)
+	ConsumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("starting consumer")
 
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
@@ -44,7 +44,7 @@ func startConsumer(routerCtx context.Context, applicationContext ApplicationCont
 				if err := consumer.Close(); err != nil {
 					ConsumerLogger.Error().Err(err).Msg("error closing consumer")
 				}
-				ConsumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("stopping consumer...")
+				ConsumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("stopping consumer")
 				wg.Done()
 				return
 			default:
