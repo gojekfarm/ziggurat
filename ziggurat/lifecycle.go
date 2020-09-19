@@ -9,10 +9,11 @@ import (
 )
 
 type StartupOptions struct {
-	StartFunction StartFunction
-	StopFunction  StopFunction
-	Retrier       MessageRetrier
-	HTTPServer    HttpServer
+	StartFunction   StartFunction
+	StopFunction    StopFunction
+	Retrier         MessageRetrier
+	HTTPServer      HttpServer
+	MetricPublisher MetricPublisher
 }
 
 func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, appContext ApplicationContext, options *StartupOptions) {
