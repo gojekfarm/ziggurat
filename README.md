@@ -93,5 +93,6 @@ func main() {
 - [x] HTTP server
 - [x] Replay RabbitMQ deadset messages
 - [x] Log formatting
+- [ ] Metrics
 - [ ] Configurable RabbitMQ consumer count
 - [ ] Unit tests
