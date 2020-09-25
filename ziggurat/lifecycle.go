@@ -39,6 +39,11 @@ func initializeComponents(applicationContext *ApplicationContext, options *Start
 	if options.HTTPServer == nil {
 		applicationContext.HttpServer = &DefaultHttpServer{}
 	}
+
+	if options.MetricPublisher == nil {
+		applicationContext.MetricPublisher = &Statsd{}
+	}
+
 }
 
 func Start(router *StreamRouter, options StartupOptions) {
