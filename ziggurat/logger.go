@@ -20,6 +20,7 @@ var RouterLogger zerolog.Logger
 var ConsumerLogger zerolog.Logger
 var ServerLogger zerolog.Logger
 var RetrierLogger zerolog.Logger
+var MetricLogger zerolog.Logger
 
 func ConfigureLogger(logLevel string) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
@@ -30,4 +31,5 @@ func ConfigureLogger(logLevel string) {
 	ConsumerLogger = log.With().Str("component", "consumer").Logger()
 	ServerLogger = log.With().Str("component", "http-server").Logger()
 	RetrierLogger = log.With().Str("component", "retrier").Logger()
+	MetricLogger = log.With().Str("component", "metrics").Logger()
 }
