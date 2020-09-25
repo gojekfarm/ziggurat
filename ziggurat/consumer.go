@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const defaultPollTimeout = 100 * time.Millisecond
+const DefaultPollTimeout = 100 * time.Millisecond
 
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
@@ -48,7 +48,7 @@ func startConsumer(routerCtx context.Context, applicationContext ApplicationCont
 				wg.Done()
 				return
 			default:
-				msg, err := c.ReadMessage(defaultPollTimeout)
+				msg, err := c.ReadMessage(DefaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
 					ConsumerLogger.Error().Err(err).Msg("terminating application, all brokers down")
