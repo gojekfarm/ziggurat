@@ -109,6 +109,12 @@ func (sr *StreamRouter) Start(ctx context.Context, applicationContext Applicatio
 	applicationContext.HttpServer.Start(ctx, applicationContext)
 	RouterLogger.Info().Msg("http server started...")
 
+	if metricStartErr := applicationContext.MetricPublisher.Start(ctx, applicationContext); metricStartErr != nil {
+		MetricLogger.Info().Msg("starting metrics")
+	}
+
+	applicationContext.MetricPublisher.PublishMetric(applicationContext, "go-routine-count", map[string]interface{}{})
+
 	go notifyRouterStop(stopNotifierCh, &wg)
 
 	return stopNotifierCh
