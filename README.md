@@ -3,6 +3,7 @@
 ### Installation
 - Configure git for using private modules
 ```shell script
+go env -w GOPRIVATE=source.golabs.io/lambda/zigg-go
 git config --global url."git@source.golabs.io:".insteadOf "https://source.golabs.io/"
 ```
 - Run go get
