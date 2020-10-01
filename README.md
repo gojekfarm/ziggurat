@@ -4,7 +4,7 @@
 
 - Run go get
 ```shell script
-go get -v -u source.golabs.io/lambda/zigg-go/ziggurat v0.1.0                                                                                                                                                         
+go get -v -u github.com/gojek/ziggurat-golang v0.1.0                                                                                                                                                         
 ```
 
 #### How to use

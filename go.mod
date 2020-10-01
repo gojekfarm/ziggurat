@@ -1,4 +1,4 @@
-module source.golabs.io/lambda/zigg-go
+module github.com/gojek/ziggurat-golang
 
 go 1.14
 
