@@ -1,14 +1,10 @@
 ### Ziggurat GO [WIP]
 
 ### Installation
-- Configure git for using private modules
-```shell script
-go env -w GOPRIVATE=source.golabs.io/lambda/zigg-go
-git config --global url."git@source.golabs.io:".insteadOf "https://source.golabs.io/"
-```
+
 - Run go get
 ```shell script
-go get -v -u source.golabs.io/lambda/zigg-go/ziggurat                                                                                                                                                          
+go get -v -u source.golabs.io/lambda/zigg-go/ziggurat v0.1.0                                                                                                                                                         
 ```
 
 #### How to use
