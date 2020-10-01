@@ -1,4 +1,5 @@
-### Ziggurat GO [WIP]
+### Ziggurat Golang
+A stream processing framework in golang
 
 ### Installation
 
