@@ -2,29 +2,36 @@ package ziggurat
 
 import (
 	"context"
-	"github.com/alexcesaro/statsd"
+	"github.com/cactus/go-statsd-client/statsd"
 	"runtime"
 )
 
-type Statsd struct {
-	client *statsd.Client
+type StatsD struct {
+	client statsd.Statter
 }
 
-func (s *Statsd) Start(ctx context.Context, applicationContext ApplicationContext) error {
-	client, openErr := statsd.New()
-	logErr(openErr, "statsd error")
+func (s *StatsD) Start(ctx context.Context, applicationContext ApplicationContext) error {
+	config := &statsd.ClientConfig{
+		Address: "127.0.0.1:8125",
+		Prefix:  applicationContext.Config.ServiceName,
+	}
+	client, clientErr := statsd.NewClientWithConfig(config)
+	if clientErr != nil {
+		return clientErr
+	}
 	s.client = client
-	return openErr
-}
-
-func (s *Statsd) PublishMetric(applicationContext ApplicationContext, metricName string, args map[string]interface{}) error {
-	s.client.Gauge("num_goroutine", runtime.NumGoroutine())
 	return nil
+
 }
 
-func (s *Statsd) Stop(ctx context.Context) error {
+func (s *StatsD) PublishMetric(applicationContext ApplicationContext, metricName string, args map[string]interface{}) error {
+	sendErr := s.client.Gauge(metricName, int64(runtime.NumGoroutine()), 1.0)
+	return sendErr
+}
+
+func (s *StatsD) Stop(ctx context.Context) error {
 	if s.client != nil {
-		s.client.Close()
+		return s.client.Close()
 	}
 	return nil
 }

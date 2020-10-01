@@ -41,7 +41,7 @@ func initializeComponents(applicationContext *ApplicationContext, options *Start
 	}
 
 	if options.MetricPublisher == nil {
-		applicationContext.MetricPublisher = &Statsd{}
+		applicationContext.MetricPublisher = &StatsD{}
 	}
 
 }
