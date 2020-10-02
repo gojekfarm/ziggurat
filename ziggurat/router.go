@@ -115,8 +115,6 @@ func (sr *StreamRouter) Start(ctx context.Context, applicationContext Applicatio
 	}
 	RouterLogger.Info().Msg("starting metrics...")
 
-	applicationContext.MetricPublisher.PublishMetric(applicationContext, "num_goroutines", nil)
-
 	go notifyRouterStop(stopNotifierCh, &wg)
 
 	return stopNotifierCh
