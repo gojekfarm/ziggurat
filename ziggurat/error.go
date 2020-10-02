@@ -12,7 +12,6 @@ var (
 	ErrTopicEntityMismatch   = errors.New("topic entity mismatch")
 	ErrOffsetCommit          = errors.New("cannot commit errored message")
 	ErrReplayCountZero       = errors.New("replay count is 0, cannot 0 messages")
-	ErrStatsdClientNil       = errors.New("statsd client is nil")
 )
 
 func logErr(err error, msg string) {
