@@ -1,9 +1,11 @@
 package ziggurat
 
-import "context"
+import (
+	"context"
+)
 
 type MetricPublisher interface {
 	Start(ctx context.Context, applicationContext ApplicationContext) error
-	PublishMetric(applicationContext ApplicationContext, metricName string, arguments map[string]interface{}) error
 	Stop(ctx context.Context) error
+	IncCounter(metricName string, value int, arguments map[string]string) error
 }
