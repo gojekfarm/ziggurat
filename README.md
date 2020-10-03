@@ -56,7 +56,7 @@ package main
 
 import (
 	"fmt"
-	"source.golabs.io/lambda/zigg-go/ziggurat"
+	"github.com/gojek/ziggurat-golang"
 )
 
 func main() {
