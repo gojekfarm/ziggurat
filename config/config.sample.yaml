@@ -1,14 +1,14 @@
 service-name: "test-app"
 stream-router:
   booking:
-    bootstrap-servers: "g-gojek-id-mainstream.golabs.io:6668"
+    bootstrap-servers: "localhost:9094"
     instance-count: 4
     # how many consumers to spawn.
     # adjust this number to the number of partitions
     # to maximize parallelization
-    origin-topics: "^.*-booking-log"
-    group-id: "booking-group-go"
-    topic-entity: booking
+    origin-topics: "^.*-message-log"
+    group-id: "message_log_go"
+    topic-entity: "message-entity"
   test-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
