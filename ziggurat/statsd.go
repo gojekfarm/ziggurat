@@ -18,7 +18,7 @@ func constructTags(tags map[string]string) string {
 	return strings.Join(tagSlice, ",")
 }
 
-func (s *StatsD) Start(ctx context.Context, applicationContext ApplicationContext) error {
+func (s *StatsD) Start(ctx context.Context, applicationContext App) error {
 	config := &statsd.ClientConfig{
 		Prefix:  applicationContext.Config.ServiceName,
 		Address: "127.0.0.1:8125",

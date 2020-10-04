@@ -16,7 +16,7 @@ type StartupOptions struct {
 	MetricPublisher MetricPublisher
 }
 
-func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, appContext ApplicationContext, options *StartupOptions) {
+func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, appContext App, options *StartupOptions) {
 	<-interruptCh
 	log.Info().Msg("sigterm received")
 	cancelFn()
@@ -31,7 +31,7 @@ func interruptHandler(interruptCh chan os.Signal, cancelFn context.CancelFunc, a
 	options.StopFunction()
 }
 
-func initializeComponents(applicationContext *ApplicationContext, options *StartupOptions) {
+func initializeComponents(applicationContext *App, options *StartupOptions) {
 	if options.Retrier == nil {
 		applicationContext.Retrier = &RabbitRetrier{}
 	}
@@ -48,7 +48,7 @@ func initializeComponents(applicationContext *ApplicationContext, options *Start
 
 func Start(router *StreamRouter, options StartupOptions) {
 	interruptChan := make(chan os.Signal)
-	applicationContext := ApplicationContext{}
+	applicationContext := App{}
 	initializeComponents(&applicationContext, &options)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	ctx, cancelFn := context.WithCancel(context.Background())

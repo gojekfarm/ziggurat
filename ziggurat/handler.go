@@ -4,7 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func MessageHandler(applicationContext ApplicationContext, handlerFunc HandlerFunc, retrier MessageRetrier) func(event MessageEvent) {
+func MessageHandler(applicationContext App, handlerFunc HandlerFunc, retrier MessageRetrier) func(event MessageEvent) {
 	return func(event MessageEvent) {
 		metricTags := map[string]string{
 			"topic_entity": event.TopicEntity,

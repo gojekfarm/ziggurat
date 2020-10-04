@@ -33,7 +33,7 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 	return nil
 }
 
-func startConsumer(routerCtx context.Context, applicationContext ApplicationContext, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+func startConsumer(routerCtx context.Context, applicationContext App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	ConsumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("starting consumer")
 
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
@@ -78,7 +78,7 @@ func startConsumer(routerCtx context.Context, applicationContext ApplicationCont
 	}(routerCtx, consumer, instanceID, wg)
 }
 
-func StartConsumers(routerCtx context.Context, applicationContext ApplicationContext, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+func StartConsumers(routerCtx context.Context, applicationContext App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)

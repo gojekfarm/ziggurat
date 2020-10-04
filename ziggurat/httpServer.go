@@ -13,7 +13,7 @@ type DefaultHttpServer struct {
 	retrier MessageRetrier
 }
 
-func (s *DefaultHttpServer) Start(ctx context.Context, applicationContext ApplicationContext) {
+func (s *DefaultHttpServer) Start(ctx context.Context, applicationContext App) {
 	router := httprouter.New()
 	router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))

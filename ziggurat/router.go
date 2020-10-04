@@ -67,7 +67,7 @@ func notifyRouterStop(stopChannel chan<- int, wg *sync.WaitGroup) {
 	close(stopChannel)
 }
 
-func (sr *StreamRouter) Start(ctx context.Context, applicationContext ApplicationContext) chan int {
+func (sr *StreamRouter) Start(ctx context.Context, applicationContext App) chan int {
 	stopNotifierCh := make(chan int)
 	config := applicationContext.Config
 	var wg sync.WaitGroup

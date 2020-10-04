@@ -140,7 +140,7 @@ func setRabbitMQConfig(config Config, r *RabbitRetrier) {
 
 }
 
-func (r *RabbitRetrier) Start(ctx context.Context, applicationContext ApplicationContext) error {
+func (r *RabbitRetrier) Start(ctx context.Context, applicationContext App) error {
 	config := applicationContext.Config
 	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
 	setRabbitMQConfig(config, r)
@@ -175,7 +175,7 @@ func (r *RabbitRetrier) Stop() error {
 	return nil
 }
 
-func (r *RabbitRetrier) Retry(applicationContext ApplicationContext, payload MessageEvent) error {
+func (r *RabbitRetrier) Retry(applicationContext App, payload MessageEvent) error {
 	config := applicationContext.Config
 	channel, err := r.connection.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
@@ -192,7 +192,7 @@ func (r *RabbitRetrier) Retry(applicationContext ApplicationContext, payload Mes
 	return err
 }
 
-func handleDelivery(ctx context.Context, applicationContext ApplicationContext, ctag string, delivery <-chan amqp.Delivery, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+func handleDelivery(ctx context.Context, applicationContext App, ctag string, delivery <-chan amqp.Delivery, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
 	doneCh := ctx.Done()
 	for {
 		select {
@@ -214,25 +214,27 @@ func handleDelivery(ctx context.Context, applicationContext ApplicationContext, 
 	}
 }
 
-func startRabbitConsumers(ctx context.Context, applicationContext ApplicationContext, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
+func startRabbitConsumers(ctx context.Context, applicationContext App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
 	channel, _ := connection.Channel()
 	instantQueueName := constructQueueName(config.ServiceName, topicEntity, InstantType)
 	ctag := topicEntity + "_amqp_consumer"
 	deliveryChan, _ := channel.Consume(instantQueueName, ctag, false, false, false, false, nil)
 	RetrierLogger.Info().Str("consumer-tag", ctag).Msg("starting Rabbit consumer")
-	wg.Add(1)
 	go handleDelivery(ctx, applicationContext, ctag, deliveryChan, r, handlerFunc, wg)
 
 }
 
-func (r *RabbitRetrier) Consume(ctx context.Context, applicationContext ApplicationContext) {
+func (r *RabbitRetrier) Consume(ctx context.Context, applicationContext App) {
 	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
 	config := applicationContext.Config
 	var wg sync.WaitGroup
-	for teName, te := range streamRoutes {
-		go startRabbitConsumers(ctx, applicationContext, r.connection, config, teName, te.handlerFunc, r, &wg)
-	}
-	wg.Wait()
+	go func() {
+		for teName, te := range streamRoutes {
+			wg.Add(1)
+			go startRabbitConsumers(ctx, applicationContext, r.connection, config, teName, te.handlerFunc, r, &wg)
+		}
+		wg.Wait()
+	}()
 }
 
 func decodeMessage(body []byte) (MessageEvent, error) {
@@ -270,7 +272,7 @@ func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, d
 	close(doneChan)
 }
 
-func (r *RabbitRetrier) Replay(applicationContext ApplicationContext, topicEntity string, count int) error {
+func (r *RabbitRetrier) Replay(applicationContext App, topicEntity string, count int) error {
 	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
 	config := applicationContext.Config
 	if count == 0 {
