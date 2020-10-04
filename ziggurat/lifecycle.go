@@ -53,8 +53,8 @@ func Start(router *StreamRouter, options StartupOptions) {
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	ctx, cancelFn := context.WithCancel(context.Background())
 	go interruptHandler(interruptChan, cancelFn, applicationContext, &options)
-
-	parseConfig()
+	commandLineOptions := parseCommandLineArguments()
+	parseConfig(commandLineOptions)
 	log.Info().Msg("successfully parsed config")
 	config := GetConfig()
 	if validationErr := config.Validate(); validationErr != nil {
