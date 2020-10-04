@@ -20,8 +20,12 @@ func MessageHandler(applicationContext App, handlerFunc HandlerFunc, retrier Mes
 			log.Info().Msg("successfully processed message")
 		case SkipMessage:
 			log.Info().Msg("skipping message")
+
 		case RetryMessage:
 			log.Info().Msgf("retrying message")
+			if publishErr := applicationContext.MetricPublisher.IncCounter("message_processing_failure", 1, metricTags); publishErr != nil {
+				log.Error().Err(publishErr).Msg("")
+			}
 			if retryErr := retrier.Retry(applicationContext, event); retryErr != nil {
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}
