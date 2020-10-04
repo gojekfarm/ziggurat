@@ -2,14 +2,19 @@ package ziggurat
 
 import "flag"
 
+var (
+	config string
+)
+
+func init() {
+	flag.StringVar(&config, "ziggurat-config", "./config/config.yaml", `--ziggurat-config="path_to_config"`)
+}
+
 type CommandLineOptions struct {
 	ConfigFilePath string
 }
 
-func parseCommandLineArguments() CommandLineOptions {
-	defaultConfigPath := "./config/config.yaml"
-	configPath := ""
-	flag.StringVar(&configPath, defaultConfigPath, defaultConfigPath, `--config="path_to_config_file"`)
+func ParseCommandLineArguments() CommandLineOptions {
 	flag.Parse()
-	return CommandLineOptions{ConfigFilePath: configPath}
+	return CommandLineOptions{ConfigFilePath: config}
 }
