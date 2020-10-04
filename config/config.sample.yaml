@@ -27,3 +27,5 @@ retry:
 rabbitmq:
   host: "amqp://user:bitnami@localhost:5672/"
   delay-queue-expiration: "1000"
+statsd:
+  host: "localhost:8125"

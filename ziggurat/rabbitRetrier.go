@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 	"sync"
 )
@@ -153,6 +154,10 @@ func (r *RabbitRetrier) Start(ctx context.Context, applicationContext App) error
 		topicEntities = append(topicEntities, te)
 	}
 	r.connection = connection
+	go func() {
+		<-r.connection.NotifyClose(make(chan *amqp.Error))
+		log.Error().Msg("rabbit retrier connection closed")
+	}()
 	channel, openErr := connection.Channel()
 	if openErr != nil {
 		return openErr

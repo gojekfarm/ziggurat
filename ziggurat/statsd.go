@@ -6,8 +6,19 @@ import (
 	"strings"
 )
 
+type StatsDConf struct {
+	host string
+}
+
 type StatsD struct {
-	client statsd.Statter
+	client       statsd.Statter
+	statsdConfig *StatsDConf
+}
+
+func setStatsDConfig(config Config, s *StatsD) {
+	rawConfig := config.GetByKey("statsd")
+	sanitizedConfig := rawConfig.(map[string]interface{})
+	s.statsdConfig = &StatsDConf{host: sanitizedConfig["host"].(string)}
 }
 
 func constructTags(tags map[string]string) string {
@@ -19,9 +30,10 @@ func constructTags(tags map[string]string) string {
 }
 
 func (s *StatsD) Start(ctx context.Context, applicationContext App) error {
+	setStatsDConfig(applicationContext.Config, s)
 	config := &statsd.ClientConfig{
 		Prefix:  applicationContext.Config.ServiceName,
-		Address: "127.0.0.1:8125",
+		Address: s.statsdConfig.host,
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
