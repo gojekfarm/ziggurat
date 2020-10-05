@@ -2,7 +2,6 @@ package ziggurat
 
 import (
 	"errors"
-	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -13,9 +12,3 @@ var (
 	ErrOffsetCommit          = errors.New("cannot commit errored message")
 	ErrReplayCountZero       = errors.New("replay count is 0, cannot 0 messages")
 )
-
-func logErr(err error, msg string) {
-	if err != nil {
-		log.Error().Err(err).Msg(msg)
-	}
-}

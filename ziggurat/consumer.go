@@ -33,7 +33,7 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 	return nil
 }
 
-func startConsumer(routerCtx context.Context, applicationContext App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+func startConsumer(routerCtx context.Context, app App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	ConsumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("starting consumer")
 
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
@@ -67,7 +67,7 @@ func startConsumer(routerCtx context.Context, applicationContext App, handlerFun
 						KafkaTimestamp:    msg.Timestamp,
 						Attributes:        make(map[string]interface{}),
 					}
-					MessageHandler(applicationContext, handlerFunc, applicationContext.Retrier)(messageEvent)
+					MessageHandler(app, handlerFunc, app.Retrier)(messageEvent)
 					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
 						ConsumerLogger.Error().Err(commitErr).Msg("offset commit error")
 					}
@@ -78,7 +78,7 @@ func startConsumer(routerCtx context.Context, applicationContext App, handlerFun
 	}(routerCtx, consumer, instanceID, wg)
 }
 
-func StartConsumers(routerCtx context.Context, applicationContext App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+func StartConsumers(routerCtx context.Context, app App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
@@ -86,7 +86,7 @@ func StartConsumers(routerCtx context.Context, applicationContext App, consumerC
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s-%s-%d", topicEntity, groupID, i)
 		wg.Add(1)
-		startConsumer(routerCtx, applicationContext, handlerFunc, consumer, topicEntity, instanceID, wg)
+		startConsumer(routerCtx, app, handlerFunc, consumer, topicEntity, instanceID, wg)
 	}
 	return consumers
 }

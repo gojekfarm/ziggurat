@@ -29,10 +29,10 @@ func constructTags(tags map[string]string) string {
 	return strings.Join(tagSlice, ",")
 }
 
-func (s *StatsD) Start(ctx context.Context, applicationContext App) error {
-	setStatsDConfig(applicationContext.Config, s)
+func (s *StatsD) Start(ctx context.Context, app App) error {
+	setStatsDConfig(app.Config, s)
 	config := &statsd.ClientConfig{
-		Prefix:  applicationContext.Config.ServiceName,
+		Prefix:  app.Config.ServiceName,
 		Address: s.statsdConfig.host,
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)

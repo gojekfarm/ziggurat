@@ -4,7 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func MessageHandler(applicationContext App, handlerFunc HandlerFunc, retrier MessageRetrier) func(event MessageEvent) {
+func MessageHandler(app App, handlerFunc HandlerFunc, retrier MessageRetrier) func(event MessageEvent) {
 	return func(event MessageEvent) {
 		metricTags := map[string]string{
 			"topic_entity": event.TopicEntity,
@@ -13,7 +13,7 @@ func MessageHandler(applicationContext App, handlerFunc HandlerFunc, retrier Mes
 		status := handlerFunc(event)
 		switch status {
 		case ProcessingSuccess:
-			if publishErr := applicationContext.MetricPublisher.IncCounter("message_processing_success", 1, metricTags); publishErr != nil {
+			if publishErr := app.MetricPublisher.IncCounter("message_processing_success", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
 
@@ -23,10 +23,10 @@ func MessageHandler(applicationContext App, handlerFunc HandlerFunc, retrier Mes
 
 		case RetryMessage:
 			log.Info().Msgf("retrying message")
-			if publishErr := applicationContext.MetricPublisher.IncCounter("message_processing_failure", 1, metricTags); publishErr != nil {
+			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
-			if retryErr := retrier.Retry(applicationContext, event); retryErr != nil {
+			if retryErr := retrier.Retry(app, event); retryErr != nil {
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}
 		}

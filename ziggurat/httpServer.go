@@ -13,11 +13,11 @@ type DefaultHttpServer struct {
 	retrier MessageRetrier
 }
 
-func (s *DefaultHttpServer) Start(ctx context.Context, applicationContext App) {
+func (s *DefaultHttpServer) Start(ctx context.Context, app App) {
 	router := httprouter.New()
 	router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
-		if replayErr := applicationContext.Retrier.Replay(applicationContext, params.ByName("topic_entity"), count); replayErr != nil {
+		if replayErr := app.Retrier.Replay(app, params.ByName("topic_entity"), count); replayErr != nil {
 			http.Error(writer, replayErr.Error(), 500)
 			return
 		}

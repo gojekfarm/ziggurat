@@ -141,9 +141,9 @@ func setRabbitMQConfig(config Config, r *RabbitRetrier) {
 
 }
 
-func (r *RabbitRetrier) Start(ctx context.Context, applicationContext App) error {
-	config := applicationContext.Config
-	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
+func (r *RabbitRetrier) Start(ctx context.Context, app App) error {
+	config := app.Config
+	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
 	setRabbitMQConfig(config, r)
 	connection, err := amqp.Dial(r.rabbitmqConfig.host)
 	if err != nil {
@@ -180,8 +180,8 @@ func (r *RabbitRetrier) Stop() error {
 	return nil
 }
 
-func (r *RabbitRetrier) Retry(applicationContext App, payload MessageEvent) error {
-	config := applicationContext.Config
+func (r *RabbitRetrier) Retry(app App, payload MessageEvent) error {
+	config := app.Config
 	channel, err := r.connection.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
 	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DeadLetterType)
@@ -197,7 +197,7 @@ func (r *RabbitRetrier) Retry(applicationContext App, payload MessageEvent) erro
 	return err
 }
 
-func handleDelivery(ctx context.Context, applicationContext App, ctag string, delivery <-chan amqp.Delivery, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+func handleDelivery(ctx context.Context, app App, ctag string, delivery <-chan amqp.Delivery, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
 	doneCh := ctx.Done()
 	for {
 		select {
@@ -214,29 +214,29 @@ func handleDelivery(ctx context.Context, applicationContext App, ctag string, de
 				RetrierLogger.Error().Err(ackErr).Msg("rabbit retrier ack error")
 			}
 			RetrierLogger.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
-			MessageHandler(applicationContext, handlerFunc, r)(messageEvent)
+			MessageHandler(app, handlerFunc, r)(messageEvent)
 		}
 	}
 }
 
-func startRabbitConsumers(ctx context.Context, applicationContext App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
+func startRabbitConsumers(ctx context.Context, app App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
 	channel, _ := connection.Channel()
 	instantQueueName := constructQueueName(config.ServiceName, topicEntity, InstantType)
 	ctag := topicEntity + "_amqp_consumer"
 	deliveryChan, _ := channel.Consume(instantQueueName, ctag, false, false, false, false, nil)
 	RetrierLogger.Info().Str("consumer-tag", ctag).Msg("starting Rabbit consumer")
-	go handleDelivery(ctx, applicationContext, ctag, deliveryChan, r, handlerFunc, wg)
+	go handleDelivery(ctx, app, ctag, deliveryChan, r, handlerFunc, wg)
 
 }
 
-func (r *RabbitRetrier) Consume(ctx context.Context, applicationContext App) {
-	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
-	config := applicationContext.Config
+func (r *RabbitRetrier) Consume(ctx context.Context, app App) {
+	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
+	config := app.Config
 	var wg sync.WaitGroup
 	go func() {
 		for teName, te := range streamRoutes {
 			wg.Add(1)
-			go startRabbitConsumers(ctx, applicationContext, r.connection, config, teName, te.handlerFunc, r, &wg)
+			go startRabbitConsumers(ctx, app, r.connection, config, teName, te.handlerFunc, r, &wg)
 		}
 		wg.Wait()
 	}()
@@ -277,9 +277,9 @@ func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, d
 	close(doneChan)
 }
 
-func (r *RabbitRetrier) Replay(applicationContext App, topicEntity string, count int) error {
-	streamRoutes := applicationContext.StreamRouter.GetHandlerFunctionMap()
-	config := applicationContext.Config
+func (r *RabbitRetrier) Replay(app App, topicEntity string, count int) error {
+	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
+	config := app.Config
 	if count == 0 {
 		RetrierLogger.Error().Err(ErrReplayCountZero).Msg("retrier replay error")
 		return ErrReplayCountZero

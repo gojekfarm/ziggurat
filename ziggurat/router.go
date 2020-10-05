@@ -66,9 +66,9 @@ func notifyRouterStop(stopChannel chan<- int, wg *sync.WaitGroup) {
 	close(stopChannel)
 }
 
-func (sr *StreamRouter) Start(ctx context.Context, applicationContext App) chan int {
+func (sr *StreamRouter) Start(ctx context.Context, app App) chan int {
 	stopNotifierCh := make(chan int)
-	config := applicationContext.Config
+	config := app.Config
 	var wg sync.WaitGroup
 	srConfig := config.StreamRouter
 	hfMap := sr.handlerFunctionMap
@@ -91,24 +91,24 @@ func (sr *StreamRouter) Start(ctx context.Context, applicationContext App) chan 
 			RouterLogger.Error().Err(setErr)
 		}
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
-		consumers := StartConsumers(ctx, applicationContext, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.handlerFunc, &wg)
+		consumers := StartConsumers(ctx, app, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.handlerFunc, &wg)
 		te.consumers = consumers
 	}
 
 	if config.Retry.Enabled {
 		RouterLogger.Info().Msg("starting retrier...")
-		if retrierStartErr := applicationContext.Retrier.Start(ctx, applicationContext); retrierStartErr != nil {
+		if retrierStartErr := app.Retrier.Start(ctx, app); retrierStartErr != nil {
 			RouterLogger.Fatal().Err(retrierStartErr).Msg("unable to start retrier")
 		}
 
-		applicationContext.Retrier.Consume(ctx, applicationContext)
+		app.Retrier.Consume(ctx, app)
 		RouterLogger.Info().Msg("starting retrier consumer")
 	}
 
-	applicationContext.HttpServer.Start(ctx, applicationContext)
+	app.HttpServer.Start(ctx, app)
 	RouterLogger.Info().Msg("http server started...")
 
-	metricStartErr := applicationContext.MetricPublisher.Start(ctx, applicationContext)
+	metricStartErr := app.MetricPublisher.Start(ctx, app)
 	if metricStartErr != nil {
 		RouterLogger.Error().Err(metricStartErr)
 	}
