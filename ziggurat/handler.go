@@ -4,7 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func MessageHandler(app App, handlerFunc HandlerFunc, retrier MessageRetrier) func(event MessageEvent) {
+func MessageHandler(app App, handlerFunc HandlerFunc) func(event MessageEvent) {
 	return func(event MessageEvent) {
 		metricTags := map[string]string{
 			"topic_entity": event.TopicEntity,
@@ -29,7 +29,7 @@ func MessageHandler(app App, handlerFunc HandlerFunc, retrier MessageRetrier) fu
 			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
-			if retryErr := retrier.Retry(app, event); retryErr != nil {
+			if retryErr := app.Retrier.Retry(app, event); retryErr != nil {
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}
 		default:
