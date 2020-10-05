@@ -19,16 +19,21 @@ func MessageHandler(app App, handlerFunc HandlerFunc, retrier MessageRetrier) fu
 
 			log.Info().Msg("successfully processed message")
 		case SkipMessage:
+			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
+				log.Error().Err(publishErr).Msg("")
+			}
 			log.Info().Msg("skipping message")
 
 		case RetryMessage:
 			log.Info().Msgf("retrying message")
-			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure", 1, metricTags); publishErr != nil {
+			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
 			if retryErr := retrier.Retry(app, event); retryErr != nil {
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}
+		default:
+			log.Error().Err(ErrInvalidReturnCode).Msg("return code must be one of `ziggurat.ProcessingSuccess OR ziggurat.RetryMessage OR ziggurat.SkipMessage`")
 		}
 	}
 }
