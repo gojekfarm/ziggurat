@@ -214,7 +214,7 @@ func handleDelivery(ctx context.Context, app App, ctag string, delivery <-chan a
 				RetrierLogger.Error().Err(ackErr).Msg("rabbit retrier ack error")
 			}
 			RetrierLogger.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
-			MessageHandler(app, handlerFunc, r)(messageEvent)
+			MessageHandler(app, handlerFunc)(messageEvent)
 		}
 	}
 }
