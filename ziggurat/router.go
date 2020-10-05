@@ -21,7 +21,6 @@ type InstanceCount = map[string]int
 
 type StreamRouter struct {
 	handlerFunctionMap TopicEntityHandlerMap
-	messageRetrier     MessageRetrier
 }
 
 func newConsumerConfig() *kafka.ConfigMap {
