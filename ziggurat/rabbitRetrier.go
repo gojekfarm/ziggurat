@@ -197,7 +197,7 @@ func (r *RabbitRetrier) Retry(app App, payload MessageEvent) error {
 	return err
 }
 
-func handleDelivery(ctx context.Context, app App, ctag string, delivery <-chan amqp.Delivery, r *RabbitRetrier, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+func handleDelivery(ctx context.Context, app App, ctag string, delivery <-chan amqp.Delivery, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
 	doneCh := ctx.Done()
 	for {
 		select {
@@ -225,7 +225,7 @@ func startRabbitConsumers(ctx context.Context, app App, connection *amqp.Connect
 	ctag := topicEntity + "_amqp_consumer"
 	deliveryChan, _ := channel.Consume(instantQueueName, ctag, false, false, false, false, nil)
 	RetrierLogger.Info().Str("consumer-tag", ctag).Msg("starting Rabbit consumer")
-	go handleDelivery(ctx, app, ctag, deliveryChan, r, handlerFunc, wg)
+	go handleDelivery(ctx, app, ctag, deliveryChan, handlerFunc, wg)
 
 }
 
