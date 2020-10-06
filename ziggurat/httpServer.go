@@ -2,15 +2,20 @@ package ziggurat
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
 )
 
 type DefaultHttpServer struct {
-	server  *http.Server
-	retrier MessageRetrier
+	server *http.Server
+}
+
+type ReplayResponse struct {
+	Status bool   `json:"status"`
+	Count  int    `json:"status"`
+	Err    string `json:"error"`
 }
 
 func (s *DefaultHttpServer) Start(ctx context.Context, app App) {
@@ -22,7 +27,13 @@ func (s *DefaultHttpServer) Start(ctx context.Context, app App) {
 			return
 		}
 		writer.WriteHeader(200)
-		fmt.Fprintf(writer, "succesfully replayed %d messages", count)
+		jsonBytes, _ := json.Marshal(ReplayResponse{
+			Status: true,
+			Count:  count,
+			Err:    "",
+		})
+		writer.Header().Add("Content-Type", "application/json")
+		writer.Write(jsonBytes)
 	})
 
 	server := &http.Server{Addr: ":8080", Handler: router}
