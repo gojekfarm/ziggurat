@@ -17,8 +17,6 @@ type topicEntity struct {
 
 type TopicEntityHandlerMap = map[string]*topicEntity
 
-type InstanceCount = map[string]int
-
 type StreamRouter struct {
 	handlerFunctionMap TopicEntityHandlerMap
 }
