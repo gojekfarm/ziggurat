@@ -68,13 +68,15 @@ func (a *App) configureDefaults() {
 	}
 }
 
-func (a *App) Run(router *StreamRouter, startCallback StartFunction) {
+// Run method blocks the app and returns a channel to notify app stop
+func (a *App) Run(router *StreamRouter, startCallback StartFunction) chan bool {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.Config.LogLevel)
 	a.StreamRouter = router
 	a.configureDefaults()
 	a.start(startCallback)
-	close(a.doneChan)
+	a.doneChan <- true
+	return a.doneChan
 }
 
 func (a *App) start(startCallback StartFunction) {

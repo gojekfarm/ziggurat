@@ -10,7 +10,7 @@ func messageHandler(app *App, handlerFunc HandlerFunc) func(event MessageEvent) 
 			"topic_entity": event.TopicEntity,
 			"kafka_topic":  event.Topic,
 		}
-		status := handlerFunc(event)
+		status := handlerFunc(event, app)
 		switch status {
 		case ProcessingSuccess:
 			if publishErr := app.MetricPublisher.IncCounter("message_processing_success", 1, metricTags); publishErr != nil {

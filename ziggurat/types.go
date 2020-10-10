@@ -1,6 +1,6 @@
 package ziggurat
 
-type HandlerFunc func(messageEvent MessageEvent) ProcessStatus
+type HandlerFunc func(messageEvent MessageEvent, app *App) ProcessStatus
 type StartFunction func(a *App)
 type StopFunction func()
 type ProcessStatus int
