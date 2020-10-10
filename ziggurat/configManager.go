@@ -11,7 +11,6 @@ type StreamRouterConfig struct {
 	BootstrapServers string `mapstructure:"bootstrap-servers"`
 	OriginTopics     string `mapstructure:"origin-topics"`
 	GroupID          string `mapstructure:"group-id"`
-	TopicEntity      string `mapstructure:"topic-entity"`
 }
 
 type RetryConfig struct {

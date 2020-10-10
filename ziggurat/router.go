@@ -71,6 +71,15 @@ func (sr *StreamRouter) stop() {
 	}
 }
 
+func (sr *StreamRouter) validate(config *Config) {
+	srmap := config.StreamRouter
+	for entityName, _ := range sr.handlerFunctionMap {
+		if _, ok := srmap[entityName]; !ok {
+			routerLogger.Fatal().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("")
+		}
+	}
+}
+
 func (sr *StreamRouter) Start(app *App) (chan int, error) {
 	ctx := app.Context()
 	config := app.Config
@@ -82,11 +91,12 @@ func (sr *StreamRouter) Start(app *App) (chan int, error) {
 		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("")
 	}
 
+	sr.validate(app.Config)
+	// halts app if validation fails
+
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
-		if topicEntityName != streamRouterCfg.TopicEntity {
-			routerLogger.Fatal().Err(ErrTopicEntityMismatch).Msg("")
-		}
+
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)

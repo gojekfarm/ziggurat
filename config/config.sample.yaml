@@ -8,13 +8,11 @@ stream-router:
     # to maximize parallelization
     origin-topics: "^.*-message-log"
     group-id: "message_log_go"
-    topic-entity: "message-entity"
   test-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "test-topic2"
     group-id: "test-group2"
-    topic-entity: "test-entity"
   json-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 1
