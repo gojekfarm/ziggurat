@@ -33,6 +33,7 @@ func NewApp() *App {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	commandLineOptions := parseCommandLineArguments()
 	parseConfig(commandLineOptions)
+	log.Info().Msg("successfully parsed config")
 	config := getConfig()
 	if validationErr := config.validate(); validationErr != nil {
 		log.Fatal().Err(validationErr).Msg("error creating app")
@@ -69,14 +70,13 @@ func (a *App) configureDefaults() {
 }
 
 // Run method blocks the app and returns a channel to notify app stop
-func (a *App) Run(router *StreamRouter, startCallback StartFunction) chan bool {
+func (a *App) Run(router *StreamRouter, startCallback StartFunction) {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.Config.LogLevel)
 	a.StreamRouter = router
 	a.configureDefaults()
 	a.start(startCallback)
-	a.doneChan <- true
-	return a.doneChan
+
 }
 
 func (a *App) start(startCallback StartFunction) {
@@ -92,17 +92,13 @@ func (a *App) start(startCallback StartFunction) {
 		}
 		startCallback(a)
 		// Wait for router poll to complete
-		for {
-			select {
-			case <-stopChan:
-				a.cancelFun()
-				a.stop()
-				return
-			case <-a.interruptChan:
-				a.cancelFun()
-				a.stop()
-				return
-			}
+		select {
+		case <-stopChan:
+			a.cancelFun()
+			a.stop()
+		case <-a.interruptChan:
+			a.cancelFun()
+			a.stop()
 		}
 	}
 
