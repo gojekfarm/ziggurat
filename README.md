@@ -19,19 +19,16 @@ stream-router:
     instance-count: 2
     origin-topics: "test-topic1"
     group-id: "test-group"
-    topic-entity: "topic-entity2"
   test-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
     origin-topics: "test-topic2"
     group-id: "test-group2"
-    topic-entity: "test-entity"
   json-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 1
     origin-topics: "json-test"
     group-id: "json-group"
-    topic-entity: "json-entity"
 log-level: "debug"
 retry:
   enabled: true
