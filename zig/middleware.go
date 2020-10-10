@@ -1,4 +1,4 @@
-package ziggurat
+package zig
 
 import (
 	"encoding/json"

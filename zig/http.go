@@ -1,4 +1,4 @@
-package ziggurat
+package zig
 
 type HttpServer interface {
 	Start(app *App)

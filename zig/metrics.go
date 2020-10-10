@@ -1,4 +1,4 @@
-package ziggurat
+package zig
 
 type MetricPublisher interface {
 	Start(app *App) error

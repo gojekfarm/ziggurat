@@ -1,4 +1,4 @@
-package ziggurat
+package zig
 
 type MessageRetrier interface {
 	Start(app *App) error

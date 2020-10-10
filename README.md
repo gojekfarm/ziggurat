@@ -53,28 +53,27 @@ package main
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-golang/ziggurat"
+	"github.com/gojekfarm/ziggurat-golang/zig"
 )
 
 func main() {
-	app := ziggurat.NewApp()
-	router := ziggurat.NewRouter()
+	app := zig.NewApp()
+	router := zig.NewRouter()
 
-	router.HandlerFunc("test-entity", func(messageEvent ziggurat.MessageEvent, a *ziggurat.App) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
+	router.HandlerFunc("test-entity", func(messageEvent zig.MessageEvent, a *zig.App) zig.ProcessStatus {
+		return zig.ProcessingSuccess
 	})
 
-	app.Configure(ziggurat.Options{
+	app.Configure(zig.Options{
 		StopFunc: func() {
 			fmt.Println("stopping app...")
 		},
 	})
 
-	app.Run(router, func(a *ziggurat.App) {
+	app.Run(router, func(a *zig.App) {
 		fmt.Println("starting app...")
 	})
 }
-
 ```
  
 

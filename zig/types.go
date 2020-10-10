@@ -1,4 +1,4 @@
-package ziggurat
+package zig
 
 type HandlerFunc func(messageEvent MessageEvent, app *App) ProcessStatus
 type StartFunction func(a *App)
