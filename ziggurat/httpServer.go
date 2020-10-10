@@ -18,7 +18,7 @@ type ReplayResponse struct {
 	Err    string `json:"error"`
 }
 
-func (s *DefaultHttpServer) Start(ctx context.Context, app App) {
+func (s *DefaultHttpServer) Start(app *App) {
 	router := httprouter.New()
 	router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
@@ -39,7 +39,7 @@ func (s *DefaultHttpServer) Start(ctx context.Context, app App) {
 	server := &http.Server{Addr: ":8080", Handler: router}
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
-			ServerLogger.Fatal().Err(err)
+			serverLogger.Fatal().Err(err)
 		}
 	}(server)
 

@@ -2,7 +2,6 @@ package ziggurat
 
 import (
 	"bytes"
-	"context"
 	"encoding/gob"
 	"fmt"
 	"github.com/rs/zerolog/log"
@@ -71,7 +70,7 @@ func publishMessage(channel *amqp.Channel, exchangeName string, payload MessageE
 }
 
 func createExchange(channel *amqp.Channel, exchangeName string) error {
-	RetrierLogger.Info().Str("exchange-name", exchangeName).Msg("creating exchange")
+	retrierLogger.Info().Str("exchange-name", exchangeName).Msg("creating exchange")
 	err := channel.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil)
 	return err
 }
@@ -81,7 +80,7 @@ func createExchanges(channel *amqp.Channel, serviceName string, topicEntities []
 		for _, exchangeType := range exchangeTypes {
 			exchangeName := constructExchangeName(serviceName, te, exchangeType)
 			if err := createExchange(channel, exchangeName); err != nil {
-				RetrierLogger.Err(err).Msg("error creating exchange")
+				retrierLogger.Err(err).Msg("error creating exchange")
 			}
 		}
 	}
@@ -92,7 +91,7 @@ func createAndBindQueue(channel *amqp.Channel, queueName string, exchangeName st
 	if queueErr != nil {
 		return queueErr
 	}
-	RetrierLogger.Info().Str("queue-name", queueName).Str("exchange-name", exchangeName).Msg("binding queue to exchange")
+	retrierLogger.Info().Str("queue-name", queueName).Str("exchange-name", exchangeName).Msg("binding queue to exchange")
 	bindErr := channel.QueueBind(queueName, "", exchangeName, false, nil)
 	return bindErr
 }
@@ -102,7 +101,7 @@ func createInstantQueues(channel *amqp.Channel, topicEntities []string, serviceN
 		queueName := constructQueueName(serviceName, te, InstantType)
 		exchangeName := constructExchangeName(serviceName, te, InstantType)
 		if bindErr := createAndBindQueue(channel, queueName, exchangeName, nil); bindErr != nil {
-			RetrierLogger.Error().Err(bindErr).Msg("queue bind error")
+			retrierLogger.Error().Err(bindErr).Msg("queue bind error")
 		}
 	}
 }
@@ -116,7 +115,7 @@ func createDelayQueues(channel *amqp.Channel, topicEntities []string, serviceNam
 			"x-dead-letter-exchange": deadLetterExchangeName,
 		}
 		if bindErr := createAndBindQueue(channel, queueName, exchangeName, args); bindErr != nil {
-			RetrierLogger.Error().Err(bindErr).Msg("queue bind error")
+			retrierLogger.Error().Err(bindErr).Msg("queue bind error")
 		}
 	}
 }
@@ -126,7 +125,7 @@ func createDeadLetterQueues(channel *amqp.Channel, topicEntities []string, servi
 		queueName := constructQueueName(serviceName, te, DeadLetterType)
 		exchangeName := constructExchangeName(serviceName, te, DeadLetterType)
 		if bindErr := createAndBindQueue(channel, queueName, exchangeName, nil); bindErr != nil {
-			RetrierLogger.Error().Err(bindErr).Msg("queue bind error")
+			retrierLogger.Error().Err(bindErr).Msg("queue bind error")
 		}
 	}
 }
@@ -141,10 +140,10 @@ func setRabbitMQConfig(config Config, r *RabbitRetrier) {
 
 }
 
-func (r *RabbitRetrier) Start(ctx context.Context, app App) error {
+func (r *RabbitRetrier) Start(app *App) error {
 	config := app.Config
 	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
-	setRabbitMQConfig(config, r)
+	setRabbitMQConfig(*config, r)
 	connection, err := amqp.Dial(r.rabbitmqConfig.host)
 	if err != nil {
 		return err
@@ -180,7 +179,7 @@ func (r *RabbitRetrier) Stop() error {
 	return nil
 }
 
-func (r *RabbitRetrier) Retry(app App, payload MessageEvent) error {
+func (r *RabbitRetrier) Retry(app *App, payload MessageEvent) error {
 	config := app.Config
 	channel, err := r.connection.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
@@ -197,46 +196,46 @@ func (r *RabbitRetrier) Retry(app App, payload MessageEvent) error {
 	return err
 }
 
-func handleDelivery(ctx context.Context, app App, ctag string, delivery <-chan amqp.Delivery, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
-	doneCh := ctx.Done()
+func handleDelivery(app *App, ctag string, delivery <-chan amqp.Delivery, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+	doneCh := app.Context().Done()
 	for {
 		select {
 		case <-doneCh:
-			RetrierLogger.Info().Str("consumer-tag", ctag).Msg("stopping rabbit consumer")
+			retrierLogger.Info().Str("consumer-tag", ctag).Msg("stopping rabbit consumer")
 			wg.Done()
 			return
 		case del := <-delivery:
 			messageEvent, decodeErr := decodeMessage(del.Body)
 			if decodeErr != nil {
-				RetrierLogger.Error().Err(decodeErr).Msg("retrier decode error")
+				retrierLogger.Error().Err(decodeErr).Msg("retrier decode error")
 			}
 			if ackErr := del.Ack(false); ackErr != nil {
-				RetrierLogger.Error().Err(ackErr).Msg("rabbit retrier ack error")
+				retrierLogger.Error().Err(ackErr).Msg("rabbit retrier ack error")
 			}
-			RetrierLogger.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
-			MessageHandler(app, handlerFunc)(messageEvent)
+			retrierLogger.Info().Str("consumer-tag", ctag).Msg("handling rabbit message delivery")
+			messageHandler(app, handlerFunc)(messageEvent)
 		}
 	}
 }
 
-func startRabbitConsumers(ctx context.Context, app App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
+func startRabbitConsumers(app *App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
 	channel, _ := connection.Channel()
 	instantQueueName := constructQueueName(config.ServiceName, topicEntity, InstantType)
 	ctag := topicEntity + "_amqp_consumer"
 	deliveryChan, _ := channel.Consume(instantQueueName, ctag, false, false, false, false, nil)
-	RetrierLogger.Info().Str("consumer-tag", ctag).Msg("starting Rabbit consumer")
-	go handleDelivery(ctx, app, ctag, deliveryChan, handlerFunc, wg)
+	retrierLogger.Info().Str("consumer-tag", ctag).Msg("starting Rabbit consumer")
+	go handleDelivery(app, ctag, deliveryChan, handlerFunc, wg)
 
 }
 
-func (r *RabbitRetrier) Consume(ctx context.Context, app App) {
+func (r *RabbitRetrier) Consume(app *App) {
 	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
 	config := app.Config
 	var wg sync.WaitGroup
 	go func() {
 		for teName, te := range streamRoutes {
 			wg.Add(1)
-			go startRabbitConsumers(ctx, app, r.connection, config, teName, te.handlerFunc, r, &wg)
+			go startRabbitConsumers(app, r.connection, *config, teName, te.handlerFunc, r, &wg)
 		}
 		wg.Wait()
 	}()
@@ -256,7 +255,7 @@ func decodeMessage(body []byte) (MessageEvent, error) {
 func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, deliveryChan <-chan amqp.Delivery, doneChan chan int) {
 	channel, openErr := r.connection.Channel()
 	if openErr != nil {
-		RetrierLogger.Error().Err(openErr)
+		retrierLogger.Error().Err(openErr)
 		return
 	}
 	exchangeName := constructExchangeName(config.ServiceName, topicEntity, InstantType)
@@ -264,35 +263,35 @@ func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, d
 	for delivery := range deliveryChan {
 		messageEvent, decodeErr := decodeMessage(delivery.Body)
 		if decodeErr != nil {
-			RetrierLogger.Error().Err(decodeErr).Msg("rabbit retrier replay decode error")
+			retrierLogger.Error().Err(decodeErr).Msg("rabbit retrier replay decode error")
 		}
 		publishErr := publishMessage(channel, exchangeName, messageEvent, r.rabbitmqConfig.delayQueueExpiration)
 		if publishErr != nil {
-			RetrierLogger.Error().Err(publishErr).Msg("error publishing message")
+			retrierLogger.Error().Err(publishErr).Msg("error publishing message")
 		}
 		if ackErr := delivery.Ack(false); ackErr != nil {
-			RetrierLogger.Error().Err(ackErr)
+			retrierLogger.Error().Err(ackErr)
 		}
 	}
 	close(doneChan)
 }
 
-func (r *RabbitRetrier) Replay(app App, topicEntity string, count int) error {
+func (r *RabbitRetrier) Replay(app *App, topicEntity string, count int) error {
 	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
 	config := app.Config
 	if count == 0 {
-		RetrierLogger.Error().Err(ErrReplayCountZero).Msg("retrier replay error")
+		retrierLogger.Error().Err(ErrReplayCountZero).Msg("retrier replay error")
 		return ErrReplayCountZero
 	}
 	if _, ok := streamRoutes[topicEntity]; !ok {
-		RetrierLogger.Error().Err(ErrTopicEntityMismatch).Msg("no topic entity found")
+		retrierLogger.Error().Err(ErrTopicEntityMismatch).Msg("no topic entity found")
 		return ErrTopicEntityMismatch
 	}
 	queueName := constructQueueName(config.ServiceName, topicEntity, DeadLetterType)
 	channel, _ := r.connection.Channel()
 	deliveryChan := make(chan amqp.Delivery, count)
 	doneCh := make(chan int)
-	go handleReplayDelivery(r, config, topicEntity, deliveryChan, doneCh)
+	go handleReplayDelivery(r, *config, topicEntity, deliveryChan, doneCh)
 	for i := 0; i < count; i++ {
 		delivery, _, _ := channel.Get(queueName, false)
 		deliveryChan <- delivery

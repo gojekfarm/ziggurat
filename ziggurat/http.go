@@ -1,8 +1,6 @@
 package ziggurat
 
-import "context"
-
 type HttpServer interface {
-	Start(ctx context.Context, app App)
+	Start(app *App)
 	Stop() error
 }

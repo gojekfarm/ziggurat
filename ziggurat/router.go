@@ -1,9 +1,9 @@
 package ziggurat
 
 import (
-	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/rs/zerolog/log"
 	"strings"
 	"sync"
 )
@@ -13,6 +13,7 @@ type topicEntity struct {
 	consumers        []*kafka.Consumer
 	bootstrapServers string
 	originTopics     []string
+	entityName       string
 }
 
 type TopicEntityHandlerMap = map[string]*topicEntity
@@ -33,7 +34,7 @@ func newConsumerConfig() *kafka.ConfigMap {
 	}
 }
 
-func NewStreamRouter() *StreamRouter {
+func NewRouter() *StreamRouter {
 	return &StreamRouter{
 		handlerFunctionMap: make(map[string]*topicEntity),
 	}
@@ -52,67 +53,61 @@ func (sr *StreamRouter) GetTopicEntities() []*topicEntity {
 }
 
 func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc) {
-	sr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn}
+	sr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
 }
 
 func makeKV(key string, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func notifyRouterStop(stopChannel chan<- int, wg *sync.WaitGroup) {
-	wg.Wait()
-	close(stopChannel)
+func (sr *StreamRouter) stop() {
+	for _, te := range sr.GetTopicEntities() {
+		log.Info().Str("topic-entity", te.entityName).Msg("stopping consumers")
+		for i, _ := range te.consumers {
+			if closeErr := te.consumers[i].Close(); closeErr != nil {
+				routerLogger.Error().Err(closeErr)
+			}
+		}
+	}
 }
 
-func (sr *StreamRouter) Start(ctx context.Context, app App) chan int {
-	stopNotifierCh := make(chan int)
+func (sr *StreamRouter) Start(app *App) (chan int, error) {
+	ctx := app.Context()
 	config := app.Config
+	stopChan := make(chan int)
 	var wg sync.WaitGroup
 	srConfig := config.StreamRouter
 	hfMap := sr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		RouterLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("")
+		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("")
 	}
 
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 		if topicEntityName != streamRouterCfg.TopicEntity {
-			RouterLogger.Fatal().Err(ErrTopicEntityMismatch).Msg("")
+			routerLogger.Fatal().Err(ErrTopicEntityMismatch).Msg("")
 		}
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
 		if setErr := consumerConfig.Set(bootstrapServers); setErr != nil {
-			RouterLogger.Error().Err(setErr)
+			routerLogger.Error().Err(setErr).Msg("")
+			return nil, setErr
 		}
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
-			RouterLogger.Error().Err(setErr)
+			routerLogger.Error().Err(setErr).Msg("")
+			return nil, setErr
 		}
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
-		consumers := StartConsumers(ctx, app, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.handlerFunc, &wg)
+		consumers := startConsumers(ctx, app, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.handlerFunc, &wg)
 		te.consumers = consumers
 	}
 
-	if config.Retry.Enabled {
-		RouterLogger.Info().Msg("starting retrier...")
-		if retrierStartErr := app.Retrier.Start(ctx, app); retrierStartErr != nil {
-			RouterLogger.Fatal().Err(retrierStartErr).Msg("unable to start retrier")
-		}
+	go func() {
+		wg.Wait()
+		sr.stop()
+		close(stopChan)
+	}()
 
-		app.Retrier.Consume(ctx, app)
-		RouterLogger.Info().Msg("starting retrier consumer")
-	}
-
-	app.HttpServer.Start(ctx, app)
-	RouterLogger.Info().Msg("http server started...")
-
-	metricStartErr := app.MetricPublisher.Start(ctx, app)
-	if metricStartErr != nil {
-		RouterLogger.Error().Err(metricStartErr)
-	}
-	RouterLogger.Info().Msg("starting metrics...")
-
-	go notifyRouterStop(stopNotifierCh, &wg)
-
-	return stopNotifierCh
+	return stopChan, nil
 }

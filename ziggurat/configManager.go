@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const DefaultPath = "./config/config.yaml"
-
 type StreamRouterConfig struct {
 	InstanceCount    int    `mapstructure:"instance-count"`
 	BootstrapServers string `mapstructure:"bootstrap-servers"`
@@ -45,7 +43,7 @@ var configValidationRuleMapping = map[string]func(c *Config) error{
 	},
 }
 
-func (config *Config) Validate() error {
+func (config *Config) validate() error {
 	for _, validationFn := range configValidationRuleMapping {
 		if err := validationFn(config); err != nil {
 			return err
@@ -76,6 +74,6 @@ func parseConfig(options CommandLineOptions) {
 	}
 }
 
-func GetConfig() Config {
+func getConfig() Config {
 	return zigguratConfig
 }

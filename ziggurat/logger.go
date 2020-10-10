@@ -16,20 +16,20 @@ var logLevelMapping = map[string]zerolog.Level{
 	"panic": zerolog.PanicLevel,
 }
 
-var RouterLogger zerolog.Logger
-var ConsumerLogger zerolog.Logger
-var ServerLogger zerolog.Logger
-var RetrierLogger zerolog.Logger
-var MetricLogger zerolog.Logger
+var routerLogger zerolog.Logger
+var consumerLogger zerolog.Logger
+var serverLogger zerolog.Logger
+var retrierLogger zerolog.Logger
+var metricLogger zerolog.Logger
 
-func ConfigureLogger(logLevel string) {
+func configureLogger(logLevel string) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	logLevelInt := logLevelMapping[logLevel]
 	zerolog.SetGlobalLevel(logLevelInt)
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	RouterLogger = log.With().Str("component", "router").Logger()
-	ConsumerLogger = log.With().Str("component", "consumer").Logger()
-	ServerLogger = log.With().Str("component", "http-server").Logger()
-	RetrierLogger = log.With().Str("component", "retrier").Logger()
-	MetricLogger = log.With().Str("component", "metrics").Logger()
+	routerLogger = log.With().Str("component", "router").Logger()
+	consumerLogger = log.With().Str("component", "consumer").Logger()
+	serverLogger = log.With().Str("component", "http-server").Logger()
+	retrierLogger = log.With().Str("component", "retrier").Logger()
+	metricLogger = log.With().Str("component", "metrics").Logger()
 }

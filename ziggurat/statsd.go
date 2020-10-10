@@ -1,7 +1,6 @@
 package ziggurat
 
 import (
-	"context"
 	"github.com/cactus/go-statsd-client/statsd"
 	"strings"
 )
@@ -29,22 +28,22 @@ func constructTags(tags map[string]string) string {
 	return strings.Join(tagSlice, ",")
 }
 
-func (s *StatsD) Start(ctx context.Context, app App) error {
-	setStatsDConfig(app.Config, s)
+func (s *StatsD) Start(app *App) error {
+	setStatsDConfig(*app.Config, s)
 	config := &statsd.ClientConfig{
 		Prefix:  app.Config.ServiceName,
 		Address: s.statsdConfig.host,
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
-		MetricLogger.Error().Err(clientErr).Msg("")
+		metricLogger.Error().Err(clientErr).Msg("")
 		return clientErr
 	}
 	s.client = client
 	return nil
 }
 
-func (s *StatsD) Stop(ctx context.Context) error {
+func (s *StatsD) Stop() error {
 	if s.client != nil {
 		return s.client.Close()
 	}
