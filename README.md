@@ -53,27 +53,28 @@ package main
 
 import (
 	"fmt"
-	"github.com/gojek/ziggurat-golang"
+	"github.com/gojekfarm/ziggurat-golang/ziggurat"
 )
 
 func main() {
-	router := ziggurat.NewStreamRouter()
-	router.HandlerFunc("booking", func(messageEvent ziggurat.MessageEvent) ziggurat.ProcessStatus {
-		fmt.Println("Message -> ", messageEvent)
+	app := ziggurat.NewApp()
+	router := ziggurat.NewRouter()
+
+	router.HandlerFunc("test-entity", func(messageEvent ziggurat.MessageEvent, a *ziggurat.App) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 
-	ziggurat.Start(router, ziggurat.StartupOptions{
-		StartFunction: func(config ziggurat.Config) {
-			fmt.Println("Start function called...")
+	app.Configure(ziggurat.Options{
+		StopFunc: func() {
+			fmt.Println("stopping app...")
 		},
-		StopFunction: func() {
-			fmt.Println("Stopping app...")
-		},
-		Retrier: nil,
 	})
 
+	app.Run(router, func(a *ziggurat.App) {
+		fmt.Println("starting app...")
+	})
 }
+
 ```
  
 
