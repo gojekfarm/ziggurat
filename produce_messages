@@ -1,12 +1,22 @@
 #!/usr/bin/env bash
 
+function generate_json() {
+  local count="$1"
+  cat <<EOF
+{
+  "key":"key-$count",
+  "value":"value-$count"
+}
+EOF
+}
+
 echo "PRESS CTRL+C to terminate message production"
 i=0
 while true; do
   echo "producing message $i"
   echo "$i:message-$i-test-topic1" | docker exec -i ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --property key.separator=":" --property parse.key=true --topic "test-topic1"
   echo "$i:message-$i-test-topic2" | docker exec -i ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --property key.separator=":" --property parse.key=true --topic "test-topic2"
-  echo '{"key":"key","value":"value"}' | docker exec -i ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --topic "json-test"
+  echo '{"value":"VALUE"}' | docker exec -i ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "localhost:9092" --topic "json-test"
   i=$((i + 1))
   sleep 2s
 done
