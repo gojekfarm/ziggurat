@@ -16,7 +16,6 @@ func messageHandler(app *App, handlerFunc HandlerFunc) func(event MessageEvent) 
 			if publishErr := app.MetricPublisher.IncCounter("message_processing_success", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
-
 			log.Info().Msg("successfully processed message")
 		case SkipMessage:
 			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
