@@ -27,3 +27,5 @@ rabbitmq:
   delay-queue-expiration: "1000"
 statsd:
   host: "localhost:8125"
+http-server:
+  port: 8080

@@ -20,6 +20,7 @@ type ReplayResponse struct {
 
 func (s *DefaultHttpServer) Start(app *App) {
 	router := httprouter.New()
+	port := app.Config.HTTPServer.Port
 	router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
 		if replayErr := app.Retrier.Replay(app, params.ByName("topic_entity"), count); replayErr != nil {
@@ -36,7 +37,7 @@ func (s *DefaultHttpServer) Start(app *App) {
 		writer.Write(jsonBytes)
 	})
 
-	server := &http.Server{Addr: ":8080", Handler: router}
+	server := &http.Server{Addr: ":" + port, Handler: router}
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
 			serverLogger.Fatal().Err(err)

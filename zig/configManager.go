@@ -18,11 +18,16 @@ type RetryConfig struct {
 	Count   int  `mapstructure:"count"`
 }
 
+type HTTPServerConfig struct {
+	Port string `mapstructure:"port"`
+}
+
 type Config struct {
 	StreamRouter map[string]StreamRouterConfig `mapstructure:"stream-router"`
 	LogLevel     string                        `mapstructure:"log-level"`
 	ServiceName  string                        `mapstructure:"service-name"`
 	Retry        RetryConfig                   `mapstructure:"retry"`
+	HTTPServer   HTTPServerConfig              `mapstructure:"http-server"`
 }
 
 var zigguratConfig Config

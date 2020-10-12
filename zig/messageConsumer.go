@@ -67,7 +67,6 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
 						consumerLogger.Error().Err(commitErr).Msg("offset commit error")
 					}
-
 				}
 			}
 		}

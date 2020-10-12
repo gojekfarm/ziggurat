@@ -91,14 +91,16 @@ func (a *App) start(startCallback StartFunction) {
 			log.Error().Err(err).Msg("")
 		}
 		startCallback(a)
+		halt := func() {
+			a.cancelFun()
+			a.stop()
+		}
 		// Wait for router poll to complete
 		select {
 		case <-stopChan:
-			a.cancelFun()
-			a.stop()
+			halt()
 		case <-a.interruptChan:
-			a.cancelFun()
-			a.stop()
+			halt()
 		}
 	}
 
