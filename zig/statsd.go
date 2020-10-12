@@ -9,6 +9,8 @@ type StatsDConf struct {
 	host string
 }
 
+var DefaultStatsDConfig = &StatsDConf{host: "localhost:8125"}
+
 type StatsD struct {
 	client       statsd.Statter
 	statsdConfig *StatsDConf
@@ -16,8 +18,12 @@ type StatsD struct {
 
 func setStatsDConfig(config Config, s *StatsD) {
 	rawConfig := config.GetByKey("statsd")
-	sanitizedConfig := rawConfig.(map[string]interface{})
-	s.statsdConfig = &StatsDConf{host: sanitizedConfig["host"].(string)}
+	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
+		metricLogger.Error().Err(ErrParsingStatsDConfig).Msg("")
+		s.statsdConfig = DefaultStatsDConfig
+	} else {
+		s.statsdConfig = &StatsDConf{host: sanitizedConfig["host"].(string)}
+	}
 }
 
 func constructTags(tags map[string]string) string {
