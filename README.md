@@ -56,13 +56,21 @@ import (
 	"github.com/gojekfarm/ziggurat-golang/zig"
 )
 
+type JSONMessage struct {
+	Value string `json:"value"`
+}
+
 func main() {
 	app := zig.NewApp()
 	router := zig.NewRouter()
 
 	router.HandlerFunc("test-entity", func(messageEvent zig.MessageEvent, a *zig.App) zig.ProcessStatus {
 		return zig.ProcessingSuccess
-	})
+	}, zig.MiddlewarePipe{zig.MessageLogger})
+
+	router.HandlerFunc("json-entity", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
+		return zig.ProcessingSuccess
+	}, zig.MiddlewarePipe{zig.MessageLogger, zig.JSONDeserializer(&JSONMessage{})})
 
 	app.Configure(zig.Options{
 		StopFunc: func() {
@@ -75,7 +83,31 @@ func main() {
 	})
 }
 ```
- 
+
+### Using middlewares
+Ziggurat allows you to use middlewares to add pluggable functionality to your stream handler logic,
+
+How do I write my own middleware? 
+
+Middlewares are just normal functions of type `zig.Middleware` 
+
+Example middleware
+
+```go
+package mypkg
+
+import (
+	"fmt"
+)
+
+func Logger(handlerFunc HandlerFunc) HandlerFunc {
+	return func(messageEvent MessageEvent, app *App) ProcessStatus {
+		fmt.Println("[HELLO FROM LOGGER]: Hello from logger")
+		return handlerFunc(messageEvent, app)
+	}
+}
+```
+Ziggurat provides  middlewares for logging and de-serializing kafka messages
 
 
 #### TODO
