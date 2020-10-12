@@ -1,4 +1,4 @@
-module github.com/gojekfarm/ziggurat-golang
+module github.com/gojekfarm/ziggurat-go
 
 go 1.14
 
