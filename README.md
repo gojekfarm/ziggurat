@@ -5,7 +5,7 @@ A stream processing framework in golang
 
 - Run go get
 ```shell script
-go get -v -u github.com/gojek/ziggurat-golang                                                                                                                                                         
+go get -v -u github.com/gojekfarm/ziggurat-go                                                                                                                                                       
 ```
 
 #### How to use
