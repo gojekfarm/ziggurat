@@ -47,5 +47,4 @@ func ProtobufDeserializer(messageValue proto.Message) Middleware {
 			return handler(messageEvent, app)
 		}
 	}
-
 }
