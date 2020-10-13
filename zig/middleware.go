@@ -7,21 +7,21 @@ import (
 )
 
 func JSONDeserializer(structValue interface{}) Middleware {
-	return func(handlerFn HandlerFunc) HandlerFunc {
+	return func(next HandlerFunc) HandlerFunc {
 		return func(message MessageEvent, app *App) ProcessStatus {
 			messageValueBytes := message.MessageValueBytes
 			if err := json.Unmarshal(messageValueBytes, structValue); err != nil {
 				log.Error().Err(err).Msg("error de-serialising json")
 				message.MessageValue = nil
-				return handlerFn(message, app)
+				return next(message, app)
 			}
 			message.MessageValue = structValue
-			return handlerFn(message, app)
+			return next(message, app)
 		}
 	}
 }
 
-func MessageLogger(handlerFunc HandlerFunc) HandlerFunc {
+func MessageLogger(next HandlerFunc) HandlerFunc {
 	return func(messageEvent MessageEvent, app *App) ProcessStatus {
 		log.Info().
 			Str("topic-entity", messageEvent.TopicEntity).
@@ -29,22 +29,22 @@ func MessageLogger(handlerFunc HandlerFunc) HandlerFunc {
 			Str("kafka-time-stamp", messageEvent.KafkaTimestamp.String()).
 			Str("message-value", string(messageEvent.MessageValueBytes)).
 			Msg("received message")
-		return handlerFunc(messageEvent, app)
+		return next(messageEvent, app)
 	}
 }
 
 func ProtobufDeserializer(messageValue proto.Message) Middleware {
-	return func(handler HandlerFunc) HandlerFunc {
+	return func(next HandlerFunc) HandlerFunc {
 		return func(messageEvent MessageEvent, app *App) ProcessStatus {
 			messageValueBytes := messageEvent.MessageValueBytes
 			if err := proto.Unmarshal(messageValueBytes, messageValue); err != nil {
 				messageEvent.MessageValue = messageValue
 				log.Error().Err(err).Msg("error de-serializing protobuf")
 				messageEvent.MessageValue = nil
-				return handler(messageEvent, app)
+				return next(messageEvent, app)
 			}
 			messageEvent.MessageValue = messageValue
-			return handler(messageEvent, app)
+			return next(messageEvent, app)
 		}
 	}
 }
