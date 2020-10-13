@@ -137,13 +137,29 @@ func setRabbitMQConfig(config Config, r *RabbitRetrier) {
 		host:                 sanitizedConfig["host"].(string),
 		delayQueueExpiration: sanitizedConfig["delay-queue-expiration"].(string),
 	}
+}
 
+func parseRabbitMQConfig(config *Config) *RabbitMQConfig {
+	rawConfig := config.GetByKey("rabbitmq")
+	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
+		retrierLogger.Error().Err(ErrParsingRabbitMQConfig).Msg("")
+		return &RabbitMQConfig{
+			host:                 "amqp://user:guest@localhost:5672/",
+			delayQueueExpiration: "2000",
+		}
+	} else {
+		return &RabbitMQConfig{
+			host:                 sanitizedConfig["host"].(string),
+			delayQueueExpiration: sanitizedConfig["delay-queue-expiration"].(string),
+		}
+	}
 }
 
 func (r *RabbitRetrier) Start(app *App) error {
 	config := app.Config
 	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
-	setRabbitMQConfig(*config, r)
+	rmqConfig := parseRabbitMQConfig(config)
+	r.rabbitmqConfig = rmqConfig
 	connection, err := amqp.Dial(r.rabbitmqConfig.host)
 	if err != nil {
 		return err

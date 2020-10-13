@@ -76,7 +76,6 @@ func (a *App) Run(router *StreamRouter, startCallback StartFunction) {
 	a.StreamRouter = router
 	a.configureDefaults()
 	a.start(startCallback)
-
 }
 
 func (a *App) start(startCallback StartFunction) {
