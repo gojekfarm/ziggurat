@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 	"sync"
 )
@@ -15,8 +14,10 @@ const DeadLetterType = "dead_letter"
 const RetryCount = "retryCount"
 
 type RabbitRetrier struct {
-	connection     *amqp.Connection
-	rabbitmqConfig *RabbitMQConfig
+	pubConn          *amqp.Connection
+	consumeConn      *amqp.Connection
+	rabbitmqConfig   *RabbitMQConfig
+	consumerStopChan chan int
 }
 
 type RabbitMQConfig struct {
@@ -130,15 +131,6 @@ func createDeadLetterQueues(channel *amqp.Channel, topicEntities []string, servi
 	}
 }
 
-func setRabbitMQConfig(config Config, r *RabbitRetrier) {
-	rawConfig := config.GetByKey("rabbitmq")
-	sanitizedConfig := rawConfig.(map[string]interface{})
-	r.rabbitmqConfig = &RabbitMQConfig{
-		host:                 sanitizedConfig["host"].(string),
-		delayQueueExpiration: sanitizedConfig["delay-queue-expiration"].(string),
-	}
-}
-
 func parseRabbitMQConfig(config *Config) *RabbitMQConfig {
 	rawConfig := config.GetByKey("rabbitmq")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
@@ -155,41 +147,56 @@ func parseRabbitMQConfig(config *Config) *RabbitMQConfig {
 	}
 }
 
-func (r *RabbitRetrier) Start(app *App) error {
+func publishConnectionCloseHandler(closeChan chan *amqp.Error) {
+	err := <-closeChan
+	retrierLogger.Error().Err(err).Msg("")
+}
+
+func consumeConnectionCloseHandler(closeChan chan *amqp.Error) {
+	err := <-closeChan
+	retrierLogger.Error().Err(err).Msg("")
+}
+
+func (r *RabbitRetrier) Start(app *App) (chan int, error) {
 	config := app.Config
 	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
 	rmqConfig := parseRabbitMQConfig(config)
 	r.rabbitmqConfig = rmqConfig
-	connection, err := amqp.Dial(r.rabbitmqConfig.host)
+	pubConn, err := amqp.Dial(r.rabbitmqConfig.host)
+	consumeConn, err := amqp.Dial(r.rabbitmqConfig.host)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var topicEntities []string
 	for te, _ := range streamRoutes {
 		topicEntities = append(topicEntities, te)
 	}
-	r.connection = connection
-	go func() {
-		<-r.connection.NotifyClose(make(chan *amqp.Error))
-		log.Error().Msg("rabbit retrier connection closed")
-	}()
-	channel, openErr := connection.Channel()
+	r.pubConn = pubConn
+	r.consumeConn = consumeConn
+
+	pubCloseChan := r.pubConn.NotifyClose(make(chan *amqp.Error))
+	consumeCloseChan := r.consumeConn.NotifyClose(make(chan *amqp.Error))
+
+	go publishConnectionCloseHandler(pubCloseChan)
+	go consumeConnectionCloseHandler(consumeCloseChan)
+
+	channel, openErr := pubConn.Channel()
 	if openErr != nil {
-		return openErr
+		return nil, openErr
 	}
 	createExchanges(channel, config.ServiceName, topicEntities, []string{DelayType, InstantType, DeadLetterType})
 	createInstantQueues(channel, topicEntities, config.ServiceName)
 	createDelayQueues(channel, topicEntities, config.ServiceName)
 	createDeadLetterQueues(channel, topicEntities, config.ServiceName)
 	if closeErr := channel.Close(); closeErr != nil {
-		return closeErr
+		return nil, closeErr
 	}
-	return nil
+	return r.StartConsumers(app), nil
 }
 
 func (r *RabbitRetrier) Stop() error {
-	if r.connection != nil {
-		closeErr := r.connection.Close()
+	if r.pubConn != nil {
+		closeErr := r.pubConn.Close()
 		return closeErr
 	}
 	return nil
@@ -197,7 +204,7 @@ func (r *RabbitRetrier) Stop() error {
 
 func (r *RabbitRetrier) Retry(app *App, payload MessageEvent) error {
 	config := app.Config
-	channel, err := r.connection.Channel()
+	channel, err := r.pubConn.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
 	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DeadLetterType)
 	retryCount := getRetryCount(&payload)
@@ -234,7 +241,7 @@ func handleDelivery(app *App, ctag string, delivery <-chan amqp.Delivery, handle
 	}
 }
 
-func startRabbitConsumers(app *App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, r *RabbitRetrier, wg *sync.WaitGroup) {
+func startRabbitConsumers(app *App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
 	channel, _ := connection.Channel()
 	instantQueueName := constructQueueName(config.ServiceName, topicEntity, InstantType)
 	ctag := topicEntity + "_amqp_consumer"
@@ -244,17 +251,20 @@ func startRabbitConsumers(app *App, connection *amqp.Connection, config Config, 
 
 }
 
-func (r *RabbitRetrier) Consume(app *App) {
+func (r *RabbitRetrier) StartConsumers(app *App) chan int {
+	doneCh := make(chan int)
 	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
 	config := app.Config
 	var wg sync.WaitGroup
+	for teName, te := range streamRoutes {
+		wg.Add(1)
+		go startRabbitConsumers(app, r.consumeConn, *config, teName, te.handlerFunc, &wg)
+	}
 	go func() {
-		for teName, te := range streamRoutes {
-			wg.Add(1)
-			go startRabbitConsumers(app, r.connection, *config, teName, te.handlerFunc, r, &wg)
-		}
 		wg.Wait()
+		close(doneCh)
 	}()
+	return doneCh
 }
 
 func decodeMessage(body []byte) (MessageEvent, error) {
@@ -269,7 +279,7 @@ func decodeMessage(body []byte) (MessageEvent, error) {
 }
 
 func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, deliveryChan <-chan amqp.Delivery, doneChan chan int) {
-	channel, openErr := r.connection.Channel()
+	channel, openErr := r.pubConn.Channel()
 	if openErr != nil {
 		retrierLogger.Error().Err(openErr)
 		return
@@ -304,7 +314,7 @@ func (r *RabbitRetrier) Replay(app *App, topicEntity string, count int) error {
 		return ErrTopicEntityMismatch
 	}
 	queueName := constructQueueName(config.ServiceName, topicEntity, DeadLetterType)
-	channel, _ := r.connection.Channel()
+	channel, _ := r.pubConn.Channel()
 	deliveryChan := make(chan amqp.Delivery, count)
 	doneCh := make(chan int)
 	go handleReplayDelivery(r, *config, topicEntity, deliveryChan, doneCh)

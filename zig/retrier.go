@@ -1,9 +1,8 @@
 package zig
 
 type MessageRetrier interface {
-	Start(app *App) error
+	Start(app *App) (chan int, error)
 	Retry(app *App, payload MessageEvent) error
 	Stop() error
-	Consume(app *App)
 	Replay(app *App, topicEntity string, count int) error
 }

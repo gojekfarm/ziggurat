@@ -69,7 +69,6 @@ func (a *App) configureDefaults() {
 	}
 }
 
-// Run method blocks the app and returns a channel to notify app stop
 func (a *App) Run(router *StreamRouter, startCallback StartFunction) {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.Config.LogLevel)
@@ -86,9 +85,18 @@ func (a *App) start(startCallback StartFunction) {
 		if err := a.MetricPublisher.Start(a); err != nil {
 			log.Error().Err(err).Msg("")
 		}
-		if err := a.Retrier.Start(a); err != nil {
+
+		retrierStopChan, err := a.Retrier.Start(a)
+
+		go func() {
+			<-retrierStopChan
+			log.Error().Err(ErrRetryConsumerStopped).Msg("")
+		}()
+
+		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
+
 		startCallback(a)
 		halt := func() {
 			a.cancelFun()
