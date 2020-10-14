@@ -24,10 +24,10 @@ func (s *DefaultHttpServer) Start(app *App) {
 	router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
 		if replayErr := app.Retrier.Replay(app, params.ByName("topic_entity"), count); replayErr != nil {
-			http.Error(writer, replayErr.Error(), 500)
+			http.Error(writer, replayErr.Error(), http.StatusInternalServerError)
 			return
 		}
-		writer.WriteHeader(200)
+		writer.WriteHeader(http.StatusOK)
 		jsonBytes, _ := json.Marshal(ReplayResponse{
 			Status: true,
 			Count:  count,
@@ -35,6 +35,11 @@ func (s *DefaultHttpServer) Start(app *App) {
 		})
 		writer.Header().Add("Content-Type", "application/json")
 		writer.Write(jsonBytes)
+	})
+
+	router.GET("/v1/ping", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		writer.WriteHeader(http.StatusOK)
+		writer.Write([]byte("pong"))
 	})
 
 	server := &http.Server{Addr: ":" + port, Handler: router}
