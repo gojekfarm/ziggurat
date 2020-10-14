@@ -14,8 +14,8 @@ type DefaultHttpServer struct {
 
 type ReplayResponse struct {
 	Status bool   `json:"status"`
-	Count  int    `json:"status"`
-	Err    string `json:"error"`
+	Count  int    `json:"count"`
+	Msg    string `json:"msg"`
 }
 
 func (s *DefaultHttpServer) Start(app *App) {
@@ -31,7 +31,7 @@ func (s *DefaultHttpServer) Start(app *App) {
 		jsonBytes, _ := json.Marshal(ReplayResponse{
 			Status: true,
 			Count:  count,
-			Err:    "",
+			Msg:    "successfully replayed messages",
 		})
 		writer.Header().Add("Content-Type", "application/json")
 		writer.Write(jsonBytes)
@@ -40,7 +40,7 @@ func (s *DefaultHttpServer) Start(app *App) {
 	server := &http.Server{Addr: ":" + port, Handler: router}
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
-			serverLogger.Fatal().Err(err)
+			serverLogger.Error().Err(err)
 		}
 	}(server)
 
