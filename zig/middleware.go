@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func JSONDeserializer(structValue interface{}) Middleware {
+func JSONDeserializer(structValue interface{}) MiddlewareFunc {
 	return func(next HandlerFunc) HandlerFunc {
 		return func(message MessageEvent, app *App) ProcessStatus {
 			messageValueBytes := message.MessageValueBytes
@@ -33,7 +33,7 @@ func MessageLogger(next HandlerFunc) HandlerFunc {
 	}
 }
 
-func ProtobufDeserializer(messageValue proto.Message) Middleware {
+func ProtobufDeserializer(messageValue proto.Message) MiddlewareFunc {
 	return func(next HandlerFunc) HandlerFunc {
 		return func(messageEvent MessageEvent, app *App) ProcessStatus {
 			messageValueBytes := messageEvent.MessageValueBytes

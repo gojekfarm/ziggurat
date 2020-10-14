@@ -5,7 +5,7 @@ type ProcessStatus int
 type HandlerFunc func(messageEvent MessageEvent, app *App) ProcessStatus
 type StartFunction func(a *App)
 type StopFunction func()
-type Middleware func(next HandlerFunc) HandlerFunc
+type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 
 // Public interfaces
 type HttpServer interface {

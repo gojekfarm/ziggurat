@@ -1,6 +1,6 @@
 package zig
 
-func pipeHandlers(funcs ...Middleware) func(handlerFunc HandlerFunc) HandlerFunc {
+func pipeHandlers(funcs ...MiddlewareFunc) func(handlerFunc HandlerFunc) HandlerFunc {
 	return func(origHandler HandlerFunc) HandlerFunc {
 		var handlerResult HandlerFunc
 		return func(messageEvent MessageEvent, app *App) ProcessStatus {

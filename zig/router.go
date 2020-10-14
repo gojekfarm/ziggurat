@@ -16,7 +16,7 @@ type topicEntity struct {
 	entityName       string
 }
 
-type MiddlewarePipe = []Middleware
+type Middleware = []MiddlewareFunc
 
 type TopicEntityHandlerMap = map[string]*topicEntity
 
@@ -54,7 +54,7 @@ func (sr *StreamRouter) GetTopicEntities() []*topicEntity {
 	return topicEntities
 }
 
-func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mwpipe MiddlewarePipe) {
+func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mwpipe Middleware) {
 	sr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
 	if len(mwpipe) > 0 {
 		origHandler := sr.handlerFunctionMap[topicEntityName].handlerFunc
