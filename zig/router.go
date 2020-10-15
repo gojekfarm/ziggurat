@@ -81,7 +81,7 @@ func (sr *StreamRouter) validate(config *Config) {
 	srmap := config.StreamRouter
 	for entityName, _ := range sr.handlerFunctionMap {
 		if _, ok := srmap[entityName]; !ok {
-			routerLogger.Fatal().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("")
+			routerLogger.Warn().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("")
 		}
 	}
 }
