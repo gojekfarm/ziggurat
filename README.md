@@ -90,7 +90,7 @@ Ziggurat allows you to use middlewares to add pluggable functionality to your st
 
 How do I write my own middleware? 
 
-Middlewares are just normal functions of type `zig.Middleware` 
+Middlewares are just normal functions of type `zig.MiddlewareFunc` 
 
 Example middleware
 
