@@ -2,6 +2,7 @@ package zig
 
 import (
 	"context"
+	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
@@ -9,10 +10,11 @@ import (
 )
 
 type Options struct {
-	HttpServer      HttpServer
-	Retrier         MessageRetrier
-	MetricPublisher MetricPublisher
-	StopFunc        StopFunction
+	HttpServer        HttpServer
+	Retrier           MessageRetrier
+	MetricPublisher   MetricPublisher
+	StopFunc          StopFunction
+	HttpConfigureFunc func(r *httprouter.Router)
 }
 
 type App struct {
@@ -53,6 +55,9 @@ func (a *App) Configure(options Options) {
 	a.HttpServer = options.HttpServer
 	a.Retrier = options.Retrier
 	a.stopFunc = options.StopFunc
+	if options.HttpConfigureFunc != nil {
+		a.HttpServer.AttachRoute(options.HttpConfigureFunc)
+	}
 	//configure defaults if components are nil
 }
 
@@ -69,14 +74,12 @@ func (a *App) configureDefaults() {
 	}
 }
 
-// Run method blocks the app and returns a channel to notify app stop
 func (a *App) Run(router *StreamRouter, startCallback StartFunction) {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.Config.LogLevel)
 	a.StreamRouter = router
 	a.configureDefaults()
 	a.start(startCallback)
-
 }
 
 func (a *App) start(startCallback StartFunction) {
@@ -87,9 +90,18 @@ func (a *App) start(startCallback StartFunction) {
 		if err := a.MetricPublisher.Start(a); err != nil {
 			log.Error().Err(err).Msg("")
 		}
-		if err := a.Retrier.Start(a); err != nil {
+
+		retrierStopChan, err := a.Retrier.Start(a)
+
+		go func() {
+			<-retrierStopChan
+			log.Error().Err(ErrRetryConsumerStopped).Msg("")
+		}()
+
+		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
+
 		startCallback(a)
 		halt := func() {
 			a.cancelFun()

@@ -53,11 +53,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-golang/zig"
+	"github.com/gojekfarm/ziggurat-go/zig"
 )
 
 type JSONMessage struct {
-	Value string `json:"value"`
+	Value int `json:"value"`
 }
 
 func main() {
@@ -66,11 +66,11 @@ func main() {
 
 	router.HandlerFunc("test-entity", func(messageEvent zig.MessageEvent, a *zig.App) zig.ProcessStatus {
 		return zig.ProcessingSuccess
-	}, zig.MiddlewarePipe{zig.MessageLogger})
+	}, zig.Middleware{zig.MessageLogger})
 
 	router.HandlerFunc("json-entity", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
 		return zig.ProcessingSuccess
-	}, zig.MiddlewarePipe{zig.MessageLogger, zig.JSONDeserializer(&JSONMessage{})})
+	}, zig.Middleware{zig.MessageLogger, zig.JSONDeserializer(&JSONMessage{})})
 
 	app.Configure(zig.Options{
 		StopFunc: func() {
@@ -82,6 +82,7 @@ func main() {
 		fmt.Println("starting app...")
 	})
 }
+
 ```
 
 ### Using middlewares
@@ -89,7 +90,7 @@ Ziggurat allows you to use middlewares to add pluggable functionality to your st
 
 How do I write my own middleware? 
 
-Middlewares are just normal functions of type `zig.Middleware` 
+Middlewares are just normal functions of type `zig.MiddlewareFunc` 
 
 Example middleware
 
@@ -120,6 +121,6 @@ Ziggurat provides  middlewares for logging and de-serializing kafka messages
 - [x] HTTP server
 - [x] Replay RabbitMQ deadset messages
 - [x] Log formatting
-- [ ] Metrics
-- [ ] Configurable RabbitMQ consumer count
+- [x] StatsD support
+- [ ] Publish metrics
 - [ ] Unit tests

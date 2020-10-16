@@ -66,9 +66,7 @@ func parseConfig(options CommandLineOptions) {
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
-		if err, ok := err.(viper.ConfigFileNotFoundError); ok {
-			log.Fatal().Err(err).Msg("config parse error")
-		}
+		log.Fatal().Err(err).Msg("")
 	}
 
 	replacer := strings.NewReplacer("-", "_", ".", "_")

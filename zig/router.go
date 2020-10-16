@@ -16,7 +16,7 @@ type topicEntity struct {
 	entityName       string
 }
 
-type MiddlewarePipe = []Middleware
+type Middleware = []MiddlewareFunc
 
 type TopicEntityHandlerMap = map[string]*topicEntity
 
@@ -54,11 +54,11 @@ func (sr *StreamRouter) GetTopicEntities() []*topicEntity {
 	return topicEntities
 }
 
-func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mwpipe MiddlewarePipe) {
+func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mwpipe Middleware) {
 	sr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
 	if len(mwpipe) > 0 {
 		origHandler := sr.handlerFunctionMap[topicEntityName].handlerFunc
-		sr.handlerFunctionMap[topicEntityName].handlerFunc = pipeHandlers(mwpipe...)(origHandler)
+		sr.handlerFunctionMap[topicEntityName].handlerFunc = PipeHandlers(mwpipe...)(origHandler)
 	}
 }
 
@@ -81,7 +81,7 @@ func (sr *StreamRouter) validate(config *Config) {
 	srmap := config.StreamRouter
 	for entityName, _ := range sr.handlerFunctionMap {
 		if _, ok := srmap[entityName]; !ok {
-			routerLogger.Fatal().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("")
+			routerLogger.Warn().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("")
 		}
 	}
 }

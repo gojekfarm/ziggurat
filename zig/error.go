@@ -14,4 +14,6 @@ var (
 	ErrInvalidReturnCode      = errors.New("invalid processing function return code")
 	ErrInvalidRouteRegistered = errors.New("invalid route registered")
 	ErrParsingStatsDConfig    = errors.New("error parsing statsd config")
+	ErrParsingRabbitMQConfig  = errors.New("error parsing rabbitmq config")
+	ErrRetryConsumerStopped   = errors.New("retry consumer stopped")
 )
