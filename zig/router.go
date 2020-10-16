@@ -58,7 +58,7 @@ func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFun
 	sr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
 	if len(mwpipe) > 0 {
 		origHandler := sr.handlerFunctionMap[topicEntityName].handlerFunc
-		sr.handlerFunctionMap[topicEntityName].handlerFunc = pipeHandlers(mwpipe...)(origHandler)
+		sr.handlerFunctionMap[topicEntityName].handlerFunc = PipeHandlers(mwpipe...)(origHandler)
 	}
 }
 
