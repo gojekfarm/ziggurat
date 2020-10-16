@@ -17,19 +17,3 @@ func PipeHandlers(funcs ...MiddlewareFunc) func(handlerFunc HandlerFunc) Handler
 		}
 	}
 }
-
-func ComposeHandlers(funcs ...MiddlewareFunc) func(handlerFunc HandlerFunc) HandlerFunc {
-	return func(origHandler HandlerFunc) HandlerFunc {
-		var handlerResult HandlerFunc
-		return func(messageEvent MessageEvent, app *App) ProcessStatus {
-			for index, f := range funcs {
-				if index == 0 {
-					handlerResult = f(origHandler)
-				} else {
-					handlerResult = f(handlerResult)
-				}
-			}
-			return handlerResult(messageEvent, app)
-		}
-	}
-}
