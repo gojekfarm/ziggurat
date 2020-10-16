@@ -121,6 +121,6 @@ Ziggurat provides  middlewares for logging and de-serializing kafka messages
 - [x] HTTP server
 - [x] Replay RabbitMQ deadset messages
 - [x] Log formatting
-- [ ] Metrics
-- [ ] Configurable RabbitMQ consumer count
+- [x] StatsD support
+- [ ] Publish metrics
 - [ ] Unit tests
