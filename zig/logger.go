@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
+	"time"
 )
 
 var logLevelMapping = map[string]zerolog.Level{
@@ -26,7 +27,7 @@ func configureLogger(logLevel string) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	logLevelInt := logLevelMapping[logLevel]
 	zerolog.SetGlobalLevel(logLevelInt)
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true, TimeFormat: time.RFC822})
 	routerLogger = log.With().Str("component", "router").Logger()
 	consumerLogger = log.With().Str("component", "consumer").Logger()
 	serverLogger = log.With().Str("component", "http-server").Logger()
