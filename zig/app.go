@@ -2,6 +2,7 @@ package zig
 
 import (
 	"context"
+	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
@@ -9,10 +10,11 @@ import (
 )
 
 type Options struct {
-	HttpServer      HttpServer
-	Retrier         MessageRetrier
-	MetricPublisher MetricPublisher
-	StopFunc        StopFunction
+	HttpServer        HttpServer
+	Retrier           MessageRetrier
+	MetricPublisher   MetricPublisher
+	StopFunc          StopFunction
+	HttpConfigureFunc func(r *httprouter.Router)
 }
 
 type App struct {
@@ -53,6 +55,9 @@ func (a *App) Configure(options Options) {
 	a.HttpServer = options.HttpServer
 	a.Retrier = options.Retrier
 	a.stopFunc = options.StopFunc
+	if options.HttpConfigureFunc != nil {
+		a.HttpServer.AttachRoute(options.HttpConfigureFunc)
+	}
 	//configure defaults if components are nil
 }
 
