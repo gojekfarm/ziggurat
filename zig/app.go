@@ -56,7 +56,7 @@ func (a *App) Configure(options Options) {
 	a.Retrier = options.Retrier
 	a.stopFunc = options.StopFunc
 	if options.HttpConfigureFunc != nil {
-		a.HttpServer.AttachRoute(options.HttpConfigureFunc)
+		a.HttpServer.attachRoute(options.HttpConfigureFunc)
 	}
 	//configure defaults if components are nil
 }
