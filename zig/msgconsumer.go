@@ -48,6 +48,7 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
 					consumerLogger.Error().Err(err).Msg("terminating application, all brokers down")
+					wg.Done()
 					return
 				}
 				if msg != nil {
