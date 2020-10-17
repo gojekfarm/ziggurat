@@ -21,7 +21,7 @@ type App struct {
 	HttpServer      HttpServer
 	Retrier         MessageRetrier
 	Config          *Config
-	StreamRouter    *StreamRouter
+	Router          StreamRouter
 	MetricPublisher MetricPublisher
 	interruptChan   chan os.Signal
 	doneChan        chan bool
@@ -33,7 +33,7 @@ type App struct {
 
 func NewApp() *App {
 	ctx, cancelFn := context.WithCancel(context.Background())
-	commandLineOptions := parseCommandLineArguments()
+	commandLineOptions := ParseCommandLineArguments()
 	parseConfig(commandLineOptions)
 	log.Info().Msg("successfully parsed config")
 	config := getConfig()
@@ -74,16 +74,16 @@ func (a *App) configureDefaults() {
 	}
 }
 
-func (a *App) Run(router *StreamRouter, startCallback StartFunction) {
+func (a *App) Run(router StreamRouter, startCallback StartFunction) {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.Config.LogLevel)
-	a.StreamRouter = router
+	a.Router = router
 	a.configureDefaults()
 	a.start(startCallback)
 }
 
 func (a *App) start(startCallback StartFunction) {
-	if stopChan, routerStartErr := a.StreamRouter.Start(a); routerStartErr != nil {
+	if stopChan, routerStartErr := a.Router.Start(a); routerStartErr != nil {
 		log.Fatal().Err(routerStartErr)
 	} else {
 		a.HttpServer.Start(a)
@@ -102,12 +102,15 @@ func (a *App) start(startCallback StartFunction) {
 			log.Error().Err(err).Msg("")
 		}
 
-		startCallback(a)
+		if startCallback != nil {
+			startCallback(a)
+		}
 		halt := func() {
 			a.cancelFun()
 			a.stop()
 		}
 		// Wait for router poll to complete
+
 		select {
 		case <-stopChan:
 			halt()
@@ -131,7 +134,10 @@ func (a *App) stop() {
 		log.Error().Err(err).Msg("error stopping metrics")
 	}
 	log.Info().Msg("invoking actor stop function")
-	a.stopFunc()
+
+	if a.stopFunc != nil {
+		a.stopFunc()
+	}
 }
 
 func (a *App) Context() context.Context {
