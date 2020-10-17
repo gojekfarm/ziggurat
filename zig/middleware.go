@@ -28,7 +28,7 @@ func MessageLogger(next HandlerFunc) HandlerFunc {
 			Str("kafka-topic", messageEvent.Topic).
 			Str("kafka-time-stamp", messageEvent.KafkaTimestamp.String()).
 			Str("message-value", string(messageEvent.MessageValueBytes)).
-			Msg("received message")
+			Msg("[MESSAGE LOGGER MIDDLEWARE]")
 		return next(messageEvent, app)
 	}
 }
