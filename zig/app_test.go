@@ -5,25 +5,26 @@ import (
 	"testing"
 )
 
-var app = &App{}
+var app *App
+var mhttp, mrouter, mstatsd, mrabbitmq = &mockHTTP{}, &mockRouter{}, &mockStatsD{}, &mockRabbitMQ{}
+var startCount = 0
+var stopCount = 0
+var expectedStopCount = 3
+var expectedStartCount = 4
 
 type mockHTTP struct {
-	isStartInvoked bool
 }
 type mockStatsD struct {
-	isStartInvoked bool
 }
 
 type mockRouter struct {
-	isStartInvoked bool
 }
 
 type mockRabbitMQ struct {
-	isStartInvoked bool
 }
 
 func (m *mockRabbitMQ) Start(app *App) (chan int, error) {
-	m.isStartInvoked = true
+	startCount++
 	stopChan := make(chan int)
 	go func() {
 		close(stopChan)
@@ -36,6 +37,7 @@ func (m *mockRabbitMQ) Retry(app *App, payload MessageEvent) error {
 }
 
 func (m *mockRabbitMQ) Stop() error {
+	stopCount++
 	return nil
 }
 
@@ -44,11 +46,12 @@ func (m *mockRabbitMQ) Replay(app *App, topicEntity string, count int) error {
 }
 
 func (m *mockStatsD) Start(app *App) error {
-	m.isStartInvoked = true
+	startCount++
 	return nil
 }
 
 func (m *mockStatsD) Stop() error {
+	stopCount++
 	return nil
 }
 
@@ -57,7 +60,7 @@ func (m *mockStatsD) IncCounter(metricName string, value int, arguments map[stri
 }
 
 func (m *mockRouter) Start(app *App) (chan int, error) {
-	m.isStartInvoked = true
+	startCount++
 	closeChan := make(chan int)
 	go func() {
 		close(closeChan)
@@ -78,7 +81,7 @@ func (m *mockRouter) GetHandlerFunctionMap() map[string]*topicEntity {
 }
 
 func (mh *mockHTTP) Start(app *App) {
-	mh.isStartInvoked = true
+	startCount++
 }
 
 func (mh *mockHTTP) attachRoute(func(r *httprouter.Router)) {
@@ -86,24 +89,58 @@ func (mh *mockHTTP) attachRoute(func(r *httprouter.Router)) {
 }
 
 func (mh *mockHTTP) Stop() error {
+	stopCount++
 	return nil
 }
 
-func TestApp_Start(t *testing.T) {
-	http, router, statsd, rabbitmq := &mockHTTP{}, &mockRouter{}, &mockStatsD{}, &mockRabbitMQ{}
-	startCallbackCalled := false
-	app.Router = router
-	app.HttpServer = http
-	app.MetricPublisher = statsd
-	app.Retrier = rabbitmq
+func setup() {
+	app = &App{}
+	app.Router = mrouter
+	app.HttpServer = mhttp
+	app.MetricPublisher = mstatsd
+	app.Retrier = mrabbitmq
 	app.cancelFun = func() {}
+}
+
+func teardown() {
+	app = &App{}
+	startCount = 0
+	stopCount = 0
+}
+
+func TestApp_Start(t *testing.T) {
+	setup()
+	defer teardown()
+	startCallbackCalled := false
 	startCallback := func(app *App) {
 		startCallbackCalled = true
 	}
 
-	app.start(startCallback)
+	app.start(startCallback, nil)
 
-	if !(http.isStartInvoked && router.isStartInvoked && statsd.isStartInvoked && rabbitmq.isStartInvoked && startCallbackCalled) {
-		t.Errorf("expected %v got %v", true, false)
+	if startCount < expectedStartCount {
+		t.Errorf("expected start count to be %v but got %v", expectedStartCount, startCount)
+	}
+
+	if !startCallbackCalled {
+		t.Errorf("expected startCallbackCalled to be %v, but got %v", true, startCallbackCalled)
+	}
+
+}
+
+func TestApp_Stop(t *testing.T) {
+	setup()
+	defer teardown()
+	stopCallbackCalled := false
+	t.Logf("%+v", app)
+
+	app.stop(func() {
+		stopCallbackCalled = true
+	})
+	if stopCount < expectedStopCount {
+		t.Errorf("expected stop count to be %v, but got %v", expectedStopCount, stopCount)
+	}
+	if !stopCallbackCalled {
+		t.Errorf("expected stopCallbackCalled to be %v, but got %v", true, stopCallbackCalled)
 	}
 }

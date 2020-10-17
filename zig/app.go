@@ -13,7 +13,6 @@ type Options struct {
 	HttpServer        HttpServer
 	Retrier           MessageRetrier
 	MetricPublisher   MetricPublisher
-	StopFunc          StopFunction
 	HttpConfigureFunc func(r *httprouter.Router)
 }
 
@@ -54,7 +53,6 @@ func (a *App) Configure(options Options) {
 	a.MetricPublisher = options.MetricPublisher
 	a.HttpServer = options.HttpServer
 	a.Retrier = options.Retrier
-	a.stopFunc = options.StopFunc
 	if options.HttpConfigureFunc != nil {
 		a.HttpServer.attachRoute(options.HttpConfigureFunc)
 	}
@@ -74,15 +72,15 @@ func (a *App) configureDefaults() {
 	}
 }
 
-func (a *App) Run(router StreamRouter, startCallback StartFunction) {
+func (a *App) Run(router StreamRouter, startCallback StartFunction, stopCallback StopFunction) {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.Config.LogLevel)
 	a.Router = router
 	a.configureDefaults()
-	a.start(startCallback)
+	a.start(startCallback, stopCallback)
 }
 
-func (a *App) start(startCallback StartFunction) {
+func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 	if stopChan, routerStartErr := a.Router.Start(a); routerStartErr != nil {
 		log.Fatal().Err(routerStartErr)
 	} else {
@@ -107,7 +105,7 @@ func (a *App) start(startCallback StartFunction) {
 		}
 		halt := func() {
 			a.cancelFun()
-			a.stop()
+			a.stop(stopCallback)
 		}
 		// Wait for router poll to complete
 
@@ -121,7 +119,7 @@ func (a *App) start(startCallback StartFunction) {
 
 }
 
-func (a *App) stop() {
+func (a *App) stop(stopFunc StopFunction) {
 	if err := a.Retrier.Stop(); err != nil {
 		log.Error().Err(err).Msg("error stopping retrier")
 	}
@@ -135,8 +133,8 @@ func (a *App) stop() {
 	}
 	log.Info().Msg("invoking actor stop function")
 
-	if a.stopFunc != nil {
-		a.stopFunc()
+	if stopFunc != nil {
+		stopFunc()
 	}
 }
 
