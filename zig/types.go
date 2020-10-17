@@ -29,6 +29,13 @@ type MessageRetrier interface {
 	Replay(app *App, topicEntity string, count int) error
 }
 
+type StreamRouter interface {
+	Start(app *App) (chan int, error)
+	HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw Middleware)
+	GetTopicEntities() []*topicEntity
+	GetHandlerFunctionMap() map[string]*topicEntity
+}
+
 // Public constants
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1
