@@ -36,12 +36,12 @@ func MessageLogger(next HandlerFunc) HandlerFunc {
 	}
 }
 
-func ProtobufDeserializer(protoModel interface{}) MiddlewareFunc {
+func ProtobufDeserializer(protoMessage interface{}) MiddlewareFunc {
 	return func(next HandlerFunc) HandlerFunc {
 		return func(messageEvent MessageEvent, app *App) ProcessStatus {
 			messageValueBytes := messageEvent.MessageValueBytes
 
-			typeModel := reflect.TypeOf(protoModel)
+			typeModel := reflect.TypeOf(protoMessage)
 			res := reflect.New(typeModel).Interface()
 
 			protoRes, ok := res.(proto.Message)
