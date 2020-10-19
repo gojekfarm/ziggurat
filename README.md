@@ -70,7 +70,7 @@ func main() {
 
 	router.HandlerFunc("json-entity", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
 		return zig.ProcessingSuccess
-	}, zig.Middleware{zig.MessageLogger, zig.JSONDeserializer(&JSONMessage{})})
+	}, zig.Middleware{zig.MessageLogger, zig.JSONDeserializer(JSONMessage{})})
 
 	app.Configure(zig.Options{
 		StopFunc: func() {
