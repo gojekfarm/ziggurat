@@ -31,7 +31,7 @@ func newConsumerConfig() *kafka.ConfigMap {
 		"auto.offset.reset":        "earliest",
 		"enable.auto.commit":       true,
 		"auto.commit.interval.ms":  2000,
-		"debug":                    "consumer,broker",
+		"debug":                    "consumer",
 		"enable.auto.offset.store": false,
 	}
 }
