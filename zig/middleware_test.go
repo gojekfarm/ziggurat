@@ -44,6 +44,7 @@ func TestProtobufDeserializer(t *testing.T) {
 		Name:      "1",
 	}
 	bytes, _ := proto.Marshal(&expectedMessage)
+	//go vet complains copying lockers by value
 	protodeserializer := ProtobufDeserializer(testProtoModel)
 	protodeserializer(func(messageEvent MessageEvent, app *App) ProcessStatus {
 		tm := messageEvent.MessageValue.(*testproto.TestMessage)

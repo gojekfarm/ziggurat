@@ -1,19 +1,22 @@
 package zig
 
 func PipeHandlers(funcs ...MiddlewareFunc) func(handlerFunc HandlerFunc) HandlerFunc {
-	return func(origHandler HandlerFunc) HandlerFunc {
-		var handlerResult HandlerFunc
+	return func(next HandlerFunc) HandlerFunc {
 		return func(messageEvent MessageEvent, app *App) ProcessStatus {
+			var handlerResult HandlerFunc
 			last := len(funcs) - 1
 			for i := last; i >= 0; i-- {
 				f := funcs[i]
 				if i == last {
-					handlerResult = f(origHandler)
+					handlerResult = f(next)
 				} else {
 					handlerResult = f(handlerResult)
 				}
 			}
-			return handlerResult(messageEvent, app)
+			if handlerResult != nil {
+				return handlerResult(messageEvent, app)
+			}
+			return next(messageEvent, app)
 		}
 	}
 }
