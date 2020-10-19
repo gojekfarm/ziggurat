@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.1.6] - 2020-10-19
+### Added
+- Add tests for app
+- Add tests for middleware
+### Changes
+- Passes all middleware args by value
+- Fixes race condition in pipe handlers
+- Makes stop function a part of the `app.Run` method
+
+
 ## [v0.1.5] - 2020-10-16
 ### Added
 - Add tests for util
