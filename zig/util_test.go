@@ -26,7 +26,7 @@ func TestPipeHandlers(t *testing.T) {
 		}
 		return SkipMessage
 	}
-	handler := PipeHandlers(testMiddlewareFunc, testMiddlewareAppender)(origHandler)
+	handler := pipeHandlers(testMiddlewareFunc, testMiddlewareAppender)(origHandler)
 	msgEvent := MessageEvent{}
 	app := App{}
 

@@ -54,11 +54,11 @@ func (dr *DefaultRouter) GetTopicEntities() []*topicEntity {
 	return topicEntities
 }
 
-func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw Middleware) {
+func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...MiddlewareFunc) {
 	dr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
 	if len(mw) > 0 {
 		origHandler := dr.handlerFunctionMap[topicEntityName].handlerFunc
-		dr.handlerFunctionMap[topicEntityName].handlerFunc = PipeHandlers(mw...)(origHandler)
+		dr.handlerFunctionMap[topicEntityName].handlerFunc = pipeHandlers(mw...)(origHandler)
 	}
 }
 

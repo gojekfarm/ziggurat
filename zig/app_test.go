@@ -68,7 +68,7 @@ func (m *mockRouter) Start(app *App) (chan int, error) {
 	return closeChan, nil
 }
 
-func (m *mockRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw Middleware) {
+func (m *mockRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...Middleware) {
 
 }
 

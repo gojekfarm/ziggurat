@@ -31,7 +31,7 @@ type MessageRetrier interface {
 
 type StreamRouter interface {
 	Start(app *App) (chan int, error)
-	HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw Middleware)
+	HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...Middleware)
 	GetTopicEntities() []*topicEntity
 	GetHandlerFunctionMap() map[string]*topicEntity
 }
