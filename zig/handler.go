@@ -32,7 +32,7 @@ func messageHandler(app *App, handlerFunc HandlerFunc) func(event MessageEvent) 
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}
 		default:
-			log.Error().Err(ErrInvalidReturnCode).Msg("return code must be one of `ziggurat.ProcessingSuccess OR ziggurat.RetryMessage OR ziggurat.SkipMessage`")
+			log.Error().Err(ErrInvalidReturnCode).Msg("return code must be one of `zig.ProcessingSuccess OR zig.RetryMessage OR zig.SkipMessage`")
 		}
 	}
 }
