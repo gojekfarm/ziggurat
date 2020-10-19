@@ -14,7 +14,7 @@ type CommandLineOptions struct {
 	ConfigFilePath string
 }
 
-func parseCommandLineArguments() CommandLineOptions {
+func ParseCommandLineArguments() CommandLineOptions {
 	flag.Parse()
 	return CommandLineOptions{ConfigFilePath: config}
 }

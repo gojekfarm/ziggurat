@@ -123,4 +123,5 @@ Ziggurat provides  middlewares for logging and de-serializing kafka messages
 - [x] Log formatting
 - [x] StatsD support
 - [ ] Publish metrics
+- [ ] Producer API
 - [ ] Unit tests

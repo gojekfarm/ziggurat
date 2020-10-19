@@ -159,7 +159,7 @@ func consumeConnectionCloseHandler(closeChan chan *amqp.Error) {
 
 func (r *RabbitRetrier) Start(app *App) (chan int, error) {
 	config := app.Config
-	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
+	streamRoutes := app.Router.GetHandlerFunctionMap()
 	rmqConfig := parseRabbitMQConfig(config)
 	r.rabbitmqConfig = rmqConfig
 	pubConn, err := amqp.Dial(r.rabbitmqConfig.host)
@@ -253,7 +253,7 @@ func startRabbitConsumers(app *App, connection *amqp.Connection, config Config, 
 
 func (r *RabbitRetrier) StartConsumers(app *App) chan int {
 	doneCh := make(chan int)
-	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
+	streamRoutes := app.Router.GetHandlerFunctionMap()
 	config := app.Config
 	var wg sync.WaitGroup
 	for teName, te := range streamRoutes {
@@ -303,7 +303,7 @@ func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, d
 }
 
 func (r *RabbitRetrier) Replay(app *App, topicEntity string, count int) error {
-	streamRoutes := app.StreamRouter.GetHandlerFunctionMap()
+	streamRoutes := app.Router.GetHandlerFunctionMap()
 	config := app.Config
 	if count == 0 {
 		retrierLogger.Error().Err(ErrReplayCountZero).Msg("retrier replay error")

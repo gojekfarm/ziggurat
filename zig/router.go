@@ -20,7 +20,7 @@ type Middleware = []MiddlewareFunc
 
 type TopicEntityHandlerMap = map[string]*topicEntity
 
-type StreamRouter struct {
+type DefaultRouter struct {
 	handlerFunctionMap TopicEntityHandlerMap
 }
 
@@ -36,29 +36,29 @@ func newConsumerConfig() *kafka.ConfigMap {
 	}
 }
 
-func NewRouter() *StreamRouter {
-	return &StreamRouter{
+func NewRouter() *DefaultRouter {
+	return &DefaultRouter{
 		handlerFunctionMap: make(map[string]*topicEntity),
 	}
 }
 
-func (sr *StreamRouter) GetHandlerFunctionMap() map[string]*topicEntity {
-	return sr.handlerFunctionMap
+func (dr *DefaultRouter) GetHandlerFunctionMap() map[string]*topicEntity {
+	return dr.handlerFunctionMap
 }
 
-func (sr *StreamRouter) GetTopicEntities() []*topicEntity {
+func (dr *DefaultRouter) GetTopicEntities() []*topicEntity {
 	var topicEntities []*topicEntity
-	for _, te := range sr.handlerFunctionMap {
+	for _, te := range dr.handlerFunctionMap {
 		topicEntities = append(topicEntities, te)
 	}
 	return topicEntities
 }
 
-func (sr *StreamRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mwpipe Middleware) {
-	sr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
-	if len(mwpipe) > 0 {
-		origHandler := sr.handlerFunctionMap[topicEntityName].handlerFunc
-		sr.handlerFunctionMap[topicEntityName].handlerFunc = PipeHandlers(mwpipe...)(origHandler)
+func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw Middleware) {
+	dr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
+	if len(mw) > 0 {
+		origHandler := dr.handlerFunctionMap[topicEntityName].handlerFunc
+		dr.handlerFunctionMap[topicEntityName].handlerFunc = PipeHandlers(mw...)(origHandler)
 	}
 }
 
@@ -66,8 +66,8 @@ func makeKV(key string, value string) string {
 	return fmt.Sprintf("%s=%s", key, value)
 }
 
-func (sr *StreamRouter) stop() {
-	for _, te := range sr.GetTopicEntities() {
+func (dr *DefaultRouter) stop() {
+	for _, te := range dr.GetTopicEntities() {
 		log.Info().Str("topic-entity", te.entityName).Msg("stopping consumers")
 		for i, _ := range te.consumers {
 			if closeErr := te.consumers[i].Close(); closeErr != nil {
@@ -77,27 +77,27 @@ func (sr *StreamRouter) stop() {
 	}
 }
 
-func (sr *StreamRouter) validate(config *Config) {
+func (dr *DefaultRouter) validate(config *Config) {
 	srmap := config.StreamRouter
-	for entityName, _ := range sr.handlerFunctionMap {
+	for entityName, _ := range dr.handlerFunctionMap {
 		if _, ok := srmap[entityName]; !ok {
 			routerLogger.Warn().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("")
 		}
 	}
 }
 
-func (sr *StreamRouter) Start(app *App) (chan int, error) {
+func (dr *DefaultRouter) Start(app *App) (chan int, error) {
 	ctx := app.Context()
 	config := app.Config
 	stopChan := make(chan int)
 	var wg sync.WaitGroup
 	srConfig := config.StreamRouter
-	hfMap := sr.handlerFunctionMap
+	hfMap := dr.handlerFunctionMap
 	if len(hfMap) == 0 {
 		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("")
 	}
 
-	sr.validate(app.Config)
+	dr.validate(app.Config)
 	// halts app if validation fails
 
 	for topicEntityName, te := range hfMap {
@@ -121,7 +121,7 @@ func (sr *StreamRouter) Start(app *App) (chan int, error) {
 
 	go func() {
 		wg.Wait()
-		sr.stop()
+		dr.stop()
 		close(stopChan)
 	}()
 
