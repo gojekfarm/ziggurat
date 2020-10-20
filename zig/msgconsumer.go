@@ -52,7 +52,6 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 					return
 				}
 				if msg != nil {
-					consumerLogger.Info().Msgf("processing message for consumer %s", instanceID)
 					messageEvent := MessageEvent{
 						MessageKey:        nil,
 						MessageValue:      nil,
