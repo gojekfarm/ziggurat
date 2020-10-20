@@ -1,5 +1,5 @@
 ### Ziggurat Golang
-A stream processing framework in golang
+Stream Processing made easy
 
 ### Installation
 
