@@ -58,7 +58,7 @@ func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFu
 	dr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
 	if len(mw) > 0 {
 		origHandler := dr.handlerFunctionMap[topicEntityName].handlerFunc
-		dr.handlerFunctionMap[topicEntityName].handlerFunc = PipeHandlers(mw...)(origHandler)
+		dr.handlerFunctionMap[topicEntityName].handlerFunc = pipeHandlers(mw...)(origHandler)
 	}
 }
 
