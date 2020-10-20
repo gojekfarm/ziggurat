@@ -33,10 +33,10 @@ func constructTags(tags map[string]string) string {
 }
 
 func (s *StatsD) Start(app *App) error {
-	parsedConfig := parseStatsDConfig(app.Config)
+	parsedConfig := parseStatsDConfig(app.config)
 	s.statsdConfig = parsedConfig
 	config := &statsd.ClientConfig{
-		Prefix:  app.Config.ServiceName,
+		Prefix:  app.config.ServiceName,
 		Address: s.statsdConfig.host,
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)

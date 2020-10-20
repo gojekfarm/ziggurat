@@ -13,22 +13,22 @@ func messageHandler(app *App, handlerFunc HandlerFunc) func(event MessageEvent) 
 		status := handlerFunc(event, app)
 		switch status {
 		case ProcessingSuccess:
-			if publishErr := app.MetricPublisher.IncCounter("message_processing_success", 1, metricTags); publishErr != nil {
+			if publishErr := app.metricPublisher.IncCounter("message_processing_success", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
 			log.Info().Msg("successfully processed message")
 		case SkipMessage:
-			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
+			if publishErr := app.metricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
 			log.Info().Msg("skipping message")
 
 		case RetryMessage:
 			log.Info().Msgf("retrying message")
-			if publishErr := app.MetricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
+			if publishErr := app.metricPublisher.IncCounter("message_processing_failure_skip", 1, metricTags); publishErr != nil {
 				log.Error().Err(publishErr).Msg("")
 			}
-			if retryErr := app.Retrier.Retry(app, event); retryErr != nil {
+			if retryErr := app.retrier.Retry(app, event); retryErr != nil {
 				log.Error().Err(retryErr).Msg("error retrying message")
 			}
 		default:

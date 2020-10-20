@@ -13,15 +13,15 @@ type Options struct {
 	HttpServer        HttpServer
 	Retrier           MessageRetrier
 	MetricPublisher   MetricPublisher
-	HttpConfigureFunc func(r *httprouter.Router)
+	HTTPConfigureFunc func(r *httprouter.Router)
 }
 
 type App struct {
-	HttpServer      HttpServer
-	Retrier         MessageRetrier
-	Config          *Config
-	Router          StreamRouter
-	MetricPublisher MetricPublisher
+	httpServer      HttpServer
+	retrier         MessageRetrier
+	config          *Config
+	router          StreamRouter
+	metricPublisher MetricPublisher
 	interruptChan   chan os.Signal
 	doneChan        chan bool
 	startFunc       StartFunction
@@ -42,7 +42,7 @@ func NewApp() *App {
 	return &App{
 		ctx:           ctx,
 		cancelFun:     cancelFn,
-		Config:        &config,
+		config:        &config,
 		stopFunc:      func() {},
 		interruptChan: make(chan os.Signal),
 		doneChan:      make(chan bool),
@@ -50,46 +50,46 @@ func NewApp() *App {
 }
 
 func (a *App) Configure(options Options) {
-	a.MetricPublisher = options.MetricPublisher
-	a.HttpServer = options.HttpServer
-	a.Retrier = options.Retrier
-	if options.HttpConfigureFunc != nil {
-		a.HttpServer.attachRoute(options.HttpConfigureFunc)
+	a.metricPublisher = options.MetricPublisher
+	a.httpServer = options.HttpServer
+	a.retrier = options.Retrier
+	if options.HTTPConfigureFunc != nil {
+		a.httpServer.attachRoute(options.HTTPConfigureFunc)
 	}
 	//configure defaults if components are nil
 }
 
 func (a *App) configureDefaults() {
-	if a.MetricPublisher == nil {
-		a.MetricPublisher = &StatsD{}
+	if a.metricPublisher == nil {
+		a.metricPublisher = &StatsD{}
 	}
-	if a.Retrier == nil {
-		a.Retrier = &RabbitRetrier{}
+	if a.retrier == nil {
+		a.retrier = &RabbitRetrier{}
 	}
 
-	if a.HttpServer == nil {
-		a.HttpServer = &DefaultHttpServer{}
+	if a.httpServer == nil {
+		a.httpServer = &DefaultHttpServer{}
 	}
 }
 
 func (a *App) Run(router StreamRouter, startCallback StartFunction, stopCallback StopFunction) {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
-	configureLogger(a.Config.LogLevel)
-	a.Router = router
+	configureLogger(a.config.LogLevel)
+	a.router = router
 	a.configureDefaults()
 	a.start(startCallback, stopCallback)
 }
 
 func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
-	if stopChan, routerStartErr := a.Router.Start(a); routerStartErr != nil {
+	if stopChan, routerStartErr := a.router.Start(a); routerStartErr != nil {
 		log.Fatal().Err(routerStartErr)
 	} else {
-		a.HttpServer.Start(a)
-		if err := a.MetricPublisher.Start(a); err != nil {
+		a.httpServer.Start(a)
+		if err := a.metricPublisher.Start(a); err != nil {
 			log.Error().Err(err).Msg("")
 		}
 
-		retrierStopChan, err := a.Retrier.Start(a)
+		retrierStopChan, err := a.retrier.Start(a)
 
 		go func() {
 			<-retrierStopChan
@@ -120,15 +120,15 @@ func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 }
 
 func (a *App) stop(stopFunc StopFunction) {
-	if err := a.Retrier.Stop(); err != nil {
+	if err := a.retrier.Stop(); err != nil {
 		log.Error().Err(err).Msg("error stopping retrier")
 	}
 
-	if err := a.HttpServer.Stop(); err != nil {
+	if err := a.httpServer.Stop(); err != nil {
 		log.Error().Err(err).Msg("error stopping http server")
 	}
 
-	if err := a.MetricPublisher.Stop(); err != nil {
+	if err := a.metricPublisher.Stop(); err != nil {
 		log.Error().Err(err).Msg("error stopping metrics")
 	}
 	log.Info().Msg("invoking actor stop function")
@@ -140,4 +140,24 @@ func (a *App) stop(stopFunc StopFunction) {
 
 func (a *App) Context() context.Context {
 	return a.ctx
+}
+
+func (a *App) Router() StreamRouter {
+	return a.router
+}
+
+func (a *App) Retrier() MessageRetrier {
+	return a.retrier
+}
+
+func (a *App) MetricPub() MetricPublisher {
+	return a.metricPublisher
+}
+
+func (a *App) HTTPServer() HttpServer {
+	return a.httpServer
+}
+
+func (a *App) Config() *Config {
+	return a.config
 }

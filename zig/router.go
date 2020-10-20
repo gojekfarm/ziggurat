@@ -54,7 +54,7 @@ func (dr *DefaultRouter) GetTopicEntities() []*topicEntity {
 	return topicEntities
 }
 
-func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw Middleware) {
+func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...MiddlewareFunc) {
 	dr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
 	if len(mw) > 0 {
 		origHandler := dr.handlerFunctionMap[topicEntityName].handlerFunc
@@ -88,7 +88,7 @@ func (dr *DefaultRouter) validate(config *Config) {
 
 func (dr *DefaultRouter) Start(app *App) (chan int, error) {
 	ctx := app.Context()
-	config := app.Config
+	config := app.config
 	stopChan := make(chan int)
 	var wg sync.WaitGroup
 	srConfig := config.StreamRouter
@@ -97,7 +97,7 @@ func (dr *DefaultRouter) Start(app *App) (chan int, error) {
 		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("")
 	}
 
-	dr.validate(app.Config)
+	dr.validate(app.config)
 	// halts app if validation fails
 
 	for topicEntityName, te := range hfMap {

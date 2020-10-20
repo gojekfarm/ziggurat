@@ -68,7 +68,7 @@ func (m *mockRouter) Start(app *App) (chan int, error) {
 	return closeChan, nil
 }
 
-func (m *mockRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw Middleware) {
+func (m *mockRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...MiddlewareFunc) {
 
 }
 
@@ -95,10 +95,10 @@ func (mh *mockHTTP) Stop() error {
 
 func setup() {
 	app = &App{}
-	app.Router = mrouter
-	app.HttpServer = mhttp
-	app.MetricPublisher = mstatsd
-	app.Retrier = mrabbitmq
+	app.router = mrouter
+	app.httpServer = mhttp
+	app.metricPublisher = mstatsd
+	app.retrier = mrabbitmq
 	app.cancelFun = func() {}
 }
 
