@@ -66,18 +66,24 @@ func main() {
 
 	router.HandlerFunc("test-entity", func(messageEvent zig.MessageEvent, a *zig.App) zig.ProcessStatus {
 		return zig.ProcessingSuccess
-	}, zig.Middleware{zig.MessageLogger})
+	}, zig.MessageLogger)
 
 	router.HandlerFunc("json-entity", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
+
 		return zig.ProcessingSuccess
-	}, zig.Middleware{zig.MessageLogger, zig.JSONDeserializer(JSONMessage{})})
-	
 
-	app.Run(router, func(a *zig.App) {
-		fmt.Println("starting app...")
-	}, func(){fmt.Println("stopping app...")})
+	}, zig.MessageLogger, zig.JSONDeserializer(JSONMessage{}))
+
+	startFunc := func(a *zig.App) {
+		fmt.Println("starting app")
+	}
+
+	stopFunc := func() {
+		fmt.Println("stopping app")
+	}
+
+	app.Run(router, startFunc, stopFunc)
 }
-
 ```
 
 ### Using middlewares
