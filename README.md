@@ -12,13 +12,16 @@ go get -v -u github.com/gojekfarm/ziggurat-go
 - create a `config/config.yaml` in your project root
 - sample `config.yaml`
 ```yaml
-service-name: "test-service"
+service-name: "test-app"
 stream-router:
-  test-entity2:
-    bootstrap-servers: "localhost:9092"
-    instance-count: 2
-    origin-topics: "test-topic1"
-    group-id: "test-group"
+  booking:
+    bootstrap-servers: "localhost:9094"
+    instance-count: 4
+    # how many consumers to spawn.
+    # adjust this number to the number of partitions
+    # to maximize parallelization
+    origin-topics: "^.*-message-log"
+    group-id: "message_log_go"
   test-entity:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
@@ -36,6 +39,10 @@ retry:
 rabbitmq:
   host: "amqp://user:bitnami@localhost:5672/"
   delay-queue-expiration: "1000"
+statsd:
+  host: "localhost:8125"
+http-server:
+  port: 8080
 ```
 #### Overriding the config using ENV variables
 - To override the boostrap-servers under test-entity2
