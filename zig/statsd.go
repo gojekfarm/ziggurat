@@ -12,6 +12,7 @@ type StatsDConf struct {
 type StatsD struct {
 	client       statsd.Statter
 	statsdConfig *StatsDConf
+	appName      string
 }
 
 func parseStatsDConfig(config *Config) *StatsDConf {
@@ -45,6 +46,7 @@ func (s *StatsD) Start(app *App) error {
 		return clientErr
 	}
 	s.client = client
+	s.appName = app.config.ServiceName
 	return nil
 }
 
@@ -56,7 +58,8 @@ func (s *StatsD) Stop() error {
 }
 
 func (s *StatsD) IncCounter(metricName string, value int, arguments map[string]string) error {
+	arguments["app_name"] = s.appName
 	tags := constructTags(arguments)
-	finalMetricName := metricName + "," + tags
+	finalMetricName := metricName + "," + tags + "," + "app_name=" + s.appName
 	return s.client.Inc(finalMetricName, int64(value), 1.0)
 }
