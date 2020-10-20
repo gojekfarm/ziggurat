@@ -2,6 +2,7 @@ package zig
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"fmt"
 	"github.com/streadway/amqp"
@@ -278,7 +279,7 @@ func decodeMessage(body []byte) (MessageEvent, error) {
 	return *messageEvent, nil
 }
 
-func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, deliveryChan <-chan amqp.Delivery, doneChan chan int) {
+func handleReplayDelivery(ctx context.Context, r *RabbitRetrier, config Config, topicEntity string, deliveryChan <-chan amqp.Delivery, doneChan chan int) {
 	channel, openErr := r.pubConn.Channel()
 	if openErr != nil {
 		retrierLogger.Error().Err(openErr)
@@ -286,17 +287,23 @@ func handleReplayDelivery(r *RabbitRetrier, config Config, topicEntity string, d
 	}
 	exchangeName := constructExchangeName(config.ServiceName, topicEntity, InstantType)
 	defer channel.Close()
+	ctxCancelChan := ctx.Done()
 	for delivery := range deliveryChan {
-		messageEvent, decodeErr := decodeMessage(delivery.Body)
-		if decodeErr != nil {
-			retrierLogger.Error().Err(decodeErr).Msg("rabbit retrier replay decode error")
-		}
-		publishErr := publishMessage(channel, exchangeName, messageEvent, r.rabbitmqConfig.delayQueueExpiration)
-		if publishErr != nil {
-			retrierLogger.Error().Err(publishErr).Msg("error publishing message")
-		}
-		if ackErr := delivery.Ack(false); ackErr != nil {
-			retrierLogger.Error().Err(ackErr)
+		select {
+		case <-ctxCancelChan:
+			return
+		default:
+			messageEvent, decodeErr := decodeMessage(delivery.Body)
+			if decodeErr != nil {
+				retrierLogger.Error().Err(decodeErr).Msg("rabbit retrier replay decode error")
+			}
+			publishErr := publishMessage(channel, exchangeName, messageEvent, r.rabbitmqConfig.delayQueueExpiration)
+			if publishErr != nil {
+				retrierLogger.Error().Err(publishErr).Msg("error publishing message")
+			}
+			if ackErr := delivery.Ack(false); ackErr != nil {
+				retrierLogger.Error().Err(ackErr)
+			}
 		}
 	}
 	close(doneChan)
@@ -317,7 +324,7 @@ func (r *RabbitRetrier) Replay(app *App, topicEntity string, count int) error {
 	channel, _ := r.pubConn.Channel()
 	deliveryChan := make(chan amqp.Delivery, count)
 	doneCh := make(chan int)
-	go handleReplayDelivery(r, *config, topicEntity, deliveryChan, doneCh)
+	go handleReplayDelivery(app.Context(), r, *config, topicEntity, deliveryChan, doneCh)
 	for i := 0; i < count; i++ {
 		delivery, _, _ := channel.Get(queueName, false)
 		deliveryChan <- delivery
