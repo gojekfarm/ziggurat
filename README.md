@@ -53,7 +53,7 @@ export ZIGGURAT_STREAM_ROUTER_TEST_ENTITY2_BOOTSTRAP_SERVERS="localhost:9094"
 
 - sample `main.go`
 ### Pass an optional config file path
-If you wish to read config from a location other than the default location run the app with `--config="your_path/config_file.yaml"` option
+If you wish to read config from a location other than the default location run the app with `--ziggurat-config="your_path/config_file.yaml"` option
 
 ```go
 package main
