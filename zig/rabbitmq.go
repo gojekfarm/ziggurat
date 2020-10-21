@@ -272,7 +272,7 @@ func decodeMessage(body []byte) (MessageEvent, error) {
 	buff := bytes.Buffer{}
 	buff.Write(body)
 	decoder := gob.NewDecoder(&buff)
-	messageEvent := &MessageEvent{attributes: map[string]interface{}{}}
+	messageEvent := &MessageEvent{Attributes: map[string]interface{}{}}
 	if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
 		return *messageEvent, decodeErr
 	}
