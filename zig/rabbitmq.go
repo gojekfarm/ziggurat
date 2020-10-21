@@ -36,6 +36,7 @@ func constructExchangeName(serviceName string, topicEntity string, exchangeType 
 
 func setRetryCount(m *MessageEvent) {
 	value := m.GetMessageAttribute(RetryCount)
+
 	if value == nil {
 		m.SetMessageAttribute(RetryCount, 1)
 		return
