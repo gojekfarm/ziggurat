@@ -1,6 +1,7 @@
 package zig
 
 import (
+	"sync"
 	"time"
 )
 
@@ -21,9 +22,8 @@ func (m MessageEvent) GetMessageAttribute(key string) interface{} {
 }
 
 func (m *MessageEvent) SetMessageAttribute(key string, value interface{}) {
-	if m.Attributes[key] != nil {
-		m.Attributes[key] = value
-		return
-	}
+	mutex := &sync.Mutex{}
+	mutex.Lock()
+	defer mutex.Unlock()
 	m.Attributes[key] = value
 }
