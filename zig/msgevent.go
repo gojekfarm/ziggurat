@@ -1,8 +1,14 @@
 package zig
 
 import (
+	"sync"
 	"time"
 )
+
+type msgAttribute struct {
+	*sync.RWMutex
+	data map[string]interface{}
+}
 
 type MessageEvent struct {
 	MessageKey        interface{}
@@ -13,17 +19,28 @@ type MessageEvent struct {
 	TopicEntity       string
 	KafkaTimestamp    time.Time
 	TimestampType     string
-	Attributes        map[string]interface{}
+	attributes        *msgAttribute
+}
+
+func newMessageAttribute() *msgAttribute {
+	return &msgAttribute{
+		RWMutex: &sync.RWMutex{},
+		data:    map[string]interface{}{},
+	}
 }
 
 func (m MessageEvent) GetMessageAttribute(key string) interface{} {
-	return m.Attributes[key]
+	m.attributes.RLock()
+	defer m.attributes.RUnlock()
+	return m.attributes.data[key]
 }
 
 func (m *MessageEvent) SetMessageAttribute(key string, value interface{}) {
-	if m.Attributes[key] != nil {
-		m.Attributes[key] = value
+	m.attributes.RWMutex.Lock()
+	defer m.attributes.RWMutex.Unlock()
+	if m.attributes.data[key] != nil {
+		m.attributes.data[key] = value
 		return
 	}
-	m.Attributes[key] = value
+	m.attributes.data[key] = value
 }

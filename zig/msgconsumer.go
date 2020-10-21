@@ -52,6 +52,7 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 					return
 				}
 				if msg != nil {
+
 					messageEvent := MessageEvent{
 						MessageKey:        nil,
 						MessageValue:      nil,
@@ -61,7 +62,7 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 						TopicEntity:       topicEntity,
 						TimestampType:     msg.TimestampType.String(),
 						KafkaTimestamp:    msg.Timestamp,
-						Attributes:        make(map[string]interface{}),
+						attributes:        newMessageAttribute(),
 					}
 					messageHandler(app, handlerFunc)(messageEvent)
 					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
