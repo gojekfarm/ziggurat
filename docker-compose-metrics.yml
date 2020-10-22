@@ -26,6 +26,8 @@ grafana:
   links:
     - influxdb
     - prometheus
+  volumes:
+    - ./data/grafana/data:/grafana
 
 prometheus:
   image: prom/prometheus
@@ -37,4 +39,5 @@ prometheus:
     - telegraf
   volumes:
     - ./prom_conf.yml:/etc/prometheus/prometheus.yml:ro
+    - ./data/prometheus/data:/prometheus
 
