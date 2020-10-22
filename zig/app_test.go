@@ -55,7 +55,11 @@ func (m *mockStatsD) Stop() error {
 	return nil
 }
 
-func (m *mockStatsD) IncCounter(metricName string, value int, arguments map[string]string) error {
+func (m *mockStatsD) Gauge(metricName string, value int64, arguments map[string]string) error {
+	return nil
+}
+
+func (m *mockStatsD) IncCounter(metricName string, value int64, arguments map[string]string) error {
 	return nil
 }
 

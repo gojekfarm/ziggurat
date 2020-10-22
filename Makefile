@@ -1,11 +1,10 @@
 .PHONY: all
 
-all: setup-spike
 topic1="test-topic1"
 topic2="test-topic2"
 topic3="json-topic"
 
-start-kafka:
+docker.start-kafka:
 	docker-compose down
 	docker-compose up -d
 	sleep 10
@@ -15,9 +14,14 @@ start-kafka:
 	@echo 'Please run `go run main.go` in a new tab or terminal'
 	sleep 5
 
-start-metrics:
+docker.start-metrics:
+	docker-compose -f docker-compose-metrics.yml down
 	docker-compose -f docker-compose-metrics.yml up -d
+	sleep 10
 
+app.start:
+	go build -race
+	bash -c "./ziggurat-go --config=./config/config.sample.yaml"
 
 
 
