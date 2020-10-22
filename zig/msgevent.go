@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+var mutex = &sync.Mutex{}
+
 type MessageEvent struct {
 	MessageKey        interface{}
 	MessageValue      interface{}
@@ -22,7 +24,6 @@ func (m MessageEvent) GetMessageAttribute(key string) interface{} {
 }
 
 func (m *MessageEvent) SetMessageAttribute(key string, value interface{}) {
-	mutex := &sync.Mutex{}
 	mutex.Lock()
 	defer mutex.Unlock()
 	m.Attributes[key] = value
