@@ -15,7 +15,7 @@ func TestParseCommandLineArgumentsWithDefaultValues(t *testing.T) {
 }
 
 func TestParseCommandLineArguments(t *testing.T) {
-	os.Args = append(os.Args, "--ziggurat-config=overriddenPath")
+	os.Args = append(os.Args, "--config=overriddenPath")
 	cmdOptions := ParseCommandLineArguments()
 	newOptions := CommandLineOptions{ConfigFilePath: "overriddenPath"}
 	if newOptions != cmdOptions {

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+TOPIC="json-log"
+
+function generate_json() {
+  local count=$1
+  cat <<EOF
+{
+  "value":$count
+}
+EOF
+}
+
+NUM="$1"
+BROKER_ADDRESS="$2"
+
+echo $(generate_json $NUM) | docker exec -i ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "$BROKER_ADDRESS" --topic "$TOPIC"

@@ -12,16 +12,10 @@ var stopCount = 0
 var expectedStopCount = 3
 var expectedStartCount = 4
 
-type mockHTTP struct {
-}
-type mockStatsD struct {
-}
-
-type mockRouter struct {
-}
-
-type mockRabbitMQ struct {
-}
+type mockHTTP struct{}
+type mockStatsD struct{}
+type mockRouter struct{}
+type mockRabbitMQ struct{}
 
 func (m *mockRabbitMQ) Start(app *App) (chan int, error) {
 	startCount++
@@ -136,7 +130,6 @@ func TestApp_Stop(t *testing.T) {
 	setup()
 	defer teardown()
 	stopCallbackCalled := false
-	t.Logf("%+v", app)
 
 	app.stop(func() {
 		stopCallbackCalled = true

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+function generate_json() {
+  local count=$1
+  cat <<EOF
+{
+  "value":$count
+}
+EOF
+}
+
+BROKER_ADDRESS="localhost:9092"
+
+echo "PRESS CTRL+C to terminate message production"
+i=0
+while true; do
+  echo "producing message $i"
+  ./scripts/produce_json_messages $i "$BROKER_ADDRESS"
+  ./scripts/produce_text_messages $i "$BROKER_ADDRESS"
+  i=$((i + 1))
+  sleep 0.2s
+done

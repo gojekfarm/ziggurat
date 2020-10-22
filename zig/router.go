@@ -98,7 +98,6 @@ func (dr *DefaultRouter) Start(app *App) (chan int, error) {
 	}
 
 	dr.validate(app.config)
-	// halts app if validation fails
 
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]

@@ -8,16 +8,16 @@ stream-router:
     # to maximize parallelization
     origin-topics: "^.*-booking-log"
     group-id: "booking_log_go_consumer"
-  test-entity:
+  plain-text-log:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
-    origin-topics: "test-topic2"
+    origin-topics: "plain-text-log"
     group-id: "test-group2"
-  json-entity:
+  json-log:
     bootstrap-servers: "localhost:9092"
-    instance-count: 1
-    origin-topics: "json-test"
-    group-id: "json-group"
+    instance-count: 2
+    origin-topics: "json-log"
+    group-id: "json_log_consumer"
 log-level: "debug"
 retry:
   enabled: true
