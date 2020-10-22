@@ -21,7 +21,7 @@ docker.start-metrics:
 
 app.start:
 	go build -race
-	bash -c "./ziggurat-go --config=./config/config.sample.yaml"
+	./ziggurat-go --config=./config/config.sample.yaml
 
 
 
