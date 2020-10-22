@@ -61,7 +61,7 @@ func ProtobufDeserializer(protoMessage interface{}) MiddlewareFunc {
 	}
 }
 
-func PublishMessageMetrics(next HandlerFunc) HandlerFunc {
+func MessageMetricsPublisher(next HandlerFunc) HandlerFunc {
 	return func(messageEvent MessageEvent, app *App) ProcessStatus {
 		args := map[string]string{
 			"topic_entity": messageEvent.TopicEntity,

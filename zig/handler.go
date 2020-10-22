@@ -2,6 +2,7 @@ package zig
 
 import (
 	"github.com/rs/zerolog/log"
+	"time"
 )
 
 func messageHandler(app *App, handlerFunc HandlerFunc) func(event MessageEvent) {
@@ -10,7 +11,10 @@ func messageHandler(app *App, handlerFunc HandlerFunc) func(event MessageEvent) 
 			"topic_entity": event.TopicEntity,
 			"kafka_topic":  event.Topic,
 		}
+		funcExecStartTime := time.Now()
 		status := handlerFunc(event, app)
+		funcExecEndTime := time.Now()
+		app.metricPublisher.Gauge("handler_func_exec_time", funcExecEndTime.Sub(funcExecStartTime).Milliseconds(), metricTags)
 		switch status {
 		case ProcessingSuccess:
 			if publishErr := app.metricPublisher.IncCounter("message_processing_success", 1, metricTags); publishErr != nil {
