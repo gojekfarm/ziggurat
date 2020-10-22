@@ -57,9 +57,18 @@ func (s *StatsD) Stop() error {
 	return nil
 }
 
-func (s *StatsD) IncCounter(metricName string, value int, arguments map[string]string) error {
-	arguments["app_name"] = s.appName
+func (s *StatsD) constructFullMetricStr(metricName, tags string) string {
+	return metricName + "," + tags + "," + "app_name=" + s.appName
+}
+
+func (s *StatsD) IncCounter(metricName string, value int64, arguments map[string]string) error {
 	tags := constructTags(arguments)
-	finalMetricName := metricName + "," + tags + "," + "app_name=" + s.appName
-	return s.client.Inc(finalMetricName, int64(value), 1.0)
+	finalMetricName := s.constructFullMetricStr(metricName, tags)
+	return s.client.Inc(finalMetricName, value, 1.0)
+}
+
+func (s *StatsD) Gauge(metricName string, value int64, arguments map[string]string) error {
+	tags := constructTags(arguments)
+	finalMetricName := s.constructFullMetricStr(metricName, tags)
+	return s.client.Gauge(finalMetricName, value, 1.0)
 }

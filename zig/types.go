@@ -19,7 +19,8 @@ type HttpServer interface {
 type MetricPublisher interface {
 	Start(app *App) error
 	Stop() error
-	IncCounter(metricName string, value int, arguments map[string]string) error
+	IncCounter(metricName string, value int64, arguments map[string]string) error
+	Gauge(metricName string, value int64, arguments map[string]string) error
 }
 
 type MessageRetrier interface {

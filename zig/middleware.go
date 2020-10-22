@@ -5,6 +5,7 @@ import (
 	"github.com/golang/protobuf/proto"
 	"github.com/rs/zerolog/log"
 	"reflect"
+	"time"
 )
 
 func JSONDeserializer(model interface{}) MiddlewareFunc {
@@ -57,5 +58,20 @@ func ProtobufDeserializer(protoMessage interface{}) MiddlewareFunc {
 			messageEvent.MessageValue = protoRes
 			return next(messageEvent, app)
 		}
+	}
+}
+
+func PublishMessageMetrics(next HandlerFunc) HandlerFunc {
+	return func(messageEvent MessageEvent, app *App) ProcessStatus {
+		args := map[string]string{
+			"topic_entity": messageEvent.TopicEntity,
+			"kafka_topic":  messageEvent.Topic,
+		}
+		currTime := time.Now()
+		kafkaTimestamp := messageEvent.KafkaTimestamp
+		delayInMS := currTime.Sub(kafkaTimestamp).Milliseconds()
+		app.MetricPub().IncCounter("message_count", 1, args)
+		app.MetricPub().Gauge("message_delay", delayInMS, args)
+		return next(messageEvent, app)
 	}
 }
