@@ -197,8 +197,12 @@ func (r *RabbitRetrier) Start(app *App) (chan int, error) {
 }
 
 func (r *RabbitRetrier) Stop() error {
+	var closeErr error
 	if r.pubConn != nil {
-		closeErr := r.pubConn.Close()
+		closeErr = r.pubConn.Close()
+	}
+	if r.consumeConn != nil {
+		closeErr = r.consumeConn.Close()
 		return closeErr
 	}
 	return nil

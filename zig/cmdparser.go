@@ -7,7 +7,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&config, "ziggurat-config", "./config/config.yaml", `--ziggurat-config="path_to_config"`)
+	flag.StringVar(&config, "config", "./config/config.yaml", `--config="path_to_config"`)
 }
 
 type CommandLineOptions struct {

@@ -35,7 +35,6 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 
 func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	consumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("starting consumer")
-
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
 		for {
