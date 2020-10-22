@@ -17,9 +17,12 @@ type MessageEvent struct {
 	KafkaTimestamp    time.Time
 	TimestampType     string
 	Attributes        map[string]interface{}
+	// exposes Attributes for gob encoding, use Get and Set for thread safety
 }
 
 func (m MessageEvent) GetMessageAttribute(key string) interface{} {
+	mutex.Lock()
+	defer mutex.Unlock()
 	return m.Attributes[key]
 }
 
