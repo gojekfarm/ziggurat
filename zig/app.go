@@ -81,40 +81,41 @@ func (a *App) Run(router StreamRouter, startCallback StartFunction, stopCallback
 }
 
 func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
-	if stopChan, routerStartErr := a.router.Start(a); routerStartErr != nil {
-		log.Fatal().Err(routerStartErr)
-	} else {
-		a.httpServer.Start(a)
-		if err := a.metricPublisher.Start(a); err != nil {
-			log.Error().Err(err).Msg("")
-		}
 
+	a.httpServer.Start(a)
+	if err := a.metricPublisher.Start(a); err != nil {
+		log.Error().Err(err).Msg("")
+	}
+
+	if a.config.Retry.Enabled {
 		retrierStopChan, err := a.retrier.Start(a)
-
 		go func() {
 			<-retrierStopChan
 			log.Error().Err(ErrRetryConsumerStopped).Msg("")
 		}()
-
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
+	}
 
-		if startCallback != nil {
-			startCallback(a)
-		}
-		halt := func() {
-			a.cancelFun()
-			a.stop(stopCallback)
-		}
-		// Wait for router poll to complete
+	stopChan, routerStartErr := a.router.Start(a)
+	if routerStartErr != nil {
+		log.Fatal().Err(routerStartErr)
+	}
 
-		select {
-		case <-stopChan:
-			halt()
-		case <-a.interruptChan:
-			halt()
-		}
+	if startCallback != nil {
+		startCallback(a)
+	}
+	halt := func() {
+		a.cancelFun()
+		a.stop(stopCallback)
+	}
+	// Wait for router poll to complete
+	select {
+	case <-stopChan:
+		halt()
+	case <-a.interruptChan:
+		halt()
 	}
 
 }
