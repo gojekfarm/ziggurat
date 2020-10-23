@@ -17,4 +17,5 @@ var (
 	ErrParsingRabbitMQConfig    = errors.New("error parsing rabbitmq config")
 	ErrRetryConsumerStopped     = errors.New("retry consumer stopped")
 	ErrInterfaceNotProtoMessage = errors.New("interface must be of type proto.Message")
+	ErrRetryDisabled            = errors.New("attempted to retry message when retries are disabled")
 )

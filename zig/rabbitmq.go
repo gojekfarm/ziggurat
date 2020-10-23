@@ -210,6 +210,9 @@ func (r *RabbitRetrier) Stop() error {
 
 func (r *RabbitRetrier) Retry(app *App, payload MessageEvent) error {
 	config := app.config
+	if !config.Retry.Enabled {
+		retrierLogger.Fatal().Err(ErrRetryDisabled).Msg("[RETRIER ERROR]")
+	}
 	channel, err := r.pubConn.Channel()
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DelayType)
 	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, DeadLetterType)
