@@ -82,7 +82,7 @@ func (mh *mockHTTP) Start(app *App) {
 	startCount++
 }
 
-func (mh *mockHTTP) attachRoute(func(r *httprouter.Router)) {
+func (mh *mockHTTP) DefineRoutes(func(r *httprouter.Router)) {
 
 }
 

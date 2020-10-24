@@ -54,7 +54,7 @@ func (s *DefaultHttpServer) Start(app *App) {
 
 }
 
-func (s *DefaultHttpServer) attachRoute(attachFunc func(r *httprouter.Router)) {
+func (s *DefaultHttpServer) DefineRoutes(attachFunc func(r *httprouter.Router)) {
 	attachFunc(s.router)
 }
 

@@ -12,7 +12,7 @@ type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 // Public interfaces
 type HttpServer interface {
 	Start(app *App)
-	attachRoute(attachFunc func(r *httprouter.Router))
+	DefineRoutes(attachFunc func(r *httprouter.Router))
 	Stop() error
 }
 

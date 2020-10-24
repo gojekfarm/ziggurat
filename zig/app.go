@@ -54,7 +54,7 @@ func (a *App) Configure(options Options) {
 	a.httpServer = options.HttpServer
 	a.retrier = options.Retrier
 	if options.HTTPConfigureFunc != nil {
-		a.httpServer.attachRoute(options.HTTPConfigureFunc)
+		a.httpServer.DefineRoutes(options.HTTPConfigureFunc)
 	}
 	//configure defaults if components are nil
 }
@@ -89,6 +89,7 @@ func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 
 	if a.config.Retry.Enabled {
 		retrierStopChan, err := a.retrier.Start(a)
+
 		go func() {
 			<-retrierStopChan
 			log.Error().Err(ErrRetryConsumerStopped).Msg("")
