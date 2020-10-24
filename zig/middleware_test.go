@@ -55,5 +55,5 @@ func TestProtobufDeserializer(t *testing.T) {
 	})(MessageEvent{
 		MessageValueBytes: bytes,
 	}, &App{})
-
+	
 }
