@@ -98,6 +98,13 @@ func setup() {
 	app.metricPublisher = mstatsd
 	app.retrier = mrabbitmq
 	app.cancelFun = func() {}
+	app.config = &Config{
+		StreamRouter: nil,
+		LogLevel:     "",
+		ServiceName:  "",
+		Retry:        RetryConfig{Enabled: true},
+		HTTPServer:   HTTPServerConfig{},
+	}
 }
 
 func teardown() {
