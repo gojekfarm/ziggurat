@@ -60,8 +60,8 @@ func (s *DefaultHttpServer) Start(app *App) {
 
 }
 
-func (s *DefaultHttpServer) DefineRoutes(attachFunc func(r *httprouter.Router)) {
-	attachFunc(s.router)
+func (s *DefaultHttpServer) ConfigureHTTPRoutes(a *App, configFunc func(a *App, r *httprouter.Router)) {
+	configFunc(a, s.router)
 }
 
 func (s *DefaultHttpServer) Stop() error {

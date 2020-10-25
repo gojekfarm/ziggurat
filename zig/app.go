@@ -10,10 +10,9 @@ import (
 )
 
 type Options struct {
-	HttpServer        HttpServer
-	Retrier           MessageRetrier
-	MetricPublisher   MetricPublisher
-	HTTPConfigureFunc func(r *httprouter.Router)
+	HttpServer      HttpServer
+	Retrier         MessageRetrier
+	MetricPublisher MetricPublisher
 }
 
 type App struct {
@@ -28,6 +27,12 @@ type App struct {
 	stopFunc        StopFunction
 	ctx             context.Context
 	cancelFun       context.CancelFunc
+}
+
+type RunOptions struct {
+	HTTPConfigFunc func(a *App, r *httprouter.Router)
+	StartCallback  func(a *App)
+	StopCallback   func()
 }
 
 func NewApp() *App {
@@ -54,9 +59,6 @@ func (a *App) Configure(configFunc func(app *App) Options) {
 	a.metricPublisher = options.MetricPublisher
 	a.httpServer = options.HttpServer
 	a.retrier = options.Retrier
-	if options.HTTPConfigureFunc != nil {
-		a.httpServer.DefineRoutes(options.HTTPConfigureFunc)
-	}
 	//configure defaults if components are nil
 }
 
@@ -73,12 +75,19 @@ func (a *App) configureDefaults() {
 	}
 }
 
-func (a *App) Run(router StreamRouter, startCallback StartFunction, stopCallback StopFunction) {
+func (a *App) ConfigureHTTPRoutes(configFunc func(a *App, r *httprouter.Router)) {
+	a.httpServer.ConfigureHTTPRoutes(a, configFunc)
+}
+
+func (a *App) Run(router StreamRouter, runOptions RunOptions) {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.config.LogLevel)
 	a.router = router
 	a.configureDefaults()
-	a.start(startCallback, stopCallback)
+	if runOptions.HTTPConfigFunc != nil {
+		a.ConfigureHTTPRoutes(runOptions.HTTPConfigFunc)
+	}
+	a.start(runOptions.StartCallback, runOptions.StopCallback)
 }
 
 func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
