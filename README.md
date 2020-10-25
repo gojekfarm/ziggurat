@@ -61,6 +61,8 @@ package main
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/zig"
+	"github.com/julienschmidt/httprouter"
+	"net/http"
 )
 
 type JSONMessage struct {
@@ -71,14 +73,12 @@ func main() {
 	app := zig.NewApp()
 	router := zig.NewRouter()
 
-	router.HandlerFunc("test-entity", func(messageEvent zig.MessageEvent, a *zig.App) zig.ProcessStatus {
+	router.HandlerFunc("plain-text-log", func(messageEvent zig.MessageEvent, a *zig.App) zig.ProcessStatus {
 		return zig.ProcessingSuccess
-	}, zig.MessageLogger)
+	}, zig.MessageMetricsPublisher, zig.MessageLogger)
 
-	router.HandlerFunc("json-entity", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
-
+	router.HandlerFunc("json-log", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
 		return zig.ProcessingSuccess
-
 	}, zig.MessageLogger, zig.JSONDeserializer(JSONMessage{}))
 
 	startFunc := func(a *zig.App) {
@@ -89,7 +89,15 @@ func main() {
 		fmt.Println("stopping app")
 	}
 
-	app.Run(router, startFunc, stopFunc)
+	app.Run(router, zig.RunOptions{
+		HTTPConfigFunc: func(a *zig.App, r *httprouter.Router) {
+			r.GET("/test_ping", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+				writer.Write([]byte("TEST_PONG"))
+			})
+		},
+		StartCallback: startFunc,
+		StopCallback:  stopFunc,
+	})
 }
 ```
 
