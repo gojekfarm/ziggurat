@@ -5,17 +5,17 @@ import (
 	"testing"
 )
 
+type mockHTTP struct{}
+type mockStatsD struct{}
+type mockRouter struct{}
+type mockRabbitMQ struct{}
+
 var app *App
 var mhttp, mrouter, mstatsd, mrabbitmq = &mockHTTP{}, &mockRouter{}, &mockStatsD{}, &mockRabbitMQ{}
 var startCount = 0
 var stopCount = 0
 var expectedStopCount = 3
 var expectedStartCount = 4
-
-type mockHTTP struct{}
-type mockStatsD struct{}
-type mockRouter struct{}
-type mockRabbitMQ struct{}
 
 func (m *mockRabbitMQ) Start(app *App) (chan int, error) {
 	startCount++
@@ -89,6 +89,10 @@ func (mh *mockHTTP) DefineRoutes(func(r *httprouter.Router)) {
 func (mh *mockHTTP) Stop() error {
 	stopCount++
 	return nil
+}
+
+func (mh *mockHTTP) ConfigureHTTPRoutes(a *App, configFunc func(a *App, r *httprouter.Router)) {
+	panic("implement me")
 }
 
 func setup() {
