@@ -11,13 +11,13 @@ type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 
 // Public interfaces
 type HttpServer interface {
-	Start(app *App)
+	Start(app *App) (chan int, error)
 	DefineRoutes(attachFunc func(r *httprouter.Router))
 	Stop() error
 }
 
 type MetricPublisher interface {
-	Start(app *App) error
+	Start(app *App) (chan int, error)
 	Stop() error
 	IncCounter(metricName string, value int64, arguments map[string]string) error
 	Gauge(metricName string, value int64, arguments map[string]string) error

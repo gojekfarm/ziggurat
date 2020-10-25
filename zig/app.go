@@ -10,10 +10,10 @@ import (
 )
 
 type Options struct {
-	HttpServer        HttpServer
-	Retrier           MessageRetrier
-	MetricPublisher   MetricPublisher
-	HTTPConfigureFunc func(r *httprouter.Router)
+	HttpServerInitializer func(app *App) HttpServer
+	RetrierInitializer    func(app *App) MessageRetrier
+	MetricPubInitializer  func(app *App) MetricPublisher
+	HTTPConfigureFunc     func(r *httprouter.Router)
 }
 
 type App struct {
@@ -50,9 +50,15 @@ func NewApp() *App {
 }
 
 func (a *App) Configure(options Options) {
-	a.metricPublisher = options.MetricPublisher
-	a.httpServer = options.HttpServer
-	a.retrier = options.Retrier
+	if options.MetricPubInitializer != nil {
+		a.metricPublisher = options.MetricPubInitializer(a)
+	}
+	if options.HttpServerInitializer != nil {
+		a.httpServer = options.HttpServerInitializer(a)
+	}
+	if options.RetrierInitializer != nil {
+		a.retrier = options.RetrierInitializer(a)
+	}
 	if options.HTTPConfigureFunc != nil {
 		a.httpServer.DefineRoutes(options.HTTPConfigureFunc)
 	}
@@ -64,7 +70,7 @@ func (a *App) configureDefaults() {
 		a.metricPublisher = &StatsD{}
 	}
 	if a.retrier == nil {
-		a.retrier = &RabbitRetrier{}
+		a.retrier = NewRabbitMQ(a)
 	}
 
 	if a.httpServer == nil {

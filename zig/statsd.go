@@ -15,6 +15,15 @@ type StatsD struct {
 	appName      string
 }
 
+func NewStatsD(app *App) MetricPublisher {
+	cfg := parseStatsDConfig(app.config)
+	s := &StatsD{
+		statsdConfig: cfg,
+		appName:      app.config.ServiceName,
+	}
+	return s
+}
+
 func parseStatsDConfig(config *Config) *StatsDConf {
 	rawConfig := config.GetByKey("statsd")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
@@ -33,21 +42,21 @@ func constructTags(tags map[string]string) string {
 	return strings.Join(tagSlice, ",")
 }
 
-func (s *StatsD) Start(app *App) error {
-	parsedConfig := parseStatsDConfig(app.config)
-	s.statsdConfig = parsedConfig
-	config := &statsd.ClientConfig{
-		Prefix:  app.config.ServiceName,
+func (s *StatsD) Start(app *App) (chan int, error) {
+	stopNotifierChan := make(chan int)
+	clientConf := &statsd.ClientConfig{
 		Address: s.statsdConfig.host,
+		Prefix:  s.appName,
 	}
-	client, clientErr := statsd.NewClientWithConfig(config)
-	if clientErr != nil {
-		metricLogger.Error().Err(clientErr).Msg("")
-		return clientErr
+	if client, err := statsd.NewClientWithConfig(clientConf); err != nil {
+		go func() {
+			close(stopNotifierChan)
+		}()
+		return stopNotifierChan, err
+	} else {
+		s.client = client
+		return stopNotifierChan, nil
 	}
-	s.client = client
-	s.appName = app.config.ServiceName
-	return nil
 }
 
 func (s *StatsD) Stop() error {
