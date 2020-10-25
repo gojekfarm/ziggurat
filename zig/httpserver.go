@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var defaultHTTPPort = "8080"
+
 type DefaultHttpServer struct {
 	server *http.Server
 	router *httprouter.Router
@@ -21,6 +23,9 @@ type ReplayResponse struct {
 
 func NewDefaultHTTPServer(config *Config) HttpServer {
 	port := config.HTTPServer.Port
+	if port == "" {
+		port = defaultHTTPPort
+	}
 	router := httprouter.New()
 	server := &http.Server{Addr: ":" + port, Handler: router}
 	return &DefaultHttpServer{
