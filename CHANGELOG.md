@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.3.0] 2020-10-25
+### Added
+- Adds a new middleware to publish message metrics
+- Adds thread safety to `MessageAttributes` in `MessageEvent`
+- Adds a metric to measure the `handlerFunc` exec time
+- Adds a make task to start the app
+- Adds a make task to start-up the metrics containers
+- Adds a make task to produce messages to kafka
+### Changes
+- halts the app if retries are disabled, and a message is retried
+- changes the `--zigurat-config` to `-config`
+- `app.Run` accepts a `zig.RunOptions` type
+- fixes race conditions when starting-up the app
+- uses constructors functions to initialize components
+
 ## [v0.2.0] 2020-10-20
 ### Added
 - Sends `app_name` as a tag in StatsD 
