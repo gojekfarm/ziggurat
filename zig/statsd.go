@@ -5,23 +5,32 @@ import (
 	"strings"
 )
 
-type StatsDConf struct {
+type MetricConfig struct {
 	host string
 }
 
 type StatsD struct {
 	client       statsd.Statter
-	statsdConfig *StatsDConf
+	metricConfig *MetricConfig
 	appName      string
 }
 
-func parseStatsDConfig(config *Config) *StatsDConf {
+func NewStatsD(config *Config) MetricPublisher {
+	metricConfig := parseStatsDConfig(config)
+	return &StatsD{
+		client:       nil,
+		metricConfig: metricConfig,
+		appName:      config.ServiceName,
+	}
+}
+
+func parseStatsDConfig(config *Config) *MetricConfig {
 	rawConfig := config.GetByKey("statsd")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
 		metricLogger.Error().Err(ErrParsingStatsDConfig).Msg("")
-		return &StatsDConf{host: "localhost:8125"}
+		return &MetricConfig{host: "localhost:8125"}
 	} else {
-		return &StatsDConf{host: sanitizedConfig["host"].(string)}
+		return &MetricConfig{host: sanitizedConfig["host"].(string)}
 	}
 }
 
@@ -34,11 +43,9 @@ func constructTags(tags map[string]string) string {
 }
 
 func (s *StatsD) Start(app *App) error {
-	parsedConfig := parseStatsDConfig(app.config)
-	s.statsdConfig = parsedConfig
 	config := &statsd.ClientConfig{
 		Prefix:  app.config.ServiceName,
-		Address: s.statsdConfig.host,
+		Address: s.metricConfig.host,
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {

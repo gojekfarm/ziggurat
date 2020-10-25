@@ -26,6 +26,14 @@ type RabbitMQConfig struct {
 	delayQueueExpiration string
 }
 
+func NewRabbitMQ(config *Config) MessageRetrier {
+	cfg := parseRabbitMQConfig(config)
+	return &RabbitRetrier{
+		rabbitmqConfig:   cfg,
+		consumerStopChan: make(chan int),
+	}
+}
+
 func constructQueueName(serviceName string, topicEntity string, queueType string) string {
 	return fmt.Sprintf("%s_%s_%s_queue", topicEntity, serviceName, queueType)
 }
@@ -162,8 +170,6 @@ func consumeConnectionCloseHandler(closeChan chan *amqp.Error) {
 func (r *RabbitRetrier) Start(app *App) (chan int, error) {
 	config := app.config
 	streamRoutes := app.router.GetHandlerFunctionMap()
-	rmqConfig := parseRabbitMQConfig(config)
-	r.rabbitmqConfig = rmqConfig
 	pubConn, err := amqp.Dial(r.rabbitmqConfig.host)
 	consumeConn, err := amqp.Dial(r.rabbitmqConfig.host)
 	if err != nil {

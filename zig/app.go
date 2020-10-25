@@ -49,7 +49,8 @@ func NewApp() *App {
 	}
 }
 
-func (a *App) Configure(options Options) {
+func (a *App) Configure(configFunc func(app *App) Options) {
+	options := configFunc(a)
 	a.metricPublisher = options.MetricPublisher
 	a.httpServer = options.HttpServer
 	a.retrier = options.Retrier
@@ -61,14 +62,14 @@ func (a *App) Configure(options Options) {
 
 func (a *App) configureDefaults() {
 	if a.metricPublisher == nil {
-		a.metricPublisher = &StatsD{}
+		a.metricPublisher = NewStatsD(a.config)
 	}
 	if a.retrier == nil {
-		a.retrier = &RabbitRetrier{}
+		a.retrier = NewRabbitMQ(a.config)
 	}
 
 	if a.httpServer == nil {
-		a.httpServer = &DefaultHttpServer{}
+		a.httpServer = NewDefaultHTTPServer(a.config)
 	}
 }
 

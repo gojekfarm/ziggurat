@@ -19,9 +19,18 @@ type ReplayResponse struct {
 	Msg    string `json:"msg"`
 }
 
+func NewDefaultHTTPServer(config *Config) HttpServer {
+	port := config.HTTPServer.Port
+	router := httprouter.New()
+	server := &http.Server{Addr: ":" + port, Handler: router}
+	return &DefaultHttpServer{
+		server: server,
+		router: router,
+	}
+}
+
 func (s *DefaultHttpServer) Start(app *App) {
 	s.router = httprouter.New()
-	port := app.config.HTTPServer.Port
 	s.router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
 		if replayErr := app.retrier.Replay(app, params.ByName("topic_entity"), count); replayErr != nil {
@@ -43,14 +52,11 @@ func (s *DefaultHttpServer) Start(app *App) {
 		writer.Write([]byte("pong"))
 	})
 
-	server := &http.Server{Addr: ":" + port, Handler: s.router}
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
 			serverLogger.Error().Err(err)
 		}
-	}(server)
-
-	s.server = server
+	}(s.server)
 
 }
 
