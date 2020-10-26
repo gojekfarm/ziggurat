@@ -4,4 +4,8 @@ NUM="$1"
 BROKER_ADDRESS="$2"
 TOPIC="plain-text-log"
 
-echo "key_$NUM:value_$NUM" | docker exec -i ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh --broker-list "$BROKER_ADDRESS" --property key.separator=":" --property parse.key=true --topic "$TOPIC"
+echo "key_$NUM:value_$NUM" | docker exec -i ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh \
+  --broker-list "$BROKER_ADDRESS" \
+  --property key.separator=":" \
+  --property parse.key=true \
+  --topic "$TOPIC"
