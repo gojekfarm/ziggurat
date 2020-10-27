@@ -10,5 +10,7 @@ require (
 	github.com/rs/zerolog v1.19.0
 	github.com/spf13/viper v1.7.0
 	github.com/streadway/amqp v1.0.0
+	github.com/stretchr/testify v1.4.0 // indirect
+	golang.org/x/sys v0.0.0-20201027090413-e1471140ff15 // indirect
 	google.golang.org/protobuf v1.23.0
 )
