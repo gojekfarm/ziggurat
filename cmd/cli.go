@@ -19,10 +19,6 @@ func (c *CLI) AddCommand(cmd string, runner Runner) {
 }
 
 func (c *CLI) Run(args []string) {
-	if len(args) < 2 {
-		os.Exit(127)
-	}
-
 	cmd := args[1]
 
 	status := c.cmdMapping[cmd](args[1:])
