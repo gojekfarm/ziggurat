@@ -18,7 +18,7 @@ var modFile = `module {{.AppName}}
 go 1.14
 
 require (
-	github.com/gojekfarm/ziggurat-go v0.3.2
+	github.com/gojekfarm/ziggurat-go v0.4.3
 	github.com/julienschmidt/httprouter v1.2.0
 )`
 
