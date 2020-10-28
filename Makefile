@@ -31,4 +31,5 @@ docker.cleanup:
 kafka.produce:
 	./scripts/produce_messages
 
-
+pkg.release:
+	./scripts/release.sh ${VERSION}
