@@ -71,7 +71,9 @@ func main() {
 `
 
 func main() {
-	cli := cmd.NewCLI()
+	cli := cmd.NewCLI("zig")
+	cli.AddUsage(`[USAGE]
+zig command_name <args>`)
 	cli.AddCommand("new", func(args []string) int {
 		if len(args) < 2 {
 			usage := `[USAGE]
