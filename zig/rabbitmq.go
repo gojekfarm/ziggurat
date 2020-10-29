@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"github.com/sirius1024/go-amqp-reconnect/rabbitmq"
 	"github.com/streadway/amqp"
 	"sync"
 )
@@ -15,8 +16,8 @@ const DeadLetterType = "dead_letter"
 const RetryCount = "retryCount"
 
 type RabbitRetrier struct {
-	pubConn          *amqp.Connection
-	consumeConn      *amqp.Connection
+	pubConn          *rabbitmq.Connection
+	consumeConn      *rabbitmq.Connection
 	rabbitmqConfig   *RabbitMQConfig
 	consumerStopChan chan int
 }
@@ -60,7 +61,7 @@ func getRetryCount(m *MessageEvent) int {
 	return m.GetMessageAttribute(RetryCount).(int)
 }
 
-func publishMessage(channel *amqp.Channel, exchangeName string, payload MessageEvent, expirationInMS string) error {
+func publishMessage(channel *rabbitmq.Channel, exchangeName string, payload MessageEvent, expirationInMS string) error {
 	buff := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buff)
 	if encodeErr := encoder.Encode(payload); encodeErr != nil {
@@ -80,13 +81,13 @@ func publishMessage(channel *amqp.Channel, exchangeName string, payload MessageE
 	return nil
 }
 
-func createExchange(channel *amqp.Channel, exchangeName string) error {
+func createExchange(channel *rabbitmq.Channel, exchangeName string) error {
 	retrierLogger.Info().Str("exchange-name", exchangeName).Msg("creating exchange")
 	err := channel.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil)
 	return err
 }
 
-func createExchanges(channel *amqp.Channel, serviceName string, topicEntities []string, exchangeTypes []string) {
+func createExchanges(channel *rabbitmq.Channel, serviceName string, topicEntities []string, exchangeTypes []string) {
 	for _, te := range topicEntities {
 		for _, exchangeType := range exchangeTypes {
 			exchangeName := constructExchangeName(serviceName, te, exchangeType)
@@ -97,7 +98,7 @@ func createExchanges(channel *amqp.Channel, serviceName string, topicEntities []
 	}
 }
 
-func createAndBindQueue(channel *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
+func createAndBindQueue(channel *rabbitmq.Channel, queueName string, exchangeName string, args amqp.Table) error {
 	_, queueErr := channel.QueueDeclare(queueName, true, false, false, false, args)
 	if queueErr != nil {
 		return queueErr
@@ -107,7 +108,7 @@ func createAndBindQueue(channel *amqp.Channel, queueName string, exchangeName st
 	return bindErr
 }
 
-func createInstantQueues(channel *amqp.Channel, topicEntities []string, serviceName string) {
+func createInstantQueues(channel *rabbitmq.Channel, topicEntities []string, serviceName string) {
 	for _, te := range topicEntities {
 		queueName := constructQueueName(serviceName, te, InstantType)
 		exchangeName := constructExchangeName(serviceName, te, InstantType)
@@ -117,7 +118,7 @@ func createInstantQueues(channel *amqp.Channel, topicEntities []string, serviceN
 	}
 }
 
-func createDelayQueues(channel *amqp.Channel, topicEntities []string, serviceName string) {
+func createDelayQueues(channel *rabbitmq.Channel, topicEntities []string, serviceName string) {
 	for _, te := range topicEntities {
 		queueName := constructQueueName(serviceName, te, DelayType)
 		exchangeName := constructExchangeName(serviceName, te, DelayType)
@@ -131,7 +132,7 @@ func createDelayQueues(channel *amqp.Channel, topicEntities []string, serviceNam
 	}
 }
 
-func createDeadLetterQueues(channel *amqp.Channel, topicEntities []string, serviceName string) {
+func createDeadLetterQueues(channel *rabbitmq.Channel, topicEntities []string, serviceName string) {
 	for _, te := range topicEntities {
 		queueName := constructQueueName(serviceName, te, DeadLetterType)
 		exchangeName := constructExchangeName(serviceName, te, DeadLetterType)
@@ -170,8 +171,8 @@ func consumeConnectionCloseHandler(closeChan chan *amqp.Error) {
 func (r *RabbitRetrier) Start(app *App) (chan int, error) {
 	config := app.config
 	streamRoutes := app.router.GetHandlerFunctionMap()
-	pubConn, err := amqp.Dial(r.rabbitmqConfig.host)
-	consumeConn, err := amqp.Dial(r.rabbitmqConfig.host)
+	pubConn, err := rabbitmq.Dial(r.rabbitmqConfig.host)
+	consumeConn, err := rabbitmq.Dial(r.rabbitmqConfig.host)
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +257,7 @@ func handleDelivery(app *App, ctag string, delivery <-chan amqp.Delivery, handle
 	}
 }
 
-func startRabbitConsumers(app *App, connection *amqp.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
+func startRabbitConsumers(app *App, connection *rabbitmq.Connection, config Config, topicEntity string, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
 	channel, _ := connection.Channel()
 	instantQueueName := constructQueueName(config.ServiceName, topicEntity, InstantType)
 	ctag := topicEntity + "_amqp_consumer"
