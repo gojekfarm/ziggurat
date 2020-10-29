@@ -8,12 +8,19 @@ import (
 	"github.com/sirius1024/go-amqp-reconnect/rabbitmq"
 	"github.com/streadway/amqp"
 	"sync"
+	"time"
 )
 
 const DelayType = "delay"
 const InstantType = "instant"
 const DeadLetterType = "dead_letter"
 const RetryCount = "retryCount"
+
+type PublishTimedOutErr struct{}
+
+func (p PublishTimedOutErr) Error() string {
+	return "rmq publish timeout"
+}
 
 type RabbitRetrier struct {
 	pubConn          *rabbitmq.Connection
@@ -215,7 +222,12 @@ func (r *RabbitRetrier) Stop() error {
 	return nil
 }
 
-func (r *RabbitRetrier) Retry(app *App, payload MessageEvent) error {
+func (r *RabbitRetrier) recoverAndRetry(app *App, payload MessageEvent) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = PublishTimedOutErr{}
+		}
+	}()
 	config := app.config
 	if !config.Retry.Enabled {
 		retrierLogger.Fatal().Err(ErrRetryDisabled).Msg("[RETRIER ERROR]")
@@ -233,6 +245,17 @@ func (r *RabbitRetrier) Retry(app *App, payload MessageEvent) error {
 	err = publishMessage(channel, exchangeName, payload, r.rabbitmqConfig.delayQueueExpiration)
 	err = channel.Close()
 	return err
+}
+
+func (r *RabbitRetrier) Retry(app *App, payload MessageEvent) error {
+	err := r.recoverAndRetry(app, payload)
+	switch err.(type) {
+	case PublishTimedOutErr:
+		time.Sleep(2 * time.Second)
+		return r.Retry(app, payload)
+	default:
+		return err
+	}
 }
 
 func handleDelivery(app *App, ctag string, delivery <-chan amqp.Delivery, handlerFunc HandlerFunc, wg *sync.WaitGroup) {
