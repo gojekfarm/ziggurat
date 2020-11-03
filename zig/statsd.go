@@ -27,7 +27,7 @@ func NewStatsD(config *Config) MetricPublisher {
 func parseStatsDConfig(config *Config) *MetricConfig {
 	rawConfig := config.GetByKey("statsd")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
-		metricLogger.Error().Err(ErrParsingStatsDConfig).Msg("")
+		metricLogger.Error().Err(ErrParsingStatsDConfig).Msg("[ZIG STATSD]")
 		return &MetricConfig{host: "localhost:8125"}
 	} else {
 		return &MetricConfig{host: sanitizedConfig["host"].(string)}
@@ -49,7 +49,7 @@ func (s *StatsD) Start(app *App) error {
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
-		metricLogger.Error().Err(clientErr).Msg("")
+		metricLogger.Error().Err(clientErr).Msg("[ZIG STATSD]")
 		return clientErr
 	}
 	s.client = client

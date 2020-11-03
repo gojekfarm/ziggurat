@@ -1,9 +1,11 @@
 package zig
 
 import (
+	"fmt"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -27,7 +29,10 @@ func configureLogger(logLevel string) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	logLevelInt := logLevelMapping[logLevel]
 	zerolog.SetGlobalLevel(logLevelInt)
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true, TimeFormat: time.RFC822})
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true, TimeFormat: time.RFC3339,
+		FormatLevel: func(i interface{}) string {
+			return strings.ToUpper(fmt.Sprintf("|%s|", i))
+		}})
 	routerLogger = log.With().Str("component", "router").Logger()
 	consumerLogger = log.With().Str("component", "consumer").Logger()
 	serverLogger = log.With().Str("component", "http-server").Logger()

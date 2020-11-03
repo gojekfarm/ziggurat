@@ -66,13 +66,13 @@ func parseConfig(options CommandLineOptions) {
 	viper.SetConfigType("yaml")
 	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatal().Err(err).Msg("")
+		log.Fatal().Err(err).Msg("[ZIG APP]")
 	}
 
 	replacer := strings.NewReplacer("-", "_", ".", "_")
 	viper.SetEnvKeyReplacer(replacer)
 	if err := viper.Unmarshal(&zigguratConfig); err != nil {
-		log.Fatal().Err(err).Msg("config parse error")
+		log.Fatal().Err(err).Msg("[ZIG APP] config parse error")
 	}
 }
 

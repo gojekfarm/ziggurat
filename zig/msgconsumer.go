@@ -13,7 +13,7 @@ const DefaultPollTimeout = 100 * time.Millisecond
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
 	if err != nil {
-		consumerLogger.Error().Err(err).Msg("")
+		consumerLogger.Error().Err(err).Msg("[ZIG CONSUMER]")
 	}
 	if subscribeErr := consumer.SubscribeTopics(topics, nil); subscribeErr != nil {
 		consumerLogger.Error().Err(subscribeErr).Msg("")
@@ -34,7 +34,7 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 }
 
 func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
-	consumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("starting consumer")
+	consumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("[ZIG CONSUMER] starting consumer")
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
 		for {
@@ -46,7 +46,7 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 				msg, err := c.ReadMessage(DefaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					consumerLogger.Error().Err(err).Msg("terminating application, all brokers down")
+					consumerLogger.Error().Err(err).Msg("[ZIG CONSUMER] stopping consumer poll, all brokers down")
 					wg.Done()
 					return
 				}
@@ -62,9 +62,9 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 						KafkaTimestamp:    msg.Timestamp,
 						Attributes:        make(map[string]interface{}),
 					}
-					messageHandler(app, handlerFunc)(messageEvent)
+					MessageHandler(app, handlerFunc)(messageEvent)
 					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
-						consumerLogger.Error().Err(commitErr).Msg("offset commit error")
+						consumerLogger.Error().Err(commitErr).Msg("[ZIG CONSUMER] offset commit error")
 					}
 				}
 			}
