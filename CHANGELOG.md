@@ -5,10 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.5.0] 2020-11-03
+### Changes
+- renames the `MessageRetrier` interface to `MessageRetry`
+- exports `handlerFn` in the `topicEntity` struct
+- removes `rabbitmq.go`
+- uses a thread-safe rabbitmq implementation
+- adds new make tasks
+
 ## [v0.4.4] 2020-10-28
 ### Changes
 - fixes CLI related issues 
-
 
 ## [v0.4.0] 2020-10-27
 ### Added
