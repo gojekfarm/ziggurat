@@ -19,6 +19,10 @@ docker.start-metrics:
 	sleep 10
 
 app.start:
+	go build
+	./ziggurat-go --config=./config/config.sample.yaml
+
+app.start-race:
 	go build -race
 	./ziggurat-go --config=./config/config.sample.yaml
 
@@ -29,7 +33,7 @@ docker.cleanup:
 	docker-compose -f docker-compose-metrics.yml rm
 
 kafka.produce:
-	./scripts/produce_messages
+	./scripts/produce_messages ${COUNT}
 
 pkg.release:
 	./scripts/release.sh ${VERSION}
