@@ -9,7 +9,7 @@ import (
 )
 
 type topicEntity struct {
-	handlerFunc      HandlerFunc
+	HandlerFunc      HandlerFunc
 	consumers        []*kafka.Consumer
 	bootstrapServers string
 	originTopics     []string
@@ -54,11 +54,20 @@ func (dr *DefaultRouter) GetTopicEntities() []*topicEntity {
 	return topicEntities
 }
 
+func (dr *DefaultRouter) GetTopicEntityNames() []string {
+	tes := dr.GetTopicEntities()
+	var names []string
+	for _, te := range tes {
+		names = append(names, te.entityName)
+	}
+	return names
+}
+
 func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...MiddlewareFunc) {
-	dr.handlerFunctionMap[topicEntityName] = &topicEntity{handlerFunc: handlerFn, entityName: topicEntityName}
+	dr.handlerFunctionMap[topicEntityName] = &topicEntity{HandlerFunc: handlerFn, entityName: topicEntityName}
 	if len(mw) > 0 {
-		origHandler := dr.handlerFunctionMap[topicEntityName].handlerFunc
-		dr.handlerFunctionMap[topicEntityName].handlerFunc = pipeHandlers(mw...)(origHandler)
+		origHandler := dr.handlerFunctionMap[topicEntityName].HandlerFunc
+		dr.handlerFunctionMap[topicEntityName].HandlerFunc = pipeHandlers(mw...)(origHandler)
 	}
 }
 
@@ -68,7 +77,7 @@ func makeKV(key string, value string) string {
 
 func (dr *DefaultRouter) stop() {
 	for _, te := range dr.GetTopicEntities() {
-		log.Info().Str("topic-entity", te.entityName).Msg("stopping consumers")
+		log.Info().Str("topic-entity", te.entityName).Msg("[ZIG ROUTER] stopping consumers")
 		for i, _ := range te.consumers {
 			if closeErr := te.consumers[i].Close(); closeErr != nil {
 				routerLogger.Error().Err(closeErr)
@@ -81,7 +90,7 @@ func (dr *DefaultRouter) validate(config *Config) {
 	srmap := config.StreamRouter
 	for entityName, _ := range dr.handlerFunctionMap {
 		if _, ok := srmap[entityName]; !ok {
-			routerLogger.Warn().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("")
+			routerLogger.Warn().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("[ZIG ROUTER]")
 		}
 	}
 }
@@ -94,7 +103,7 @@ func (dr *DefaultRouter) Start(app *App) (chan int, error) {
 	srConfig := config.StreamRouter
 	hfMap := dr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("")
+		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("[ZIG ROUTER]")
 	}
 
 	dr.validate(app.config)
@@ -110,11 +119,11 @@ func (dr *DefaultRouter) Start(app *App) (chan int, error) {
 			return nil, setErr
 		}
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
-			routerLogger.Error().Err(setErr).Msg("")
+			routerLogger.Error().Err(setErr).Msg("[ZIG ROUTER]")
 			return nil, setErr
 		}
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
-		consumers := startConsumers(ctx, app, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.handlerFunc, &wg)
+		consumers := startConsumers(ctx, app, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.HandlerFunc, &wg)
 		te.consumers = consumers
 	}
 
