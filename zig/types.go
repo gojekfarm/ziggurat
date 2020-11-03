@@ -23,7 +23,7 @@ type MetricPublisher interface {
 	Gauge(metricName string, value int64, arguments map[string]string) error
 }
 
-type MessageRetrier interface {
+type MessageRetry interface {
 	Start(app *App) (chan int, error)
 	Retry(app *App, payload MessageEvent) error
 	Stop() error
@@ -35,6 +35,7 @@ type StreamRouter interface {
 	HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...MiddlewareFunc)
 	GetTopicEntities() []*topicEntity
 	GetHandlerFunctionMap() map[string]*topicEntity
+	GetTopicEntityNames() []string
 }
 
 // Public constants

@@ -11,13 +11,13 @@ import (
 
 type Options struct {
 	HttpServer      HttpServer
-	Retrier         MessageRetrier
+	Retrier         MessageRetry
 	MetricPublisher MetricPublisher
 }
 
 type App struct {
 	httpServer      HttpServer
-	retrier         MessageRetrier
+	retrier         MessageRetry
 	config          *Config
 	router          StreamRouter
 	metricPublisher MetricPublisher
@@ -39,10 +39,10 @@ func NewApp() *App {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	commandLineOptions := ParseCommandLineArguments()
 	parseConfig(commandLineOptions)
-	log.Info().Msg("successfully parsed config")
+	log.Info().Msg("[ZIG APP] successfully parsed config")
 	config := getConfig()
 	if validationErr := config.validate(); validationErr != nil {
-		log.Fatal().Err(validationErr).Msg("error creating app")
+		log.Fatal().Err(validationErr).Msg("[ZIG APP] error creating app")
 	}
 	return &App{
 		ctx:           ctx,
@@ -67,7 +67,7 @@ func (a *App) configureDefaults() {
 		a.metricPublisher = NewStatsD(a.config)
 	}
 	if a.retrier == nil {
-		a.retrier = NewRabbitMQ(a.config)
+		a.retrier = NewRabbitMQRetry(a.config)
 	}
 
 	if a.httpServer == nil {
@@ -92,10 +92,11 @@ func (a *App) Run(router StreamRouter, runOptions RunOptions) {
 
 func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 
-	a.httpServer.Start(a)
 	if err := a.metricPublisher.Start(a); err != nil {
-		log.Error().Err(err).Msg("")
+		log.Error().Err(err).Msg("[ZIG APP]")
 	}
+
+	a.httpServer.Start(a)
 
 	if a.config.Retry.Enabled {
 		retrierStopChan, err := a.retrier.Start(a)
@@ -109,7 +110,7 @@ func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 		}
 	}
 
-	stopChan, routerStartErr := a.router.Start(a)
+	routerStopChan, routerStartErr := a.router.Start(a)
 	if routerStartErr != nil {
 		log.Fatal().Err(routerStartErr)
 	}
@@ -117,33 +118,38 @@ func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 	if startCallback != nil {
 		startCallback(a)
 	}
-	halt := func() {
+	halt := func(routerStopChan chan int) {
 		a.cancelFun()
+		if routerStopChan != nil {
+			<-routerStopChan
+		}
+		log.Info().Msg("[ZIG APP] router poll complete")
 		a.stop(stopCallback)
 	}
 	// Wait for router poll to complete
 	select {
-	case <-stopChan:
-		halt()
+	case <-routerStopChan:
+		halt(nil)
 	case <-a.interruptChan:
-		halt()
+		log.Info().Msg("[ZIG APP] CTRL+C interrupt received")
+		halt(routerStopChan)
 	}
 
 }
 
 func (a *App) stop(stopFunc StopFunction) {
 	if err := a.retrier.Stop(); err != nil {
-		log.Error().Err(err).Msg("error stopping retrier")
+		log.Error().Err(err).Msg("[ZIG APP] error stopping retry")
 	}
 
 	if err := a.httpServer.Stop(); err != nil {
-		log.Error().Err(err).Msg("error stopping http server")
+		log.Error().Err(err).Msg("[ZIG APP] error stopping http server")
 	}
 
 	if err := a.metricPublisher.Stop(); err != nil {
-		log.Error().Err(err).Msg("error stopping metrics")
+		log.Error().Err(err).Msg("[ZIG APP] error stopping metrics")
 	}
-	log.Info().Msg("invoking actor stop function")
+	log.Info().Msg("[ZIG APP] invoking actor stop callback")
 
 	if stopFunc != nil {
 		stopFunc()
@@ -158,7 +164,7 @@ func (a *App) Router() StreamRouter {
 	return a.router
 }
 
-func (a *App) Retrier() MessageRetrier {
+func (a *App) Retrier() MessageRetry {
 	return a.retrier
 }
 
