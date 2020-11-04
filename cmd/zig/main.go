@@ -22,8 +22,7 @@ require (
 	github.com/julienschmidt/httprouter v1.2.0
 )`
 
-var yamlFile = `
-service-name: "{{.AppName}}"
+var yamlFile = `service-name: "{{.AppName}}"
 stream-router:
   {{.TopicEntity}}:
     bootstrap-servers: "localhost:9092"
@@ -43,8 +42,76 @@ http-server:
   port: 8080
 `
 
-var mainFile = `
-package main
+var kafkaComposeFile = `version: '3.3'
+
+services:
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    ports:
+      - '2181:2181'
+    container_name: '{{.AppName}}_zookeeper'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: 'bitnami/kafka:2'
+    ports:
+      - '9092:9092'
+    container_name: '{{.AppName}}_kafka'
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+  rabbitmq:
+    image: 'bitnami/rabbitmq:latest'
+    ports:
+      - '15672:15672'
+      - '5672:5672'
+`
+var metricsComposeFile = `influxdb:
+  image: influxdb:latest
+  container_name: influxdb
+  ports:
+    - "8083:8083"
+    - "8086:8086"
+    - "8090:8090"
+
+telegraf:
+  image: telegraf:latest
+  container_name: telegraf
+  links:
+    - influxdb
+  ports:
+    - "8125:8125/udp"
+    - "9273:9273"
+  volumes:
+    - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+grafana:
+  image: grafana/grafana:latest
+  container_name: grafana
+  ports:
+    - "3000:3000"
+  user: "0"
+  links:
+    - influxdb
+    - prometheus
+  volumes:
+    - ./data/grafana/data:/grafana
+
+prometheus:
+  image: prom/prometheus
+  container_name: prometheus
+  ports:
+    - "9090:9090"
+  links:
+    - influxdb
+    - telegraf
+  volumes:
+    - ./prom_conf.yml:/etc/prometheus/prometheus.yml:ro
+    - ./data/prometheus/data:/prometheus
+`
+
+var mainFile = `package main
 
 import (
 	"github.com/gojekfarm/ziggurat-go/zig"
@@ -58,7 +125,7 @@ func main() {
 		return zig.ProcessingSuccess
 	}, zig.MessageLogger)
 
-	app.Run(router, zig.RunOptions{
+	<-app.Run(router, zig.RunOptions{
 		StartCallback: func(a *zig.App) {
 
 		},
@@ -90,6 +157,9 @@ zig new <app_name>`
 		if err := os.MkdirAll(appName+"/"+"config", 07770); err != nil {
 			return 1
 		}
+		if err := os.MkdirAll(appName+"/"+"sandbox", 07770); err != nil {
+			return 1
+		}
 		mainT, _ := template.New("mainTpl").Parse(mainFile)
 		mainF, _ := os.Create(appName + "/main.go")
 		mainT.Execute(mainF, d)
@@ -99,6 +169,13 @@ zig new <app_name>`
 		modT, _ := template.New("modTpl").Parse(modFile)
 		modF, _ := os.Create(appName + "/go.mod")
 		modT.Execute(modF, d)
+		kafkaComposeT, _ := template.New("kafkaComposeTpl").Parse(kafkaComposeFile)
+		kafkaComposeF, _ := os.Create(appName + "/" + "sandbox" + "/kafka-compose.yaml")
+		kafkaComposeT.Execute(kafkaComposeF, d)
+		metricsComposeT, _ := template.New("metricsComposeTpl").Parse(metricsComposeFile)
+		metricsComposeF, _ := os.Create(appName + "/" + "sandbox" + "/metrics-compose.yaml")
+		metricsComposeT.Execute(metricsComposeF, d)
+
 		fmt.Printf("successfully created app %s\n", appName)
 		return 0
 	})
