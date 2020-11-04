@@ -65,7 +65,6 @@ func retry(ctx context.Context, c *amqpsafe.Connector, config *Config, payload M
 	retryCount := getRetryCount(&payload)
 	if retryCount == config.Retry.Count {
 		return publishMessage(ctx, c, deadLetterExchangeName, payload, "")
-
 	}
 	setRetryCount(&payload)
 	return publishMessage(ctx, c, exchangeName, payload, expiry)

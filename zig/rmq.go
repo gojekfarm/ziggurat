@@ -2,6 +2,7 @@ package zig
 
 import (
 	"fmt"
+	"github.com/streadway/amqp"
 	amqpsafe "github.com/xssnick/amqp-safe"
 )
 
@@ -43,5 +44,25 @@ func (r *RabbitMQRetry) Stop() error {
 }
 
 func (r *RabbitMQRetry) Replay(app *App, topicEntity string, count int) error {
-	return nil
+	// amqpsafe does not expose the `channel.Get` method,
+	//dialing a new connection and using the `streadway/amqp` to consume single messages
+	hfmap := app.Router().GetHandlerFunctionMap()
+	if _, ok := hfmap[topicEntity]; !ok {
+		return fmt.Errorf("error: topic-entity %s not registered", topicEntity)
+	}
+	if count < 1 {
+		return fmt.Errorf("invalid count error: requested count %d is less than 1", count)
+	}
+
+	conn, err := amqp.Dial(r.config.host)
+	if err != nil {
+		return err
+	}
+
+	channel, chanOpenErr := conn.Channel()
+	if chanOpenErr != nil {
+		return chanOpenErr
+	}
+	return replayMessages(app, r.c, channel, topicEntity, count, r.config.delayQueueExpiration)
+
 }
