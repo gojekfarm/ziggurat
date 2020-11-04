@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/cmd"
-	"html/template"
 	"os"
+	"text/template"
 )
 
 type Data struct {
