@@ -89,7 +89,7 @@ func main() {
 		fmt.Println("stopping app")
 	}
 
-	app.Run(router, zig.RunOptions{
+	<-app.Run(router, zig.RunOptions{
 		HTTPConfigFunc: func(a *zig.App, r *httprouter.Router) {
 			r.GET("/test_ping", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 				writer.Write([]byte("TEST_PONG"))
