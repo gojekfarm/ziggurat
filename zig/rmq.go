@@ -64,5 +64,4 @@ func (r *RabbitMQRetry) Replay(app *App, topicEntity string, count int) error {
 		return chanOpenErr
 	}
 	return replayMessages(app, r.c, channel, topicEntity, count, r.config.delayQueueExpiration)
-
 }

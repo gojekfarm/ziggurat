@@ -14,7 +14,7 @@ go get -v -u github.com/gojekfarm/ziggurat-go
 ```yaml
 service-name: "test-app"
 stream-router:
-  booking:
+  message-log:
     bootstrap-servers: "localhost:9094"
     instance-count: 4
     # how many consumers to spawn.
@@ -125,6 +125,10 @@ func Logger(handlerFunc HandlerFunc) HandlerFunc {
 }
 ```
 Ziggurat provides  middlewares for logging and de-serializing kafka messages
+
+## Known issues
+- Data race occurs when rabbitmq is trying to re-connect, this doesn't lead to any adverse effects or message loss.
+However this is not caused by ziggurat-go but by a library called `amqp-safe`.
 
 
 #### TODO

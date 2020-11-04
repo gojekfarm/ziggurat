@@ -22,6 +22,9 @@ app.start:
 	go build
 	./ziggurat-go --config=./config/config.sample.yaml
 
+app.test:
+	go test -v ./zig
+
 app.start-race:
 	go build -race
 	./ziggurat-go --config=./config/config.sample.yaml
@@ -37,3 +40,4 @@ kafka.produce:
 
 pkg.release:
 	./scripts/release.sh ${VERSION}
+

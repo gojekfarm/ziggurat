@@ -8,6 +8,11 @@ import (
 type mockHTTP struct{}
 type mockStatsD struct{}
 type mockRouter struct{}
+
+func (m *mockRouter) GetTopicEntityNames() []string {
+	return []string{}
+}
+
 type mockRabbitMQ struct{}
 
 var app *App
