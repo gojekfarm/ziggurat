@@ -22,7 +22,7 @@ type App struct {
 	router          StreamRouter
 	metricPublisher MetricPublisher
 	interruptChan   chan os.Signal
-	doneChan        chan bool
+	doneChan        chan int
 	startFunc       StartFunction
 	stopFunc        StopFunction
 	ctx             context.Context
@@ -50,7 +50,7 @@ func NewApp() *App {
 		config:        &config,
 		stopFunc:      func() {},
 		interruptChan: make(chan os.Signal),
-		doneChan:      make(chan bool),
+		doneChan:      make(chan int),
 	}
 }
 
@@ -79,7 +79,7 @@ func (a *App) ConfigureHTTPRoutes(configFunc func(a *App, r *httprouter.Router))
 	a.httpServer.ConfigureHTTPRoutes(a, configFunc)
 }
 
-func (a *App) Run(router StreamRouter, runOptions RunOptions) {
+func (a *App) Run(router StreamRouter, runOptions RunOptions) chan int {
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.config.LogLevel)
 	a.router = router
@@ -87,7 +87,11 @@ func (a *App) Run(router StreamRouter, runOptions RunOptions) {
 	if runOptions.HTTPConfigFunc != nil {
 		a.ConfigureHTTPRoutes(runOptions.HTTPConfigFunc)
 	}
-	a.start(runOptions.StartCallback, runOptions.StopCallback)
+	go func() {
+		a.start(runOptions.StartCallback, runOptions.StopCallback)
+		close(a.doneChan)
+	}()
+	return a.doneChan
 }
 
 func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
@@ -134,7 +138,6 @@ func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 		log.Info().Msg("[ZIG APP] CTRL+C interrupt received")
 		halt(routerStopChan)
 	}
-
 }
 
 func (a *App) stop(stopFunc StopFunction) {
