@@ -36,6 +36,6 @@ func configureLogger(logLevel string) {
 	routerLogger = log.With().Str("component", "router").Logger()
 	consumerLogger = log.With().Str("component", "consumer").Logger()
 	serverLogger = log.With().Str("component", "http-server").Logger()
-	retrierLogger = log.With().Str("component", "retrier").Logger()
+	retrierLogger = log.With().Str("component", "messageRetry").Logger()
 	metricLogger = log.With().Str("component", "metrics").Logger()
 }

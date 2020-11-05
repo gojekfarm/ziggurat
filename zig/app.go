@@ -17,7 +17,7 @@ type Options struct {
 
 type App struct {
 	httpServer      HttpServer
-	retrier         MessageRetry
+	messageRetry    MessageRetry
 	config          *Config
 	router          StreamRouter
 	metricPublisher MetricPublisher
@@ -58,7 +58,7 @@ func (a *App) Configure(configFunc func(app *App) Options) {
 	options := configFunc(a)
 	a.metricPublisher = options.MetricPublisher
 	a.httpServer = options.HttpServer
-	a.retrier = options.Retrier
+	a.messageRetry = options.Retrier
 	//configure defaults if components are nil
 }
 
@@ -66,8 +66,8 @@ func (a *App) configureDefaults() {
 	if a.metricPublisher == nil {
 		a.metricPublisher = NewStatsD(a.config)
 	}
-	if a.retrier == nil {
-		a.retrier = NewRabbitMQRetry(a.config)
+	if a.messageRetry == nil {
+		a.messageRetry = NewRabbitMQRetry(a.config)
 	}
 
 	if a.httpServer == nil {
@@ -75,17 +75,18 @@ func (a *App) configureDefaults() {
 	}
 }
 
-func (a *App) ConfigureHTTPRoutes(configFunc func(a *App, r *httprouter.Router)) {
+func (a *App) configureHTTPRoutes(configFunc func(a *App, r *httprouter.Router)) {
 	a.httpServer.ConfigureHTTPRoutes(a, configFunc)
 }
 
 func (a *App) Run(router StreamRouter, runOptions RunOptions) chan int {
+
 	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	configureLogger(a.config.LogLevel)
 	a.router = router
 	a.configureDefaults()
 	if runOptions.HTTPConfigFunc != nil {
-		a.ConfigureHTTPRoutes(runOptions.HTTPConfigFunc)
+		a.configureHTTPRoutes(runOptions.HTTPConfigFunc)
 	}
 	go func() {
 		a.start(runOptions.StartCallback, runOptions.StopCallback)
@@ -103,10 +104,10 @@ func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 	a.httpServer.Start(a)
 
 	if a.config.Retry.Enabled {
-		retrierStopChan, err := a.retrier.Start(a)
+		retryStopChan, err := a.messageRetry.Start(a)
 
 		go func() {
-			<-retrierStopChan
+			<-retryStopChan
 			log.Error().Err(ErrRetryConsumerStopped).Msg("")
 		}()
 		if err != nil {
@@ -141,7 +142,7 @@ func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
 }
 
 func (a *App) stop(stopFunc StopFunction) {
-	if err := a.retrier.Stop(); err != nil {
+	if err := a.messageRetry.Stop(); err != nil {
 		log.Error().Err(err).Msg("[ZIG APP] error stopping retry")
 	}
 
@@ -167,11 +168,11 @@ func (a *App) Router() StreamRouter {
 	return a.router
 }
 
-func (a *App) Retrier() MessageRetry {
-	return a.retrier
+func (a *App) MessageRetry() MessageRetry {
+	return a.messageRetry
 }
 
-func (a *App) MetricPub() MetricPublisher {
+func (a *App) MetricPublisher() MetricPublisher {
 	return a.metricPublisher
 }
 

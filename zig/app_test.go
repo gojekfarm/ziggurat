@@ -105,7 +105,7 @@ func setup() {
 	app.router = mrouter
 	app.httpServer = mhttp
 	app.metricPublisher = mstatsd
-	app.retrier = mrabbitmq
+	app.messageRetry = mrabbitmq
 	app.cancelFun = func() {}
 	app.config = &Config{
 		StreamRouter: nil,

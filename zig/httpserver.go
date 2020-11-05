@@ -37,7 +37,7 @@ func NewDefaultHTTPServer(config *Config) HttpServer {
 func (s *DefaultHttpServer) Start(app *App) {
 	s.router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
-		if replayErr := app.retrier.Replay(app, params.ByName("topic_entity"), count); replayErr != nil {
+		if replayErr := app.messageRetry.Replay(app, params.ByName("topic_entity"), count); replayErr != nil {
 			http.Error(writer, replayErr.Error(), http.StatusInternalServerError)
 			return
 		}

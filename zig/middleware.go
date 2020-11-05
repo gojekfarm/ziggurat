@@ -70,8 +70,8 @@ func MessageMetricsPublisher(next HandlerFunc) HandlerFunc {
 		currTime := time.Now()
 		kafkaTimestamp := messageEvent.KafkaTimestamp
 		delayInMS := currTime.Sub(kafkaTimestamp).Milliseconds()
-		app.MetricPub().IncCounter("message_count", 1, args)
-		app.MetricPub().Gauge("message_delay", delayInMS, args)
+		app.MetricPublisher().IncCounter("message_count", 1, args)
+		app.MetricPublisher().Gauge("message_delay", delayInMS, args)
 		return next(messageEvent, app)
 	}
 }
