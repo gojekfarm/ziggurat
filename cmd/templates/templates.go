@@ -1,4 +1,362 @@
-##################### Grafana Configuration Defaults #####################
+package templates
+
+var YamlConfig = `service-name: "{{.AppName}}"
+stream-router:
+  {{.TopicEntity}}:
+    bootstrap-servers: "localhost:9092"
+    instance-count: 2
+    origin-topics: "{{.OriginTopics}}"
+    group-id: "{{.ConsumerGroup}}"
+log-level: "debug"
+retry:
+  enabled: true
+  count: 5
+rabbitmq:
+  host: "amqp://user:bitnami@localhost:5672/"
+  delay-queue-expiration: "1000"
+statsd:
+  host: "localhost:8125"
+http-server:
+  port: 8080`
+
+var DockerComposeKafka = `version: '3.3'
+
+services:
+  zookeeper:
+    image: 'bitnami/zookeeper:latest'
+    ports:
+      - '2181:2181'
+    container_name: '{{.AppName}}_zookeeper'
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: 'bitnami/kafka:2'
+    ports:
+      - '9092:9092'
+    container_name: '{{.AppName}}_kafka'
+    environment:
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092
+      - ALLOW_PLAINTEXT_LISTENER=yes
+  rabbitmq:
+    image: 'bitnami/rabbitmq:latest'
+    container_name: '{{.AppName}}_rabbitmq'
+    ports:
+      - '15672:15672'
+      - '5672:5672'`
+
+var DockerComposeMetrics = `telegraf:
+  image: telegraf:latest
+  container_name: {{.AppName}}_telegraf
+  ports:
+    - "8125:8125/udp"
+    - "9273:9273"
+  volumes:
+    - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+grafana:
+  image: grafana/grafana:latest
+  container_name: {{.AppName}}_grafana
+  ports:
+    - "3000:3000"
+  user: "0"
+  links:
+    - prometheus
+  volumes:
+    - ./data/grafana/data:/var/lib/grafana
+    - ./grafana.ini:/etc/grafana/grafana.ini
+    - ./datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+
+prometheus:
+  image: prom/prometheus
+  container_name: {{.AppName}}_prometheus
+  ports:
+    - "9090:9090"
+  links:
+    - telegraf
+  volumes:
+    - ./prom_conf.yaml:/etc/prometheus/prometheus.yml:ro
+    - ./data/prometheus/data:/prometheus`
+
+var GoMod = `module {{.AppName}}
+
+go 1.14
+
+require (
+	github.com/gojekfarm/ziggurat-go v0.5.1
+	github.com/julienschmidt/httprouter v1.2.0
+)`
+
+var PromConf = `global:
+  scrape_interval:     15s # By default, scrape targets every 15 seconds.
+
+  # Attach these labels to any time series or alerts when communicating with
+  # external systems (federation, remote storage, Alertmanager).
+  external_labels:
+    monitor: 'codelab-monitor'
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # The job name is added as a label` + `job = <job_name>` + `to any timeseries scraped from this config.
+  - job_name: 'prometheus'
+
+    # Override the global default and scrape targets from this job every 5 seconds.
+    scrape_interval: 5s
+
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: '{{.AppName}}'
+
+    scrape_interval: 5s
+
+    static_configs:
+      - targets: ['telegraf:9273']`
+
+var TelegrafConf = `[[inputs.statsd]]
+  ## Protocol, must be "tcp", "udp4", "udp6" or "udp" (default=udp)
+  protocol = "udp"
+
+  ## MaxTCPConnection - applicable when protocol is set to tcp (default=250)
+  max_tcp_connections = 250
+
+  ## Enable TCP keep alive probes (default=false)
+  tcp_keep_alive = false
+
+  ## Specifies the keep-alive period for an active network connection.
+  ## Only applies to TCP sockets and will be ignored if tcp_keep_alive is false.
+  ## Defaults to the OS configuration.
+  # tcp_keep_alive_period = "2h"
+
+  ## Address and port to host UDP listener on
+  service_address = ":8125"
+
+  ## The following configuration options control when telegraf clears it's cache
+  ## of previous values. If set to false, then telegraf will only clear it's
+  ## cache when the daemon is restarted.
+  ## Reset gauges every interval (default=true)
+  delete_gauges = true
+  ## Reset counters every interval (default=true)
+  delete_counters = true
+  ## Reset sets every interval (default=true)
+  delete_sets = true
+  ## Reset timings & histograms every interval (default=true)
+  delete_timings = true
+
+  ## Percentiles to calculate for timing & histogram stats.
+  percentiles = [50.0, 90.0, 99.0, 99.9, 99.95, 100.0]
+
+  ## separator to use between elements of a statsd metric
+  metric_separator = "_"
+
+  ## Parses tags in the datadog statsd format
+  ## http://docs.datadoghq.com/guides/dogstatsd/
+  ## deprecated in 1.10; use datadog_extensions option instead
+  parse_data_dog_tags = false
+
+  ## Parses extensions to statsd in the datadog statsd format
+  ## currently supports metrics and datadog tags.
+  ## http://docs.datadoghq.com/guides/dogstatsd/
+  datadog_extensions = false
+
+  ## Statsd data translation templates, more info can be read here:
+  ## https://github.com/influxdata/telegraf/blob/master/docs/TEMPLATE_PATTERN.md
+  # templates = [
+  #     "cpu.* measurement*"
+  # ]
+
+  ## Number of UDP messages allowed to queue up, once filled,
+  ## the statsd server will start dropping packets
+  allowed_pending_messages = 10000
+
+  ## Number of timing/histogram values to track per-measurement in the
+  ## calculation of percentiles. Raising this limit increases the accuracy
+  ## of percentiles but also increases the memory usage and cpu time.
+  percentile_limit = 1000
+
+  ## Maximum socket buffer size in bytes, once the buffer fills up, metrics
+  ## will start dropping.  Defaults to the OS default.
+  # read_buffer_size = 65535
+
+#[[outputs.influxdb]]
+#    urls = ["http://influxdb:8086"]
+
+[[outputs.prometheus_client]]
+  ## Address to listen on.
+  listen = ":9273"
+
+  ## Metric version controls the mapping from Telegraf metrics into
+  ## Prometheus format.  When using the prometheus input, use the same value in
+  ## both plugins to ensure metrics are round-tripped without modification.
+  ##
+  ##   example: metric_version = 1; deprecated in 1.13
+  ##            metric_version = 2; recommended version
+  metric_version = 2
+
+  ## Use HTTP Basic Authentication.
+  # basic_username = "Foo"
+  # basic_password = "Bar"
+
+  ## If set, the IP Ranges which are allowed to access metrics.
+  ##   ex: ip_range = ["192.168.0.0/24", "192.168.1.0/30"]
+  # ip_range = []
+
+  ## Path to publish the metrics on.
+  # path = "/metrics"
+
+  ## Expiration interval for each metric. 0 == no expiration
+  # expiration_interval = "60s"
+
+  ## Collectors to enable, valid entries are "gocollector" and "process".
+  ## If unset, both are enabled.
+  # collectors_exclude = ["gocollector", "process"]
+
+  ## Send string metrics as Prometheus labels.
+  ## Unless set to false all string metrics will be sent as labels.
+  # string_as_label = true
+
+  ## If set, enable TLS with the given certificate.
+  # tls_cert = "/etc/ssl/telegraf.crt"
+  # tls_key = "/etc/ssl/telegraf.key"
+
+  ## Set one or more allowed client CA certificate file names to
+  ## enable mutually authenticated TLS connections
+  # tls_allowed_cacerts = ["/etc/telegraf/clientca.pem"]
+
+  ## Export metric collection time.
+  # export_timestamp = false`
+
+var GrafanaDS = `# config file version
+apiVersion: 1
+
+# list of datasources that should be deleted from the database
+deleteDatasources:
+  - name: Prometheus
+    orgId: 1
+
+# list of datasources to insert/update depending
+# whats available in the database
+datasources:
+  # <string, required> name of the datasource. Required
+- name: Prometheus
+  # <string, required> datasource type. Required
+  type: prometheus
+  # <string, required> access mode. direct or proxy. Required
+  access: proxy
+  # <int> org id. will default to orgId 1 if not specified
+  orgId: 1
+  # <string> url
+  url: http://prometheus:9090
+  # <string> database password, if used
+  password:
+  # <string> database user, if used
+  user:
+  # <string> database name, if used
+  database:
+  # <bool> enable/disable basic auth
+  basicAuth: true
+  # <string> basic auth username
+  basicAuthUser: admin
+  # <string> basic auth password
+  basicAuthPassword: foobar
+  # <bool> enable/disable with credentials headers
+  withCredentials:
+  # <bool> mark as default datasource. Max one per org
+  isDefault:
+  # <map> fields that will be converted to json and stored in json_data
+  jsonData:
+     graphiteVersion: "1.1"
+     tlsAuth: false
+     tlsAuthWithCACert: false
+  # <string> json object of data that will be encrypted.
+  secureJsonData:
+    tlsCACert: "..."
+    tlsClientCert: "..."
+    tlsClientKey: "..."
+  version: 1
+  # <bool> allow users to edit datasources from the UI.
+  editable: true`
+
+var Main = `package main
+
+import (
+	"github.com/gojekfarm/ziggurat-go/zig"
+)
+
+func main() {
+	app := zig.NewApp()
+	router := zig.NewRouter()
+
+	router.HandlerFunc("{{.TopicEntity}}", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
+		return zig.ProcessingSuccess
+	}, zig.MessageLogger)
+
+	<-app.Run(router, zig.RunOptions{
+		StartCallback: func(a *zig.App) {
+
+		},
+		StopCallback: func() {
+
+		},
+	})
+
+}`
+
+var Makefile = `.PHONY: all
+
+TOPIC_NAME="{{.OriginTopics}}"
+BROKER_ADDRESS="{{.BootstrapServers}}"
+
+docker.start-kafka:
+	docker-compose -f ./sandbox/docker-compose-kafka.yaml down
+	docker-compose -f ./sandbox/docker-compose-kafka.yaml up -d
+	sleep 10
+	docker exec -it {{.AppName}}_kafka /opt/bitnami/kafka/bin/kafka-topics.sh --create --topic $(TOPIC_NAME) --partitions 3 --replication-factor 1 --zookeeper {{.AppName}}_zookeeper
+	sleep 5
+
+docker.start-metrics:
+	docker-compose -f ./sandbox/docker-compose-metrics.yaml down
+	docker-compose -f ./sandbox/docker-compose-metrics.yaml up -d
+	sleep 10
+
+app.start:
+	go build
+	./{{.AppName}}
+
+docker.cleanup:
+	docker-compose -f ./sandbox/docker-compose-kafka.yaml down
+	docker-compose -f ./sandbox/docker-compose-kafka.yaml rm
+	docker-compose -f ./sandbox/docker-compose-metrics.yaml down
+	docker-compose -f ./sandbox/docker-compose-metrics.yaml rm
+
+docker.kafka-produce:
+	./sandbox/kafka_produce.sh`
+
+var ProduceMessages = `#!/usr/bin/env bash
+
+BROKER_ADDRESS="{{.BootstrapServers}}"
+TOPIC="{{.OriginTopics}}"
+
+function produce() {
+  NUM="$1"
+  echo "key_$NUM:value_$NUM" | docker exec -i {{.AppName}}_kafka /opt/bitnami/kafka/bin/kafka-console-producer.sh \
+    --broker-list "$BROKER_ADDRESS" \
+    --property key.separator=":" \
+    --property parse.key=true \
+    --topic "$TOPIC"
+}
+
+echo "PRESS CTRL+C to terminate message production"
+i=0
+while true; do
+  echo "producing message $i"
+  produce $i
+  i=$((i + 1))
+  sleep 0.2s
+done`
+
+var GrafanaINI = `##################### Grafana Configuration Defaults #####################
 #
 # Do not modify this file in grafana installs
 #
@@ -14,7 +372,7 @@ instance_name = ${HOSTNAME}
 # Path to where grafana can store temp files, sessions, and the sqlite3 db (if that is used)
 data = data
 
-# Temporary files in `data` directory older than given duration will be removed
+# Temporary files in` + `data` + `directory older than given duration will be removed
 temp_data_lifetime = 24h
 
 # Directory where grafana can store logs
@@ -47,7 +405,7 @@ enforce_domain = false
 # The full public facing url
 root_url = %(protocol)s://%(domain)s:%(http_port)s/
 
-# Serve Grafana from subpath specified in `root_url` setting. By default it is set to `false` for compatibility reasons.
+# Serve Grafana from subpath specified in` + `root_url` + `setting. By default it is set to` + `false` + `for compatibility reasons.
 serve_from_sub_path = false
 
 # Log web requests
@@ -116,7 +474,7 @@ type = database
 
 # cache connectionstring options
 # database: will use Grafana primary database.
-# redis: config like redis server e.g. `addr=127.0.0.1:6379,pool_size=100,db=0,ssl=false`. Only addr is required. ssl may be 'true', 'false', or 'insecure'.
+# redis: config like redis server e.g.` + `addr = 127.0.0.1:6379, pool_size = 100, db = 0, ssl = false.` + `Only addr is required. ssl may be 'true', 'false', or 'insecure'.
 # memcache: 127.0.0.1:11211
 connstr =
 
@@ -198,7 +556,7 @@ disable_brute_force_login_protection = false
 # set to true if you host Grafana behind HTTPS. default is false.
 cookie_secure = false
 
-# set cookie SameSite attribute. defaults to `lax`. can be set to "lax", "strict", "none" and "disabled"
+# set cookie SameSite attribute. defaults to` + `lax` + `. can be set to "lax", "strict", "none" and "disabled"
 cookie_samesite = lax
 
 # set to true if you want to allow browsers to render Grafana in a <frame>, <iframe>, <embed> or <object>. default is false.
@@ -671,7 +1029,7 @@ disable_total_stats = false
 basic_auth_username =
 basic_auth_password =
 
-# Metrics environment info adds dimensions to the `grafana_environment_info` metric, which
+# Metrics environment info adds dimensions to the` + `grafana_environment_info` + `metric, which
 # can expose more information about the Grafana instance.
 [metrics.environment_info]
 #exampleLabel1 = exampleValue1
@@ -857,3 +1215,4 @@ use_browser_locale = false
 
 # Default timezone for user preferences. Options are 'browser' for the browser local timezone or a timezone name from IANA Time Zone database, e.g. 'UTC' or 'Europe/Amsterdam' etc.
 default_timezone = browser
+`

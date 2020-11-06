@@ -17,7 +17,7 @@ type Data struct {
 
 type ZigTemplate struct {
 	TemplateName    string
-	TemplatePath    string
+	TemplateText    string
 	TemplateOutPath string
 	IsExec          bool
 	outFile         *os.File
@@ -30,6 +30,7 @@ type ZigTemplateSet struct {
 }
 
 func NewZigTemplateSet(basedir string, tplcfg []ZigTemplate) *ZigTemplateSet {
+
 	return &ZigTemplateSet{
 		tplConfig: tplcfg,
 		basedir:   basedir,
@@ -68,7 +69,7 @@ func (zts *ZigTemplateSet) CreateOutFiles() error {
 func (zts *ZigTemplateSet) Parse() error {
 	cfg := zts.tplConfig
 	for i, _ := range cfg {
-		t, err := template.ParseFiles(cfg[i].TemplatePath)
+		t, err := template.New(cfg[i].TemplateName).Parse(cfg[i].TemplateText)
 		if err != nil {
 			return fmt.Errorf("error parsing template %s: %s", cfg[i].TemplateName, err.Error())
 		}
