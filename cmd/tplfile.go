@@ -8,16 +8,18 @@ import (
 )
 
 type Data struct {
-	AppName       string
-	TopicEntity   string
-	ConsumerGroup string
-	OriginTopics  string
+	AppName          string
+	TopicEntity      string
+	ConsumerGroup    string
+	OriginTopics     string
+	BootstrapServers string
 }
 
 type ZigTemplate struct {
 	TemplateName    string
 	TemplatePath    string
 	TemplateOutPath string
+	IsExec          bool
 	outFile         *os.File
 	t               *template.Template
 }
@@ -35,11 +37,11 @@ func NewZigTemplateSet(basedir string, tplcfg []ZigTemplate) *ZigTemplateSet {
 }
 
 func (zts *ZigTemplateSet) createBaseDirectories() error {
-	err := os.MkdirAll(zts.basedir+"/"+"config", 07770)
+	err := os.MkdirAll(zts.basedir+"/"+"config", 0777)
 	if err != nil {
 		return fmt.Errorf("error creating config dir: %s", err.Error())
 	}
-	err = os.MkdirAll(zts.basedir+"/"+"sandbox", 07770)
+	err = os.MkdirAll(zts.basedir+"/"+"sandbox", 0777)
 	if err != nil {
 		return fmt.Errorf("error creating sandbox dir: %s", err.Error())
 	}
@@ -81,6 +83,11 @@ func (zts *ZigTemplateSet) Render(data Data) error {
 		err := z.t.Execute(z.outFile, data)
 		if err != nil {
 			return fmt.Errorf("error rendering template %s: %s", z.TemplateName, err.Error())
+		}
+		if z.IsExec {
+			if permErr := z.outFile.Chmod(0755); permErr != nil {
+				return permErr
+			}
 		}
 	}
 	return nil

@@ -14,10 +14,11 @@ zig new <app_name>`
 	}
 	appName := args[1]
 	d := cmd.Data{
-		AppName:       appName,
-		TopicEntity:   "plain-text-log",
-		ConsumerGroup: appName + "_" + "consumer",
-		OriginTopics:  "plain-text-log",
+		AppName:          appName,
+		TopicEntity:      "plain-text-log",
+		ConsumerGroup:    appName + "_" + "consumer",
+		OriginTopics:     "plain-text-log",
+		BootstrapServers: "localhost:9092",
 	}
 	tplConfig := cmd.GetTemplateConfig()
 	zts := cmd.NewZigTemplateSet(appName, tplConfig)

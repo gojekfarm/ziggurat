@@ -51,6 +51,12 @@ var templateConfig = []ZigTemplate{
 		TemplatePath:    "cmd/templates/datasource.yaml.tpl",
 		TemplateOutPath: "$APP_NAME/sandbox/datasource.yaml",
 	},
+	{
+		TemplateName:    "kafka-produce",
+		TemplatePath:    "cmd/templates/produce_messages.sh.tpl",
+		TemplateOutPath: "$APP_NAME/sandbox/kafka_produce.sh",
+		IsExec:          true,
+	},
 }
 
 func GetTemplateConfig() []ZigTemplate {
