@@ -3,7 +3,7 @@ stream-router:
   {{.TopicEntity}}:
     bootstrap-servers: "localhost:9092"
     instance-count: 2
-    origin-topics: "plain-text-log"
+    origin-topics: "{{.OriginTopics}}"
     group-id: "{{.ConsumerGroup}}"
 log-level: "debug"
 retry:

@@ -11,6 +11,7 @@ type Data struct {
 	AppName       string
 	TopicEntity   string
 	ConsumerGroup string
+	OriginTopics  string
 }
 
 type ZigTemplate struct {

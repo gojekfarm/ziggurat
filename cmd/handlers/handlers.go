@@ -15,8 +15,9 @@ zig new <app_name>`
 	appName := args[1]
 	d := cmd.Data{
 		AppName:       appName,
-		TopicEntity:   "my-topic-entity",
+		TopicEntity:   "plain-text-log",
 		ConsumerGroup: appName + "_" + "consumer",
+		OriginTopics:  "plain-text-log",
 	}
 	tplConfig := cmd.GetTemplateConfig()
 	zts := cmd.NewZigTemplateSet(appName, tplConfig)

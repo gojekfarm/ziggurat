@@ -16,6 +16,41 @@ var templateConfig = []ZigTemplate{
 		TemplatePath:    "cmd/templates/main.go.tpl",
 		TemplateOutPath: "$APP_NAME/main.go",
 	},
+	{
+		TemplateName:    "docker-compose-metrics.yaml",
+		TemplatePath:    "cmd/templates/docker-compose-metrics.yaml.tpl",
+		TemplateOutPath: "$APP_NAME/sandbox/docker-compose-metrics.yaml",
+	},
+	{
+		TemplateName:    "prom-conf",
+		TemplatePath:    "cmd/templates/prom_conf.yaml.tpl",
+		TemplateOutPath: "$APP_NAME/sandbox/prom_conf.yaml",
+	},
+	{
+		TemplateName:    "docker-compose-kafka",
+		TemplatePath:    "cmd/templates/docker-compose-kafka.yaml.tpl",
+		TemplateOutPath: "$APP_NAME/sandbox/docker-compose-kafka.yaml",
+	},
+	{
+		TemplateName:    "makefile",
+		TemplatePath:    "cmd/templates/Makefile.tpl",
+		TemplateOutPath: "$APP_NAME/Makefile",
+	},
+	{
+		TemplateName:    "grafana-config",
+		TemplatePath:    "cmd/templates/grafana.ini.tpl",
+		TemplateOutPath: "$APP_NAME/sandbox/grafana.ini",
+	},
+	{
+		TemplateName:    "telegraf-config",
+		TemplatePath:    "cmd/templates/telegraf.conf.tpl",
+		TemplateOutPath: "$APP_NAME/sandbox/telegraf.conf",
+	},
+	{
+		TemplateName:    "datasource-grafana",
+		TemplatePath:    "cmd/templates/datasource.yaml.tpl",
+		TemplateOutPath: "$APP_NAME/sandbox/datasource.yaml",
+	},
 }
 
 func GetTemplateConfig() []ZigTemplate {

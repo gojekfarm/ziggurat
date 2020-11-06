@@ -36,7 +36,7 @@ docker.cleanup:
 	docker-compose -f docker-compose-metrics.yml rm
 
 kafka.produce:
-	./scripts/produce_messages ${COUNT}
+	./scripts/produce_messages
 
 pkg.release:
 	./scripts/release.sh ${VERSION}
