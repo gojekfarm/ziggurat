@@ -1,14 +1,5 @@
 #!/usr/bin/env bash
 
-function generate_json() {
-  local count=$1
-  cat <<EOF
-{
-  "value":$count
-}
-EOF
-}
-
 BROKER_ADDRESS="localhost:9092"
 
 echo "PRESS CTRL+C to terminate message production"
