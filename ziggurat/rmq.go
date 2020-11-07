@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ func NewRabbitMQRetry(config *Config) *RabbitMQRetry {
 	}
 }
 
-func (r *RabbitMQRetry) Start(app *App) (chan int, error) {
+func (r *RabbitMQRetry) Start(app App) (chan int, error) {
 	conn := amqpsafe.NewConnector(amqpsafe.Config{
 		Hosts: []string{r.config.host},
 	})
@@ -29,7 +29,7 @@ func (r *RabbitMQRetry) Start(app *App) (chan int, error) {
 	return make(chan int), nil
 }
 
-func (r *RabbitMQRetry) Retry(app *App, payload MessageEvent) error {
+func (r *RabbitMQRetry) Retry(app App, payload MessageEvent) error {
 	if app.Config().Retry.Enabled {
 		return retry(app.Context(), r.c, app.Config(), payload, r.config.delayQueueExpiration)
 	}
@@ -43,7 +43,7 @@ func (r *RabbitMQRetry) Stop() error {
 	return nil
 }
 
-func (r *RabbitMQRetry) Replay(app *App, topicEntity string, count int) error {
+func (r *RabbitMQRetry) Replay(app App, topicEntity string, count int) error {
 	// amqpsafe does not expose the `channel.Get` method,
 	//dialing a new connection and using the `streadway/amqp` to consume single messages
 	hfmap := app.Router().GetHandlerFunctionMap()

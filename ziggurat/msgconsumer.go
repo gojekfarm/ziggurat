@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"context"
@@ -33,7 +33,7 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 	return nil
 }
 
-func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+func startConsumer(routerCtx context.Context, app App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	consumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("[ZIG CONSUMER] starting consumer")
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
@@ -72,7 +72,7 @@ func startConsumer(routerCtx context.Context, app *App, handlerFunc HandlerFunc,
 	}(routerCtx, consumer, instanceID, wg)
 }
 
-func startConsumers(routerCtx context.Context, app *App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+func startConsumers(routerCtx context.Context, app App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)

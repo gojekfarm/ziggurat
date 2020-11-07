@@ -1,7 +1,7 @@
-package zig
+package ziggurat
 
 import (
-	testproto "github.com/gojekfarm/ziggurat-go/zig/protobuf"
+	testproto "github.com/gojekfarm/ziggurat-go/ziggurat/protobuf"
 	"github.com/golang/protobuf/proto"
 	"testing"
 )
@@ -20,7 +20,7 @@ func TestJSONDeserializer(t *testing.T) {
 		Name:      "road_rash",
 		SecretNum: 1,
 	}
-	handler := func(event MessageEvent, app *App) ProcessStatus {
+	handler := func(event MessageEvent, app *Ziggurat) ProcessStatus {
 		message := *event.MessageValue.(*JSONMessage)
 		if message == expectedMessage {
 			return ProcessingSuccess
@@ -29,7 +29,7 @@ func TestJSONDeserializer(t *testing.T) {
 	}
 	result := jsonDeserializer(handler)(MessageEvent{
 		MessageValueBytes: []byte(jsonMessage),
-	}, &App{})
+	}, &Ziggurat{})
 
 	if result == SkipMessage {
 		t.Errorf("expected %v but got %v", ProcessingSuccess, result)
@@ -46,7 +46,7 @@ func TestProtobufDeserializer(t *testing.T) {
 	bytes, _ := proto.Marshal(&expectedMessage)
 	//go vet complains copying lockers by value
 	protoDeserializer := ProtobufDeserializer(testProtoModel)
-	protoDeserializer(func(messageEvent MessageEvent, app *App) ProcessStatus {
+	protoDeserializer(func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
 		tm := messageEvent.MessageValue.(*testproto.TestMessage)
 		if !proto.Equal(tm, &expectedMessage) {
 			t.Errorf("proto messages are not equal")
@@ -54,6 +54,6 @@ func TestProtobufDeserializer(t *testing.T) {
 		return ProcessingSuccess
 	})(MessageEvent{
 		MessageValueBytes: bytes,
-	}, &App{})
+	}, &Ziggurat{})
 	
 }

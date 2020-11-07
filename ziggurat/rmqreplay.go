@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"github.com/rs/zerolog/log"
@@ -6,7 +6,7 @@ import (
 	amqpsafe "github.com/xssnick/amqp-safe"
 )
 
-func replayMessages(app *App, connector *amqpsafe.Connector, channel *amqp.Channel, topicEntity string, count int, expiration string) error {
+func replayMessages(app App, connector *amqpsafe.Connector, channel *amqp.Channel, topicEntity string, count int, expiration string) error {
 	serviceName, ctx := app.Config().ServiceName, app.Context()
 	queueName := constructQueueName(serviceName, topicEntity, QueueTypeDL)
 	for i := 0; i < count; i++ {

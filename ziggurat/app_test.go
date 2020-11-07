@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"github.com/julienschmidt/httprouter"
@@ -15,14 +15,14 @@ func (m *mockRouter) GetTopicEntityNames() []string {
 
 type mockRabbitMQ struct{}
 
-var app *App
+var app *Ziggurat
 var mhttp, mrouter, mstatsd, mrabbitmq = &mockHTTP{}, &mockRouter{}, &mockStatsD{}, &mockRabbitMQ{}
 var startCount = 0
 var stopCount = 0
 var expectedStopCount = 3
 var expectedStartCount = 4
 
-func (m *mockRabbitMQ) Start(app *App) (chan int, error) {
+func (m *mockRabbitMQ) Start(app *Ziggurat) (chan int, error) {
 	startCount++
 	stopChan := make(chan int)
 	go func() {
@@ -31,7 +31,7 @@ func (m *mockRabbitMQ) Start(app *App) (chan int, error) {
 	return stopChan, nil
 }
 
-func (m *mockRabbitMQ) Retry(app *App, payload MessageEvent) error {
+func (m *mockRabbitMQ) Retry(app *Ziggurat, payload MessageEvent) error {
 	return nil
 }
 
@@ -40,11 +40,11 @@ func (m *mockRabbitMQ) Stop() error {
 	return nil
 }
 
-func (m *mockRabbitMQ) Replay(app *App, topicEntity string, count int) error {
+func (m *mockRabbitMQ) Replay(app *Ziggurat, topicEntity string, count int) error {
 	return nil
 }
 
-func (m *mockStatsD) Start(app *App) error {
+func (m *mockStatsD) Start(app *Ziggurat) error {
 	startCount++
 	return nil
 }
@@ -62,7 +62,7 @@ func (m *mockStatsD) IncCounter(metricName string, value int64, arguments map[st
 	return nil
 }
 
-func (m *mockRouter) Start(app *App) (chan int, error) {
+func (m *mockRouter) Start(app *Ziggurat) (chan int, error) {
 	startCount++
 	closeChan := make(chan int)
 	go func() {
@@ -83,7 +83,7 @@ func (m *mockRouter) GetHandlerFunctionMap() map[string]*topicEntity {
 	return map[string]*topicEntity{}
 }
 
-func (mh *mockHTTP) Start(app *App) {
+func (mh *mockHTTP) Start(app *Ziggurat) {
 	startCount++
 }
 
@@ -96,12 +96,12 @@ func (mh *mockHTTP) Stop() error {
 	return nil
 }
 
-func (mh *mockHTTP) ConfigureHTTPRoutes(a *App, configFunc func(a *App, r *httprouter.Router)) {
+func (mh *mockHTTP) ConfigureHTTPRoutes(a *Ziggurat, configFunc func(a *Ziggurat, r *httprouter.Router)) {
 	panic("implement me")
 }
 
 func setup() {
-	app = &App{}
+	app = &Ziggurat{}
 	app.router = mrouter
 	app.httpServer = mhttp
 	app.metricPublisher = mstatsd
@@ -117,7 +117,7 @@ func setup() {
 }
 
 func teardown() {
-	app = &App{}
+	app = &Ziggurat{}
 	startCount = 0
 	stopCount = 0
 }
@@ -126,7 +126,7 @@ func TestApp_Start(t *testing.T) {
 	setup()
 	defer teardown()
 	startCallbackCalled := false
-	startCallback := func(app *App) {
+	startCallback := func(app *Ziggurat) {
 		startCallbackCalled = true
 	}
 

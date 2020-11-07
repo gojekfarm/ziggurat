@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"encoding/json"
@@ -10,7 +10,7 @@ import (
 
 func JSONDeserializer(model interface{}) MiddlewareFunc {
 	return func(next HandlerFunc) HandlerFunc {
-		return func(message MessageEvent, app *App) ProcessStatus {
+		return func(message MessageEvent, app *Ziggurat) ProcessStatus {
 			messageValueBytes := message.MessageValueBytes
 			typeModel := reflect.TypeOf(model)
 			res := reflect.New(typeModel).Interface()
@@ -26,7 +26,7 @@ func JSONDeserializer(model interface{}) MiddlewareFunc {
 }
 
 func MessageLogger(next HandlerFunc) HandlerFunc {
-	return func(messageEvent MessageEvent, app *App) ProcessStatus {
+	return func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
 		log.Info().
 			Str("topic-entity", messageEvent.TopicEntity).
 			Str("kafka-topic", messageEvent.Topic).
@@ -39,7 +39,7 @@ func MessageLogger(next HandlerFunc) HandlerFunc {
 
 func ProtobufDeserializer(protoMessage interface{}) MiddlewareFunc {
 	return func(next HandlerFunc) HandlerFunc {
-		return func(messageEvent MessageEvent, app *App) ProcessStatus {
+		return func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
 			messageValueBytes := messageEvent.MessageValueBytes
 
 			typeModel := reflect.TypeOf(protoMessage)
@@ -62,7 +62,7 @@ func ProtobufDeserializer(protoMessage interface{}) MiddlewareFunc {
 }
 
 func MessageMetricsPublisher(next HandlerFunc) HandlerFunc {
-	return func(messageEvent MessageEvent, app *App) ProcessStatus {
+	return func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
 		args := map[string]string{
 			"topic_entity": messageEvent.TopicEntity,
 			"kafka_topic":  messageEvent.Topic,

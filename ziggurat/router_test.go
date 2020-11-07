@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import "testing"
 
@@ -7,10 +7,10 @@ var dr = NewRouter()
 func TestDefaultRouter_HandlerFunc(t *testing.T) {
 	topicEntity := "test-entity"
 	topicEntityTwo := "test-entity2"
-	dr.HandlerFunc(topicEntity, func(messageEvent MessageEvent, app *App) ProcessStatus {
+	dr.HandlerFunc(topicEntity, func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
-	dr.HandlerFunc(topicEntityTwo, func(messageEvent MessageEvent, app *App) ProcessStatus {
+	dr.HandlerFunc(topicEntityTwo, func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
 	if len(dr.handlerFunctionMap) < 2 {

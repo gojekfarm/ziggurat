@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"bytes"

@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"fmt"
@@ -95,9 +95,9 @@ func (dr *DefaultRouter) validate(config *Config) {
 	}
 }
 
-func (dr *DefaultRouter) Start(app *App) (chan int, error) {
+func (dr *DefaultRouter) Start(app App) (chan int, error) {
 	ctx := app.Context()
-	config := app.config
+	config := app.Config()
 	stopChan := make(chan int)
 	var wg sync.WaitGroup
 	srConfig := config.StreamRouter
@@ -106,7 +106,7 @@ func (dr *DefaultRouter) Start(app *App) (chan int, error) {
 		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("[ZIG ROUTER]")
 	}
 
-	dr.validate(app.config)
+	dr.validate(config)
 
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]

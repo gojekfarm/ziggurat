@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"context"
@@ -15,7 +15,7 @@ type Options struct {
 	MetricPublisher MetricPublisher
 }
 
-type App struct {
+type Ziggurat struct {
 	httpServer      HttpServer
 	messageRetry    MessageRetry
 	config          *Config
@@ -30,12 +30,12 @@ type App struct {
 }
 
 type RunOptions struct {
-	HTTPConfigFunc func(a *App, r *httprouter.Router)
-	StartCallback  func(a *App)
+	HTTPConfigFunc func(a App, r *httprouter.Router)
+	StartCallback  func(a App)
 	StopCallback   func()
 }
 
-func NewApp() *App {
+func NewApp() *Ziggurat {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	commandLineOptions := ParseCommandLineArguments()
 	parseConfig(commandLineOptions)
@@ -44,7 +44,7 @@ func NewApp() *App {
 	if validationErr := config.validate(); validationErr != nil {
 		log.Fatal().Err(validationErr).Msg("[ZIG APP] error creating app")
 	}
-	return &App{
+	return &Ziggurat{
 		ctx:           ctx,
 		cancelFun:     cancelFn,
 		config:        &config,
@@ -54,103 +54,103 @@ func NewApp() *App {
 	}
 }
 
-func (a *App) Configure(configFunc func(app *App) Options) {
-	options := configFunc(a)
-	a.metricPublisher = options.MetricPublisher
-	a.httpServer = options.HttpServer
-	a.messageRetry = options.Retrier
+func (z *Ziggurat) Configure(configFunc func(app App) Options) {
+	options := configFunc(z)
+	z.metricPublisher = options.MetricPublisher
+	z.httpServer = options.HttpServer
+	z.messageRetry = options.Retrier
 	//configure defaults if components are nil
 }
 
-func (a *App) configureDefaults() {
-	if a.metricPublisher == nil {
-		a.metricPublisher = NewStatsD(a.config)
+func (z *Ziggurat) configureDefaults() {
+	if z.metricPublisher == nil {
+		z.metricPublisher = NewStatsD(z.config)
 	}
-	if a.messageRetry == nil {
-		a.messageRetry = NewRabbitMQRetry(a.config)
+	if z.messageRetry == nil {
+		z.messageRetry = NewRabbitMQRetry(z.config)
 	}
 
-	if a.httpServer == nil {
-		a.httpServer = NewDefaultHTTPServer(a.config)
+	if z.httpServer == nil {
+		z.httpServer = NewDefaultHTTPServer(z.config)
 	}
 }
 
-func (a *App) configureHTTPRoutes(configFunc func(a *App, r *httprouter.Router)) {
-	a.httpServer.ConfigureHTTPRoutes(a, configFunc)
+func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, r *httprouter.Router)) {
+	z.httpServer.ConfigureHTTPRoutes(z, configFunc)
 }
 
-func (a *App) Run(router StreamRouter, runOptions RunOptions) chan int {
+func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan int {
 
-	signal.Notify(a.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
-	configureLogger(a.config.LogLevel)
-	a.router = router
-	a.configureDefaults()
+	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
+	configureLogger(z.config.LogLevel)
+	z.router = router
+	z.configureDefaults()
 	if runOptions.HTTPConfigFunc != nil {
-		a.configureHTTPRoutes(runOptions.HTTPConfigFunc)
+		z.configureHTTPRoutes(runOptions.HTTPConfigFunc)
 	}
 	go func() {
-		a.start(runOptions.StartCallback, runOptions.StopCallback)
-		close(a.doneChan)
+		z.start(runOptions.StartCallback, runOptions.StopCallback)
+		close(z.doneChan)
 	}()
-	return a.doneChan
+	return z.doneChan
 }
 
-func (a *App) start(startCallback StartFunction, stopCallback StopFunction) {
+func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction) {
 
-	if err := a.metricPublisher.Start(a); err != nil {
+	if err := z.metricPublisher.Start(z); err != nil {
 		log.Error().Err(err).Msg("[ZIG APP]")
 	}
 
-	a.httpServer.Start(a)
+	z.httpServer.Start(z)
 
-	if a.config.Retry.Enabled {
-		retryStopChan, err := a.messageRetry.Start(a)
-
-		go func() {
-			<-retryStopChan
-			log.Error().Err(ErrRetryConsumerStopped).Msg("")
-		}()
+	if z.config.Retry.Enabled {
+		_, err := z.messageRetry.Start(z)
 		if err != nil {
 			log.Error().Err(err).Msg("")
 		}
 	}
 
-	routerStopChan, routerStartErr := a.router.Start(a)
+	routerStopChan, routerStartErr := z.router.Start(z)
 	if routerStartErr != nil {
 		log.Fatal().Err(routerStartErr)
 	}
 
 	if startCallback != nil {
-		startCallback(a)
+		startCallback(z)
 	}
 	halt := func(routerStopChan chan int) {
-		a.cancelFun()
+		z.cancelFun()
 		if routerStopChan != nil {
 			<-routerStopChan
 		}
 		log.Info().Msg("[ZIG APP] router poll complete")
-		a.stop(stopCallback)
+		z.stop(stopCallback)
 	}
 	// Wait for router poll to complete
 	select {
 	case <-routerStopChan:
 		halt(nil)
-	case <-a.interruptChan:
+	case <-z.interruptChan:
 		log.Info().Msg("[ZIG APP] CTRL+C interrupt received")
 		halt(routerStopChan)
 	}
 }
 
-func (a *App) stop(stopFunc StopFunction) {
-	if err := a.messageRetry.Stop(); err != nil {
+func (z *Ziggurat) Stop() {
+	z.cancelFun()
+	z.stop(z.stopFunc)
+}
+
+func (z *Ziggurat) stop(stopFunc StopFunction) {
+	if err := z.messageRetry.Stop(); err != nil {
 		log.Error().Err(err).Msg("[ZIG APP] error stopping retry")
 	}
 
-	if err := a.httpServer.Stop(); err != nil {
+	if err := z.httpServer.Stop(); err != nil {
 		log.Error().Err(err).Msg("[ZIG APP] error stopping http server")
 	}
 
-	if err := a.metricPublisher.Stop(); err != nil {
+	if err := z.metricPublisher.Stop(); err != nil {
 		log.Error().Err(err).Msg("[ZIG APP] error stopping metrics")
 	}
 	log.Info().Msg("[ZIG APP] invoking actor stop callback")
@@ -160,26 +160,26 @@ func (a *App) stop(stopFunc StopFunction) {
 	}
 }
 
-func (a *App) Context() context.Context {
-	return a.ctx
+func (z *Ziggurat) Context() context.Context {
+	return z.ctx
 }
 
-func (a *App) Router() StreamRouter {
-	return a.router
+func (z *Ziggurat) Router() StreamRouter {
+	return z.router
 }
 
-func (a *App) MessageRetry() MessageRetry {
-	return a.messageRetry
+func (z *Ziggurat) MessageRetry() MessageRetry {
+	return z.messageRetry
 }
 
-func (a *App) MetricPublisher() MetricPublisher {
-	return a.metricPublisher
+func (z *Ziggurat) MetricPublisher() MetricPublisher {
+	return z.metricPublisher
 }
 
-func (a *App) HTTPServer() HttpServer {
-	return a.httpServer
+func (z *Ziggurat) HTTPServer() HttpServer {
+	return z.httpServer
 }
 
-func (a *App) Config() *Config {
-	return a.config
+func (z *Ziggurat) Config() *Config {
+	return z.config
 }

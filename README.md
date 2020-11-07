@@ -60,7 +60,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/zig"
+	"github.com/gojekfarm/ziggurat-go/ziggurat"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )

@@ -1,8 +1,8 @@
-package zig
+package ziggurat
 
 func pipeHandlers(funcs ...MiddlewareFunc) func(handlerFunc HandlerFunc) HandlerFunc {
 	return func(next HandlerFunc) HandlerFunc {
-		return func(messageEvent MessageEvent, app *App) ProcessStatus {
+		return func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
 			var handlerResult HandlerFunc
 			last := len(funcs) - 1
 			for i := last; i >= 0; i-- {

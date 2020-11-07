@@ -1,4 +1,4 @@
-package zig
+package ziggurat
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ func decodeMessage(body []byte) (MessageEvent, error) {
 	return *messageEvent, nil
 }
 
-func createSetupCallback(connector *amqpsafe.Connector, app *App) func() {
+func createSetupCallback(connector *amqpsafe.Connector, app App) func() {
 	topicEntities := app.Router().GetTopicEntityNames()
 	handlerMap := app.Router().GetHandlerFunctionMap()
 	return func() {
