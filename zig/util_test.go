@@ -5,14 +5,14 @@ import (
 )
 
 func testMiddlewareFunc(next HandlerFunc) HandlerFunc {
-	return func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
+	return func(messageEvent MessageEvent, app App) ProcessStatus {
 		messageEvent.MessageValueBytes = []byte("Test message")
 		return next(messageEvent, app)
 	}
 }
 
 func testMiddlewareAppender(next HandlerFunc) HandlerFunc {
-	return func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
+	return func(messageEvent MessageEvent, app App) ProcessStatus {
 		msg := messageEvent.MessageValueBytes
 		messageEvent.MessageValueBytes = append(msg, []byte(" appender")...)
 		return next(messageEvent, app)
@@ -20,7 +20,7 @@ func testMiddlewareAppender(next HandlerFunc) HandlerFunc {
 }
 
 func TestPipeHandlers(t *testing.T) {
-	origHandler := func(msg MessageEvent, app *Ziggurat) ProcessStatus {
+	origHandler := func(msg MessageEvent, app App) ProcessStatus {
 		if string(msg.MessageValueBytes) == "Test message appender" {
 			return ProcessingSuccess
 		}

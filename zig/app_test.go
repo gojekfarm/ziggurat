@@ -22,7 +22,7 @@ var stopCount = 0
 var expectedStopCount = 3
 var expectedStartCount = 4
 
-func (m *mockRabbitMQ) Start(app *Ziggurat) (chan int, error) {
+func (m *mockRabbitMQ) Start(app App) (chan int, error) {
 	startCount++
 	stopChan := make(chan int)
 	go func() {
@@ -31,7 +31,7 @@ func (m *mockRabbitMQ) Start(app *Ziggurat) (chan int, error) {
 	return stopChan, nil
 }
 
-func (m *mockRabbitMQ) Retry(app *Ziggurat, payload MessageEvent) error {
+func (m *mockRabbitMQ) Retry(app App, payload MessageEvent) error {
 	return nil
 }
 
@@ -40,11 +40,11 @@ func (m *mockRabbitMQ) Stop() error {
 	return nil
 }
 
-func (m *mockRabbitMQ) Replay(app *Ziggurat, topicEntity string, count int) error {
+func (m *mockRabbitMQ) Replay(app App, topicEntity string, count int) error {
 	return nil
 }
 
-func (m *mockStatsD) Start(app *Ziggurat) error {
+func (m *mockStatsD) Start(app App) error {
 	startCount++
 	return nil
 }
@@ -62,7 +62,7 @@ func (m *mockStatsD) IncCounter(metricName string, value int64, arguments map[st
 	return nil
 }
 
-func (m *mockRouter) Start(app *Ziggurat) (chan int, error) {
+func (m *mockRouter) Start(app App) (chan int, error) {
 	startCount++
 	closeChan := make(chan int)
 	go func() {
@@ -83,7 +83,7 @@ func (m *mockRouter) GetHandlerFunctionMap() map[string]*topicEntity {
 	return map[string]*topicEntity{}
 }
 
-func (mh *mockHTTP) Start(app *Ziggurat) {
+func (mh *mockHTTP) Start(app App) {
 	startCount++
 }
 
@@ -96,7 +96,7 @@ func (mh *mockHTTP) Stop() error {
 	return nil
 }
 
-func (mh *mockHTTP) ConfigureHTTPRoutes(a *Ziggurat, configFunc func(a *Ziggurat, r *httprouter.Router)) {
+func (mh *mockHTTP) ConfigureHTTPRoutes(a App, configFunc func(a App, r *httprouter.Router)) {
 	panic("implement me")
 }
 
@@ -126,7 +126,7 @@ func TestApp_Start(t *testing.T) {
 	setup()
 	defer teardown()
 	startCallbackCalled := false
-	startCallback := func(app *Ziggurat) {
+	startCallback := func(app App) {
 		startCallbackCalled = true
 	}
 

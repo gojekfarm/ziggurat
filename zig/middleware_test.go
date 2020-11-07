@@ -20,7 +20,7 @@ func TestJSONDeserializer(t *testing.T) {
 		Name:      "road_rash",
 		SecretNum: 1,
 	}
-	handler := func(event MessageEvent, app *Ziggurat) ProcessStatus {
+	handler := func(event MessageEvent, app App) ProcessStatus {
 		message := *event.MessageValue.(*JSONMessage)
 		if message == expectedMessage {
 			return ProcessingSuccess
@@ -46,7 +46,7 @@ func TestProtobufDeserializer(t *testing.T) {
 	bytes, _ := proto.Marshal(&expectedMessage)
 	//go vet complains copying lockers by value
 	protoDeserializer := ProtobufDeserializer(testProtoModel)
-	protoDeserializer(func(messageEvent MessageEvent, app *Ziggurat) ProcessStatus {
+	protoDeserializer(func(messageEvent MessageEvent, app App) ProcessStatus {
 		tm := messageEvent.MessageValue.(*testproto.TestMessage)
 		if !proto.Equal(tm, &expectedMessage) {
 			t.Errorf("proto messages are not equal")
