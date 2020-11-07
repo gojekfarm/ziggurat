@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] 20202-11-06
+## [0.7.0] 2020-11-07
+## Added
+- updates the `kakfa-client` lib
+## Changes
+- uses `http.Handler` to configure http-routes
+- updates main template
+- defines an interface for App
+
+## [0.6.1] 2020-11-06 UNRELEASED
 ##Changes
 - fixes template not found bug
 - uses raw strings instead of tempalte files
