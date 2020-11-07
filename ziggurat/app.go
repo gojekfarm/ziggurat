@@ -2,10 +2,12 @@ package ziggurat
 
 import (
 	"context"
+	"errors"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
 	"os"
 	"os/signal"
+	"sync/atomic"
 	"syscall"
 )
 
@@ -27,6 +29,7 @@ type Ziggurat struct {
 	stopFunc        StopFunction
 	ctx             context.Context
 	cancelFun       context.CancelFunc
+	isRunning       int32
 }
 
 type RunOptions struct {
@@ -80,19 +83,26 @@ func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, r *httprouter.Rout
 }
 
 func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan int {
-
-	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
-	configureLogger(z.config.LogLevel)
-	z.router = router
-	z.configureDefaults()
-	if runOptions.HTTPConfigFunc != nil {
-		z.configureHTTPRoutes(runOptions.HTTPConfigFunc)
+	if atomic.LoadInt32(&z.isRunning) == 1 {
+		log.Error().Err(errors.New("app is already running")).Msg("[ZIG APP]")
+		return z.doneChan
 	}
-	go func() {
-		z.start(runOptions.StartCallback, runOptions.StopCallback)
-		close(z.doneChan)
-	}()
-	return z.doneChan
+
+	{
+		signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
+		configureLogger(z.config.LogLevel)
+		z.router = router
+		z.configureDefaults()
+		if runOptions.HTTPConfigFunc != nil {
+			z.configureHTTPRoutes(runOptions.HTTPConfigFunc)
+		}
+		go func() {
+			z.start(runOptions.StartCallback, runOptions.StopCallback)
+			close(z.doneChan)
+		}()
+		atomic.StoreInt32(&z.isRunning, 1)
+		return z.doneChan
+	}
 }
 
 func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction) {
@@ -123,6 +133,7 @@ func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction)
 		if routerStopChan != nil {
 			<-routerStopChan
 		}
+		atomic.StoreInt32(&z.isRunning, 0)
 		log.Info().Msg("[ZIG APP] router poll complete")
 		z.stop(stopCallback)
 	}
