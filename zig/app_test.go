@@ -1,7 +1,7 @@
 package zig
 
 import (
-	"github.com/julienschmidt/httprouter"
+	"net/http"
 	"testing"
 )
 
@@ -87,17 +87,12 @@ func (mh *mockHTTP) Start(app App) {
 	startCount++
 }
 
-func (mh *mockHTTP) DefineRoutes(func(r *httprouter.Router)) {
-
-}
-
 func (mh *mockHTTP) Stop() error {
 	stopCount++
 	return nil
 }
 
-func (mh *mockHTTP) ConfigureHTTPRoutes(a App, configFunc func(a App, r *httprouter.Router)) {
-	panic("implement me")
+func (mh *mockHTTP) ConfigureHTTPRoutes(a App, configFunc func(a App, h http.Handler)) {
 }
 
 func setup() {

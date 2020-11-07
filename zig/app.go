@@ -24,7 +24,7 @@ type Ziggurat struct {
 	router          StreamRouter
 	metricPublisher MetricPublisher
 	interruptChan   chan os.Signal
-	doneChan        chan int
+	doneChan        chan struct{}
 	startFunc       StartFunction
 	stopFunc        StopFunction
 	ctx             context.Context
@@ -53,7 +53,7 @@ func NewApp() *Ziggurat {
 		config:        &config,
 		stopFunc:      func() {},
 		interruptChan: make(chan os.Signal),
-		doneChan:      make(chan int),
+		doneChan:      make(chan struct{}),
 	}
 }
 
@@ -82,7 +82,7 @@ func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, h http.Handler)) {
 	z.httpServer.ConfigureHTTPRoutes(z, configFunc)
 }
 
-func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan int {
+func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{} {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		log.Error().Err(errors.New("app is already running")).Msg("[ZIG APP]")
 		return z.doneChan

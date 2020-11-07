@@ -45,7 +45,7 @@ type App interface {
 	Context() context.Context
 	Router() StreamRouter
 	MessageRetry() MessageRetry
-	Run(router StreamRouter, options RunOptions) chan int
+	Run(router StreamRouter, options RunOptions) chan struct{}
 	Configure(configFunc func(o App) Options)
 	MetricPublisher() MetricPublisher
 	HTTPServer() HttpServer
