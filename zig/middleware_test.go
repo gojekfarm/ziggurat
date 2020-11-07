@@ -1,7 +1,7 @@
 package zig
 
 import (
-	testproto "github.com/gojekfarm/ziggurat-go/zig/protobuf"
+	testproto "github.com/gojekfarm/ziggurat-go/protobuf"
 	"github.com/golang/protobuf/proto"
 	"testing"
 )
