@@ -295,7 +295,7 @@ func main() {
 
 		return zig.ProcessingSuccess
 
-	}, zig.MessageLogger, zig.JSONDeserializer(JSONMessage{}))
+	}, zig.MessageLogger)
 
 	startFunc := func(a zig.App) {
 		fmt.Println("starting app")
