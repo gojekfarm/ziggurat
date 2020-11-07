@@ -3,8 +3,8 @@ package zig
 import (
 	"context"
 	"errors"
-	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
+	"net/http"
 	"os"
 	"os/signal"
 	"sync/atomic"
@@ -33,7 +33,7 @@ type Ziggurat struct {
 }
 
 type RunOptions struct {
-	HTTPConfigFunc func(a App, r *httprouter.Router)
+	HTTPConfigFunc func(a App, h http.Handler)
 	StartCallback  func(a App)
 	StopCallback   func()
 }
@@ -78,7 +78,7 @@ func (z *Ziggurat) configureDefaults() {
 	}
 }
 
-func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, r *httprouter.Router)) {
+func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, h http.Handler)) {
 	z.httpServer.ConfigureHTTPRoutes(z, configFunc)
 }
 

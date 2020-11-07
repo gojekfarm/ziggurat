@@ -2,7 +2,7 @@ package zig
 
 import (
 	"context"
-	"github.com/julienschmidt/httprouter"
+	"net/http"
 )
 
 //public types
@@ -15,7 +15,7 @@ type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 // Public interfaces
 type HttpServer interface {
 	Start(app App)
-	ConfigureHTTPRoutes(a App, configFunc func(a App, r *httprouter.Router))
+	ConfigureHTTPRoutes(a App, configFunc func(a App, h http.Handler))
 	Stop() error
 }
 

@@ -281,27 +281,46 @@ datasources:
 var Main = `package main
 
 import (
+	"fmt"
 	"github.com/gojekfarm/ziggurat-go/zig"
+	"github.com/julienschmidt/httprouter"
+	"net/http"
 )
 
 func main() {
 	app := zig.NewApp()
 	router := zig.NewRouter()
 
-	router.HandlerFunc("{{.TopicEntity}}", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
+	router.HandlerFunc("{{.TopicEntity}}", func(messageEvent zig.MessageEvent, app zig.App) zig.ProcessStatus {
+		_, ok := messageEvent.MessageValue.(*JSONMessage)
+		if !ok {
+			return zig.SkipMessage
+		}
+
 		return zig.ProcessingSuccess
-	}, zig.MessageLogger)
+
+	}, zig.MessageLogger, zig.JSONDeserializer(JSONMessage{}))
+
+	startFunc := func(a zig.App) {
+		fmt.Println("starting app")
+	}
+
+	stopFunc := func() {
+		fmt.Println("stopping app")
+	}
 
 	<-app.Run(router, zig.RunOptions{
-		StartCallback: func(a *zig.App) {
-
-		},
-		StopCallback: func() {
-
+		StartCallback: startFunc,
+		StopCallback:  stopFunc,
+		HTTPConfigFunc: func(a zig.App, h http.Handler) {
+			r, _ := h.(*httprouter.Router)
+			r.GET("/if_you_dont_eat_your_meat", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+				writer.Write([]byte("you can't have any pudding"))
+			})
 		},
 	})
-
-}`
+}
+`
 
 var Makefile = `.PHONY: all
 

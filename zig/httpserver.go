@@ -64,7 +64,7 @@ func (s *DefaultHttpServer) Start(app App) {
 
 }
 
-func (s *DefaultHttpServer) ConfigureHTTPRoutes(a App, configFunc func(a App, r *httprouter.Router)) {
+func (s *DefaultHttpServer) ConfigureHTTPRoutes(a App, configFunc func(a App, h http.Handler)) {
 	configFunc(a, s.router)
 }
 
