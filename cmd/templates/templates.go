@@ -83,7 +83,7 @@ var GoMod = `module {{.AppName}}
 go 1.14
 
 require (
-	github.com/gojekfarm/ziggurat-go v0.5.1
+	github.com/gojekfarm/ziggurat-go v0.7.0
 	github.com/julienschmidt/httprouter v1.2.0
 )`
 
@@ -292,10 +292,6 @@ func main() {
 	router := zig.NewRouter()
 
 	router.HandlerFunc("{{.TopicEntity}}", func(messageEvent zig.MessageEvent, app zig.App) zig.ProcessStatus {
-		_, ok := messageEvent.MessageValue.(*JSONMessage)
-		if !ok {
-			return zig.SkipMessage
-		}
 
 		return zig.ProcessingSuccess
 
