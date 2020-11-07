@@ -1,4 +1,4 @@
-package ziggurat
+package zig
 
 func pipeHandlers(funcs ...MiddlewareFunc) func(handlerFunc HandlerFunc) HandlerFunc {
 	return func(next HandlerFunc) HandlerFunc {

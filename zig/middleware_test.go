@@ -1,7 +1,7 @@
-package ziggurat
+package zig
 
 import (
-	testproto "github.com/gojekfarm/ziggurat-go/ziggurat/protobuf"
+	testproto "github.com/gojekfarm/ziggurat-go/zig/protobuf"
 	"github.com/golang/protobuf/proto"
 	"testing"
 )
@@ -55,5 +55,5 @@ func TestProtobufDeserializer(t *testing.T) {
 	})(MessageEvent{
 		MessageValueBytes: bytes,
 	}, &Ziggurat{})
-	
+
 }
