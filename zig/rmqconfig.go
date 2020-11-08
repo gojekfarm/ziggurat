@@ -10,7 +10,7 @@ type RabbitMQConfig struct {
 	delayQueueExpiration string
 }
 
-func parseRabbitMQConfig(config *Config) *RabbitMQConfig {
+func parseRabbitMQConfig(config ConfigReader) *RabbitMQConfig {
 	rawConfig := config.GetByKey("rabbitmq")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
 		log.Error().Err(errors.New("error parsing rabbitmq appconf")).Msg("")

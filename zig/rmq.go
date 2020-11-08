@@ -12,7 +12,7 @@ type RabbitMQRetry struct {
 }
 
 func NewRabbitMQRetry(config ConfigReader) *RabbitMQRetry {
-	cfg := parseRabbitMQConfig(config.Config())
+	cfg := parseRabbitMQConfig(config)
 	return &RabbitMQRetry{
 		config: cfg,
 	}
