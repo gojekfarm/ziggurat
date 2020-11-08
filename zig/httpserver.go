@@ -21,8 +21,8 @@ type ReplayResponse struct {
 	Msg    string `json:"msg"`
 }
 
-func NewDefaultHTTPServer(config *Config) HttpServer {
-	port := config.HTTPServer.Port
+func NewDefaultHTTPServer(config ConfigReader) HttpServer {
+	port := config.Config().HTTPServer.Port
 	if port == "" {
 		port = defaultHTTPPort
 	}

@@ -30,7 +30,16 @@ type Config struct {
 	HTTPServer   HTTPServerConfig              `mapstructure:"http-server"`
 }
 
-var zigguratConfig Config
+type ViperConfig struct {
+	v            *viper.Viper
+	parsedConfig *Config
+}
+
+func NewViperConfig() *ViperConfig {
+	return &ViperConfig{
+		v: viper.New(),
+	}
+}
 
 var configValidationRuleMapping = map[string]func(c *Config) error{
 	"streamRouteValidation": func(c *Config) error {
@@ -47,35 +56,35 @@ var configValidationRuleMapping = map[string]func(c *Config) error{
 	},
 }
 
-func (config *Config) validate() error {
+func (vc *ViperConfig) Validate() error {
 	for _, validationFn := range configValidationRuleMapping {
-		if err := validationFn(config); err != nil {
+		if err := validationFn(vc.parsedConfig); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (config *Config) GetByKey(key string) interface{} {
-	return viper.Get(key)
+func (vc *ViperConfig) GetByKey(key string) interface{} {
+	return vc.v.Get(key)
 }
 
-func parseConfig(options CommandLineOptions) {
-	viper.SetConfigFile(options.ConfigFilePath)
-	viper.SetEnvPrefix("ziggurat")
-	viper.SetConfigType("yaml")
-	viper.AutomaticEnv()
-	if err := viper.ReadInConfig(); err != nil {
+func (vc *ViperConfig) Parse(options CommandLineOptions) {
+	vc.v.SetConfigFile(options.ConfigFilePath)
+	vc.v.SetEnvPrefix("ziggurat")
+	vc.v.SetConfigType("yaml")
+	vc.v.AutomaticEnv()
+	if err := vc.v.ReadInConfig(); err != nil {
 		log.Fatal().Err(err).Msg("[ZIG APP]")
 	}
 
 	replacer := strings.NewReplacer("-", "_", ".", "_")
 	viper.SetEnvKeyReplacer(replacer)
-	if err := viper.Unmarshal(&zigguratConfig); err != nil {
-		log.Fatal().Err(err).Msg("[ZIG APP] config parse error")
+	if err := viper.Unmarshal(vc.parsedConfig); err != nil {
+		log.Fatal().Err(err).Msg("[ZIG APP] appconf parse error")
 	}
 }
 
-func getConfig() Config {
-	return zigguratConfig
+func (vc *ViperConfig) Config() *Config {
+	return vc.parsedConfig
 }

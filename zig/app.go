@@ -20,7 +20,7 @@ type Options struct {
 type Ziggurat struct {
 	httpServer      HttpServer
 	messageRetry    MessageRetry
-	config          *Config
+	appconf         ConfigReader
 	router          StreamRouter
 	metricPublisher MetricPublisher
 	interruptChan   chan os.Signal
@@ -40,17 +40,10 @@ type RunOptions struct {
 
 func NewApp() *Ziggurat {
 	ctx, cancelFn := context.WithCancel(context.Background())
-	commandLineOptions := ParseCommandLineArguments()
-	parseConfig(commandLineOptions)
-	log.Info().Msg("[ZIG APP] successfully parsed config")
-	config := getConfig()
-	if validationErr := config.validate(); validationErr != nil {
-		log.Fatal().Err(validationErr).Msg("[ZIG APP] error creating app")
-	}
 	return &Ziggurat{
 		ctx:           ctx,
 		cancelFun:     cancelFn,
-		config:        &config,
+		appconf:       NewViperConfig(),
 		stopFunc:      func() {},
 		interruptChan: make(chan os.Signal),
 		doneChan:      make(chan struct{}),
@@ -67,14 +60,14 @@ func (z *Ziggurat) Configure(configFunc func(app App) Options) {
 
 func (z *Ziggurat) configureDefaults() {
 	if z.metricPublisher == nil {
-		z.metricPublisher = NewStatsD(z.config)
+		z.metricPublisher = NewStatsD(z.appconf)
 	}
 	if z.messageRetry == nil {
-		z.messageRetry = NewRabbitMQRetry(z.config)
+		z.messageRetry = NewRabbitMQRetry(z.appconf)
 	}
 
 	if z.httpServer == nil {
-		z.httpServer = NewDefaultHTTPServer(z.config)
+		z.httpServer = NewDefaultHTTPServer(z.appconf)
 	}
 }
 
@@ -82,15 +75,24 @@ func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, h http.Handler)) {
 	z.httpServer.ConfigureHTTPRoutes(z, configFunc)
 }
 
+func (z *Ziggurat) loadConfig() {
+	commandLineOptions := ParseCommandLineArguments()
+	z.appconf.Parse(commandLineOptions)
+	log.Info().Msg("[ZIG APP] successfully parsed appconf")
+	if validationErr := z.appconf.Validate(); validationErr != nil {
+		log.Fatal().Err(validationErr).Msg("[ZIG APP] error creating app")
+	}
+	configureLogger(z.appconf.Config().LogLevel)
+}
+
 func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{} {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		log.Error().Err(errors.New("app is already running")).Msg("[ZIG APP]")
 		return z.doneChan
 	}
-
+	z.loadConfig()
 	{
 		signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
-		configureLogger(z.config.LogLevel)
 		z.router = router
 		z.configureDefaults()
 		if runOptions.HTTPConfigFunc != nil {
@@ -113,7 +115,7 @@ func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction)
 
 	z.httpServer.Start(z)
 
-	if z.config.Retry.Enabled {
+	if z.appconf.Config().Retry.Enabled {
 		_, err := z.messageRetry.Start(z)
 		if err != nil {
 			log.Error().Err(err).Msg("")
@@ -192,5 +194,5 @@ func (z *Ziggurat) HTTPServer() HttpServer {
 }
 
 func (z *Ziggurat) Config() *Config {
-	return z.config
+	return z.appconf.Config()
 }

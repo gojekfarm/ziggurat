@@ -7,7 +7,7 @@ import (
 )
 
 func TestConfig_parseConfig(t *testing.T) {
-	parseConfig(CommandLineOptions{ConfigFilePath: "../config/config.test.yaml"})
+	parseConfig(CommandLineOptions{ConfigFilePath: "../appconf/appconf.test.yaml"})
 	expectedConfig := Config{
 		StreamRouter: map[string]StreamRouterConfig{
 			"plain-text-log": {
@@ -29,7 +29,7 @@ func TestConfig_parseConfig(t *testing.T) {
 	}
 	actualConfig := getConfig()
 	if !reflect.DeepEqual(expectedConfig, actualConfig) {
-		t.Errorf("expected confg %+v, actual config %+v", expectedConfig, actualConfig)
+		t.Errorf("expected confg %+v, actual appconf %+v", expectedConfig, actualConfig)
 	}
 }
 
@@ -38,7 +38,7 @@ func TestEnvOverride(t *testing.T) {
 	if err := os.Setenv("ZIGGURAT_STREAM_ROUTER_PLAIN_TEXT_LOG_BOOTSTRAP_SERVERS", overriddenValue); err != nil {
 		t.Error(err)
 	}
-	parseConfig(CommandLineOptions{ConfigFilePath: "../config/config.test.yaml"})
+	parseConfig(CommandLineOptions{ConfigFilePath: "../appconf/appconf.test.yaml"})
 	config := getConfig()
 	actualValue := config.StreamRouter["plain-text-log"].BootstrapServers
 	if !(actualValue == overriddenValue) {

@@ -53,6 +53,13 @@ type App interface {
 	Stop()
 }
 
+type ConfigReader interface {
+	Config() *Config
+	Parse(options CommandLineOptions)
+	GetByKey(key string) interface{}
+	Validate() error
+}
+
 // Public constants
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1

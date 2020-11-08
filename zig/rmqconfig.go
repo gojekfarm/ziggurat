@@ -13,7 +13,7 @@ type RabbitMQConfig struct {
 func parseRabbitMQConfig(config *Config) *RabbitMQConfig {
 	rawConfig := config.GetByKey("rabbitmq")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
-		log.Error().Err(errors.New("error parsing rabbitmq config")).Msg("")
+		log.Error().Err(errors.New("error parsing rabbitmq appconf")).Msg("")
 		return &RabbitMQConfig{
 			host:                 "amqp://user:guest@localhost:5672/",
 			delayQueueExpiration: "2000",

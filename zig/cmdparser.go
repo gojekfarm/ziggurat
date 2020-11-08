@@ -7,7 +7,7 @@ var (
 )
 
 func init() {
-	flag.StringVar(&config, "config", "./config/config.yaml", `--config="path_to_config"`)
+	flag.StringVar(&config, "appconf", "./appconf/appconf.yaml", `--appconf="path_to_config"`)
 }
 
 type CommandLineOptions struct {

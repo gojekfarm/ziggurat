@@ -15,16 +15,16 @@ type StatsD struct {
 	appName      string
 }
 
-func NewStatsD(config *Config) MetricPublisher {
+func NewStatsD(config ConfigReader) MetricPublisher {
 	metricConfig := parseStatsDConfig(config)
 	return &StatsD{
 		client:       nil,
 		metricConfig: metricConfig,
-		appName:      config.ServiceName,
+		appName:      config.Config().ServiceName,
 	}
 }
 
-func parseStatsDConfig(config *Config) *MetricConfig {
+func parseStatsDConfig(config ConfigReader) *MetricConfig {
 	rawConfig := config.GetByKey("statsd")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
 		metricLogger.Error().Err(ErrParsingStatsDConfig).Msg("[ZIG STATSD]")

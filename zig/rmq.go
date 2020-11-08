@@ -11,8 +11,8 @@ type RabbitMQRetry struct {
 	config *RabbitMQConfig
 }
 
-func NewRabbitMQRetry(config *Config) *RabbitMQRetry {
-	cfg := parseRabbitMQConfig(config)
+func NewRabbitMQRetry(config ConfigReader) *RabbitMQRetry {
+	cfg := parseRabbitMQConfig(config.Config())
 	return &RabbitMQRetry{
 		config: cfg,
 	}

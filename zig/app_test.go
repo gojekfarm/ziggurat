@@ -102,7 +102,7 @@ func setup() {
 	app.metricPublisher = mstatsd
 	app.messageRetry = mrabbitmq
 	app.cancelFun = func() {}
-	app.config = &Config{
+	app.appconf = &Config{
 		StreamRouter: nil,
 		LogLevel:     "",
 		ServiceName:  "",
