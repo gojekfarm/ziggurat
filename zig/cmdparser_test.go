@@ -6,7 +6,7 @@ import (
 )
 
 func TestParseCommandLineArgumentsWithDefaultValues(t *testing.T) {
-	expected := CommandLineOptions{ConfigFilePath: "./appconf/appconf.yaml"}
+	expected := CommandLineOptions{ConfigFilePath: "./config/config.yaml"}
 	cmdOptions := ParseCommandLineArguments()
 	if expected != cmdOptions {
 		t.Errorf("EXPECTED %+v GOT %+v", expected, cmdOptions)
@@ -15,7 +15,7 @@ func TestParseCommandLineArgumentsWithDefaultValues(t *testing.T) {
 }
 
 func TestParseCommandLineArguments(t *testing.T) {
-	os.Args = append(os.Args, "--appconf=overriddenPath")
+	os.Args = append(os.Args, "--config=overriddenPath")
 	cmdOptions := ParseCommandLineArguments()
 	newOptions := CommandLineOptions{ConfigFilePath: "overriddenPath"}
 	if newOptions != cmdOptions {

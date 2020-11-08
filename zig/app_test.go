@@ -8,6 +8,28 @@ import (
 type mockHTTP struct{}
 type mockStatsD struct{}
 type mockRouter struct{}
+type mViperConf struct{}
+
+func (m mViperConf) Config() *Config {
+	return &Config{
+		StreamRouter: nil,
+		LogLevel:     "",
+		ServiceName:  "",
+		Retry:        RetryConfig{Enabled: true},
+		HTTPServer:   HTTPServerConfig{},
+	}
+}
+
+func (m mViperConf) Parse(options CommandLineOptions) {
+}
+
+func (m mViperConf) GetByKey(key string) interface{} {
+	return nil
+}
+
+func (m mViperConf) Validate() error {
+	return nil
+}
 
 func (m *mockRouter) GetTopicEntityNames() []string {
 	return []string{}
@@ -16,7 +38,7 @@ func (m *mockRouter) GetTopicEntityNames() []string {
 type mockRabbitMQ struct{}
 
 var app *Ziggurat
-var mhttp, mrouter, mstatsd, mrabbitmq = &mockHTTP{}, &mockRouter{}, &mockStatsD{}, &mockRabbitMQ{}
+var mhttp, mrouter, mstatsd, mrabbitmq, mappconf = &mockHTTP{}, &mockRouter{}, &mockStatsD{}, &mockRabbitMQ{}, &mViperConf{}
 var startCount = 0
 var stopCount = 0
 var expectedStopCount = 3
@@ -102,13 +124,7 @@ func setup() {
 	app.metricPublisher = mstatsd
 	app.messageRetry = mrabbitmq
 	app.cancelFun = func() {}
-	app.appconf = &Config{
-		StreamRouter: nil,
-		LogLevel:     "",
-		ServiceName:  "",
-		Retry:        RetryConfig{Enabled: true},
-		HTTPServer:   HTTPServerConfig{},
-	}
+	app.appconf = mappconf
 }
 
 func teardown() {

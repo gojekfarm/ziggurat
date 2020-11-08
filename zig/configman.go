@@ -79,8 +79,8 @@ func (vc *ViperConfig) Parse(options CommandLineOptions) {
 	}
 
 	replacer := strings.NewReplacer("-", "_", ".", "_")
-	viper.SetEnvKeyReplacer(replacer)
-	if err := viper.Unmarshal(vc.parsedConfig); err != nil {
+	vc.v.SetEnvKeyReplacer(replacer)
+	if err := vc.v.Unmarshal(&vc.parsedConfig); err != nil {
 		log.Fatal().Err(err).Msg("[ZIG APP] appconf parse error")
 	}
 }

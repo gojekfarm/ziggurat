@@ -7,7 +7,7 @@ import (
 )
 
 func TestConfig_parseConfig(t *testing.T) {
-	parseConfig(CommandLineOptions{ConfigFilePath: "../appconf/appconf.test.yaml"})
+	vc := NewViperConfig()
 	expectedConfig := Config{
 		StreamRouter: map[string]StreamRouterConfig{
 			"plain-text-log": {
@@ -27,22 +27,24 @@ func TestConfig_parseConfig(t *testing.T) {
 			Port: "8080",
 		},
 	}
-	actualConfig := getConfig()
-	if !reflect.DeepEqual(expectedConfig, actualConfig) {
+	vc.Parse(CommandLineOptions{ConfigFilePath: "../config/config.test.yaml"})
+	actualConfig := vc.Config()
+	if !reflect.DeepEqual(expectedConfig, *actualConfig) {
 		t.Errorf("expected confg %+v, actual appconf %+v", expectedConfig, actualConfig)
 	}
+
 }
 
 func TestEnvOverride(t *testing.T) {
 	overriddenValue := "localhost:9094"
+	vc := NewViperConfig()
 	if err := os.Setenv("ZIGGURAT_STREAM_ROUTER_PLAIN_TEXT_LOG_BOOTSTRAP_SERVERS", overriddenValue); err != nil {
 		t.Error(err)
 	}
-	parseConfig(CommandLineOptions{ConfigFilePath: "../appconf/appconf.test.yaml"})
-	config := getConfig()
+	vc.Parse(CommandLineOptions{ConfigFilePath: "../config/config.test.yaml"})
+	config := vc.Config()
 	actualValue := config.StreamRouter["plain-text-log"].BootstrapServers
 	if !(actualValue == overriddenValue) {
 		t.Errorf("expected value of bootstrap servers to be %s but got %s", overriddenValue, actualValue)
 	}
-
 }
