@@ -2,15 +2,19 @@ package zig
 
 import (
 	"net/http"
+	"reflect"
 	"testing"
+	"time"
 )
 
 type mockHTTP struct{}
 type mockStatsD struct{}
 type mockRouter struct{}
-type mViperConf struct{}
+type mViperConf struct {
+	parsedCfg *Config
+}
 
-func (m mViperConf) Config() *Config {
+func (m *mViperConf) Config() *Config {
 	return &Config{
 		StreamRouter: nil,
 		LogLevel:     "",
@@ -20,14 +24,21 @@ func (m mViperConf) Config() *Config {
 	}
 }
 
-func (m mViperConf) Parse(options CommandLineOptions) {
+func (m *mViperConf) Parse(options CommandLineOptions) {
+	m.parsedCfg = &Config{
+		StreamRouter: nil,
+		LogLevel:     "1",
+		ServiceName:  "2",
+		Retry:        RetryConfig{Enabled: false},
+		HTTPServer:   HTTPServerConfig{Port: "1000"},
+	}
 }
 
-func (m mViperConf) GetByKey(key string) interface{} {
+func (m *mViperConf) GetByKey(key string) interface{} {
 	return nil
 }
 
-func (m mViperConf) Validate() error {
+func (m *mViperConf) Validate() error {
 	return nil
 }
 
@@ -88,6 +99,7 @@ func (m *mockRouter) Start(app App) (chan int, error) {
 	startCount++
 	closeChan := make(chan int)
 	go func() {
+		time.Sleep(time.Second * 2)
 		close(closeChan)
 	}()
 	return closeChan, nil
@@ -118,7 +130,7 @@ func (mh *mockHTTP) ConfigureHTTPRoutes(a App, configFunc func(a App, h http.Han
 }
 
 func setup() {
-	app = &Ziggurat{}
+	app = NewApp()
 	app.router = mrouter
 	app.httpServer = mhttp
 	app.metricPublisher = mstatsd
@@ -128,7 +140,7 @@ func setup() {
 }
 
 func teardown() {
-	app = &Ziggurat{}
+	app = NewApp()
 	startCount = 0
 	stopCount = 0
 }
@@ -150,7 +162,6 @@ func TestApp_Start(t *testing.T) {
 	if !startCallbackCalled {
 		t.Errorf("expected startCallbackCalled to be %v, but got %v", true, startCallbackCalled)
 	}
-
 }
 
 func TestApp_Stop(t *testing.T) {
@@ -167,4 +178,34 @@ func TestApp_Stop(t *testing.T) {
 	if !stopCallbackCalled {
 		t.Errorf("expected stopCallbackCalled to be %v, but got %v", true, stopCallbackCalled)
 	}
+}
+
+func TestAppLoadConfig(t *testing.T) {
+	cfg := Config{
+		StreamRouter: nil,
+		LogLevel:     "1",
+		ServiceName:  "2",
+		Retry:        RetryConfig{Enabled: false},
+		HTTPServer:   HTTPServerConfig{Port: "1000"},
+	}
+	setup()
+	defer teardown()
+	app.loadConfig()
+	parsedConfig := *mappconf.parsedCfg
+	if !reflect.DeepEqual(parsedConfig, cfg) {
+		t.Errorf("expected app config to be %+v but got %+v", cfg, parsedConfig)
+	}
+}
+
+func TestAppRun(t *testing.T) {
+	done := make(chan struct{})
+	setup()
+	defer teardown()
+	go func() {
+		<-app.Run(mrouter, RunOptions{})
+		close(done)
+	}()
+
+	<-done
+
 }

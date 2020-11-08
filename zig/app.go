@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync/atomic"
 	"syscall"
 )
 
@@ -29,7 +28,7 @@ type Ziggurat struct {
 	stopFunc        StopFunction
 	ctx             context.Context
 	cancelFun       context.CancelFunc
-	isRunning       int32
+	isRunning       bool
 }
 
 type RunOptions struct {
@@ -40,7 +39,7 @@ type RunOptions struct {
 
 func NewApp() *Ziggurat {
 	ctx, cancelFn := context.WithCancel(context.Background())
-	return &Ziggurat{
+	z := &Ziggurat{
 		ctx:           ctx,
 		cancelFun:     cancelFn,
 		appconf:       NewViperConfig(),
@@ -48,6 +47,7 @@ func NewApp() *Ziggurat {
 		interruptChan: make(chan os.Signal),
 		doneChan:      make(chan struct{}),
 	}
+	return z
 }
 
 func (z *Ziggurat) Configure(configFunc func(app App) Options) {
@@ -86,25 +86,25 @@ func (z *Ziggurat) loadConfig() {
 }
 
 func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{} {
-	if atomic.LoadInt32(&z.isRunning) == 1 {
+	if z.isRunning {
 		log.Error().Err(errors.New("app is already running")).Msg("[ZIG APP]")
 		return z.doneChan
 	}
+
+	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
 	z.loadConfig()
-	{
-		signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
-		z.router = router
-		z.configureDefaults()
-		if runOptions.HTTPConfigFunc != nil {
-			z.configureHTTPRoutes(runOptions.HTTPConfigFunc)
-		}
-		go func() {
-			z.start(runOptions.StartCallback, runOptions.StopCallback)
-			close(z.doneChan)
-		}()
-		atomic.StoreInt32(&z.isRunning, 1)
-		return z.doneChan
+	z.router = router
+	z.isRunning = true
+	z.configureDefaults()
+	if runOptions.HTTPConfigFunc != nil {
+		z.configureHTTPRoutes(runOptions.HTTPConfigFunc)
 	}
+	go func() {
+		z.start(runOptions.StartCallback, runOptions.StopCallback)
+		close(z.doneChan)
+	}()
+	return z.doneChan
+
 }
 
 func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction) {
@@ -135,8 +135,8 @@ func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction)
 		if routerStopChan != nil {
 			<-routerStopChan
 		}
-		atomic.StoreInt32(&z.isRunning, 0)
 		log.Info().Msg("[ZIG APP] router poll complete")
+		z.isRunning = false
 		z.stop(stopCallback)
 	}
 	// Wait for router poll to complete
