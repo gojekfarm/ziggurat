@@ -15,3 +15,10 @@ var (
 	ErrRetryConsumerStopped     = errors.New("retry consumer stopped")
 	ErrInterfaceNotProtoMessage = errors.New("interface must be of type proto.Message")
 )
+
+func returnErr(err error) error {
+	if err != nil {
+		return err
+	}
+	return nil
+}

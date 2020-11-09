@@ -2,7 +2,9 @@ package zig
 
 import (
 	"github.com/cactus/go-statsd-client/statsd"
+	"runtime"
 	"strings"
+	"time"
 )
 
 type MetricConfig struct {
@@ -54,6 +56,22 @@ func (s *StatsD) Start(app App) error {
 	}
 	s.client = client
 	s.appName = app.Config().ServiceName
+	go func() {
+		logInfo("statsd: starting go-routine publisher")
+		done := app.Context().Done()
+		t := time.NewTicker(10 * time.Second)
+		tickerChan := t.C
+		for {
+			select {
+			case <-done:
+				t.Stop()
+				logInfo("halting go-routine publisher")
+				return
+			case <-tickerChan:
+				s.client.Gauge("go_routine_count", int64(runtime.NumGoroutine()), 1.0)
+			}
+		}
+	}()
 	return nil
 }
 
