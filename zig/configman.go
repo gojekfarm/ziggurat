@@ -1,7 +1,6 @@
 package zig
 
 import (
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"strings"
 )
@@ -74,15 +73,10 @@ func (vc *ViperConfig) Parse(options CommandLineOptions) {
 	vc.v.SetEnvPrefix("ziggurat")
 	vc.v.SetConfigType("yaml")
 	vc.v.AutomaticEnv()
-	if err := vc.v.ReadInConfig(); err != nil {
-		log.Fatal().Err(err).Msg("")
-	}
-
+	logErrAndExit(vc.v.ReadInConfig(), "failed to read from config file")
 	replacer := strings.NewReplacer("-", "_", ".", "_")
 	vc.v.SetEnvKeyReplacer(replacer)
-	if err := vc.v.Unmarshal(&vc.parsedConfig); err != nil {
-		log.Fatal().Err(err).Msg(" appconf parse error")
-	}
+	logErrAndExit(vc.v.Unmarshal(&vc.parsedConfig), "failed to parse app config")
 }
 
 func (vc *ViperConfig) Config() *Config {
