@@ -100,10 +100,7 @@ func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{}
 }
 
 func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction) {
-
-	if err := z.metricPublisher.Start(z); err != nil {
-		log.Error().Err(err).Msg("")
-	}
+	logError(z.metricPublisher.Start(z), "")
 
 	z.httpServer.Start(z)
 
