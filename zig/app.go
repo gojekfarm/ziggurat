@@ -2,7 +2,6 @@ package zig
 
 import (
 	"context"
-	"errors"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
@@ -28,7 +27,6 @@ type Ziggurat struct {
 	stopFunc        StopFunction
 	ctx             context.Context
 	cancelFun       context.CancelFunc
-	isRunning       bool
 }
 
 type RunOptions struct {
@@ -75,26 +73,21 @@ func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, h http.Handler)) {
 	z.httpServer.ConfigureHTTPRoutes(z, configFunc)
 }
 
-func (z *Ziggurat) loadConfig() {
+func (z *Ziggurat) loadConfig() error {
 	commandLineOptions := ParseCommandLineArguments()
 	z.appconf.Parse(commandLineOptions)
-	log.Info().Msg("[ZIG APP] successfully parsed appconf")
+	log.Info().Msg(" successfully parsed appconf")
 	if validationErr := z.appconf.Validate(); validationErr != nil {
-		log.Fatal().Err(validationErr).Msg("[ZIG APP] error creating app")
+		return validationErr
 	}
 	configureLogger(z.appconf.Config().LogLevel)
+	return nil
 }
 
 func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{} {
-	if z.isRunning {
-		log.Error().Err(errors.New("app is already running")).Msg("[ZIG APP]")
-		return z.doneChan
-	}
-
 	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
-	z.loadConfig()
+	logErrAndExit(z.loadConfig(), "")
 	z.router = router
-	z.isRunning = true
 	z.configureDefaults()
 	if runOptions.HTTPConfigFunc != nil {
 		z.configureHTTPRoutes(runOptions.HTTPConfigFunc)
@@ -104,28 +97,23 @@ func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{}
 		close(z.doneChan)
 	}()
 	return z.doneChan
-
 }
 
 func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction) {
 
 	if err := z.metricPublisher.Start(z); err != nil {
-		log.Error().Err(err).Msg("[ZIG APP]")
+		log.Error().Err(err).Msg("")
 	}
 
 	z.httpServer.Start(z)
 
 	if z.appconf.Config().Retry.Enabled {
 		_, err := z.messageRetry.Start(z)
-		if err != nil {
-			log.Error().Err(err).Msg("")
-		}
+		logError(err, "")
 	}
 
 	routerStopChan, routerStartErr := z.router.Start(z)
-	if routerStartErr != nil {
-		log.Fatal().Err(routerStartErr)
-	}
+	logErrAndExit(routerStartErr, "")
 
 	if startCallback != nil {
 		startCallback(z)
@@ -135,8 +123,7 @@ func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction)
 		if routerStopChan != nil {
 			<-routerStopChan
 		}
-		log.Info().Msg("[ZIG APP] router poll complete")
-		z.isRunning = false
+		log.Info().Msg(" router poll complete")
 		z.stop(stopCallback)
 	}
 	// Wait for router poll to complete
@@ -144,7 +131,7 @@ func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction)
 	case <-routerStopChan:
 		halt(nil)
 	case <-z.interruptChan:
-		log.Info().Msg("[ZIG APP] CTRL+C interrupt received")
+		log.Info().Msg(" CTRL+C interrupt received")
 		halt(routerStopChan)
 	}
 }
@@ -155,20 +142,12 @@ func (z *Ziggurat) Stop() {
 }
 
 func (z *Ziggurat) stop(stopFunc StopFunction) {
-	if err := z.messageRetry.Stop(); err != nil {
-		log.Error().Err(err).Msg("[ZIG APP] error stopping retry")
-	}
-
-	if err := z.httpServer.Stop(); err != nil {
-		log.Error().Err(err).Msg("[ZIG APP] error stopping http server")
-	}
-
-	if err := z.metricPublisher.Stop(); err != nil {
-		log.Error().Err(err).Msg("[ZIG APP] error stopping metrics")
-	}
-	log.Info().Msg("[ZIG APP] invoking actor stop callback")
+	logError(z.messageRetry.Stop(), "failed to stop retries")
+	logError(z.httpServer.Stop(), "failed to stop http server")
+	logError(z.metricPublisher.Stop(), "failed to stop metric publisher")
 
 	if stopFunc != nil {
+		logInfo("invoking actor stop callback")
 		stopFunc()
 	}
 }

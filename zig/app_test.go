@@ -99,7 +99,7 @@ func (m *mockRouter) Start(app App) (chan int, error) {
 	startCount++
 	closeChan := make(chan int)
 	go func() {
-		time.Sleep(time.Second * 2)
+		time.Sleep(time.Second * 10)
 		close(closeChan)
 	}()
 	return closeChan, nil
@@ -195,17 +195,4 @@ func TestAppLoadConfig(t *testing.T) {
 	if !reflect.DeepEqual(parsedConfig, cfg) {
 		t.Errorf("expected app config to be %+v but got %+v", cfg, parsedConfig)
 	}
-}
-
-func TestAppRun(t *testing.T) {
-	done := make(chan struct{})
-	setup()
-	defer teardown()
-	go func() {
-		<-app.Run(mrouter, RunOptions{})
-		close(done)
-	}()
-
-	<-done
-
 }
