@@ -15,7 +15,7 @@ func JSONDeserializer(model interface{}) MiddlewareFunc {
 			typeModel := reflect.TypeOf(model)
 			res := reflect.New(typeModel).Interface()
 			if err := json.Unmarshal(messageValueBytes, res); err != nil {
-				log.Error().Err(err).Msg("[JSON MIDDLEWARE]")
+				logError(err, "JSON middlerware:")
 				message.MessageValue = nil
 				return next(message, app)
 			}
@@ -32,7 +32,7 @@ func MessageLogger(next HandlerFunc) HandlerFunc {
 			Str("kafka-topic", messageEvent.Topic).
 			Str("kafka-time-stamp", messageEvent.KafkaTimestamp.String()).
 			Str("message-value", string(messageEvent.MessageValueBytes)).
-			Msg("[MESSAGE LOGGER MIDDLEWARE]")
+			Msg("JSON middlware")
 		return next(messageEvent, app)
 	}
 }

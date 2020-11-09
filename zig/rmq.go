@@ -54,9 +54,9 @@ func (r *RabbitMQRetry) Replay(app App, topicEntity string, count int) error {
 		return fmt.Errorf("invalid count error: requested count %d is less than 1", count)
 	}
 
-	conn, err := amqp.Dial(r.config.host)
-	if err != nil {
-		return err
+	conn, dialErr := amqp.Dial(r.config.host)
+	if dialErr != nil {
+		return dialErr
 	}
 
 	channel, chanOpenErr := conn.Channel()
