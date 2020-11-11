@@ -58,7 +58,7 @@ func (s *DefaultHttpServer) Start(app App) {
 
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
-			serverLogger.Error().Err(err)
+			logError(err, "ziggurat http-server:", nil)
 		}
 	}(s.server)
 
@@ -68,6 +68,6 @@ func (s *DefaultHttpServer) ConfigureHTTPRoutes(a App, configFunc func(a App, h 
 	configFunc(a, s.router)
 }
 
-func (s *DefaultHttpServer) Stop() error {
-	return s.server.Shutdown(context.Background())
+func (s *DefaultHttpServer) Stop(ctx context.Context) error {
+	return s.server.Shutdown(ctx)
 }
