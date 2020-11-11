@@ -40,23 +40,8 @@ func NewViperConfig() *ViperConfig {
 	}
 }
 
-var configValidationRuleMapping = map[string]func(c *Config) error{
-	"streamRouteValidation": func(c *Config) error {
-		if len(c.StreamRouter) == 0 {
-			return ErrStreamRouteValidation
-		}
-		return nil
-	},
-	"serviceNameValidation": func(c *Config) error {
-		if c.ServiceName == "" {
-			return ErrServiceNameValidation
-		}
-		return nil
-	},
-}
-
-func (vc *ViperConfig) Validate() error {
-	for _, validationFn := range configValidationRuleMapping {
+func (vc *ViperConfig) Validate(rules map[string]func(c *Config) error) error {
+	for _, validationFn := range rules {
 		if err := validationFn(vc.parsedConfig); err != nil {
 			return err
 		}
@@ -73,10 +58,10 @@ func (vc *ViperConfig) Parse(options CommandLineOptions) {
 	vc.v.SetEnvPrefix("ziggurat")
 	vc.v.SetConfigType("yaml")
 	vc.v.AutomaticEnv()
-	logErrAndExit(vc.v.ReadInConfig(), "failed to read from config file")
+	logFatal(vc.v.ReadInConfig(), "failed to read from config file", nil)
 	replacer := strings.NewReplacer("-", "_", ".", "_")
 	vc.v.SetEnvKeyReplacer(replacer)
-	logErrAndExit(vc.v.Unmarshal(&vc.parsedConfig), "failed to parse app config")
+	logFatal(vc.v.Unmarshal(&vc.parsedConfig), "failed to parse app config", nil)
 }
 
 func (vc *ViperConfig) Config() *Config {
