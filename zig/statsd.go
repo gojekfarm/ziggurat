@@ -29,7 +29,7 @@ func NewStatsD(config ConfigReader) MetricPublisher {
 func parseStatsDConfig(config ConfigReader) *MetricConfig {
 	rawConfig := config.GetByKey("statsd")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
-		metricLogger.Error().Err(ErrParsingStatsDConfig).Msg("[ZIG STATSD]")
+		logError(ErrParsingStatsDConfig, "ziggurat stasd", nil)
 		return &MetricConfig{host: "localhost:8125"}
 	} else {
 		return &MetricConfig{host: sanitizedConfig["host"].(string)}
@@ -51,13 +51,13 @@ func (s *StatsD) Start(app App) error {
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
-		metricLogger.Error().Err(clientErr).Msg("[ZIG STATSD]")
+		logError(clientErr, "ziggurat statsD", nil)
 		return clientErr
 	}
 	s.client = client
 	s.appName = app.Config().ServiceName
 	go func() {
-		logInfo("statsd: starting go-routine publisher")
+		logInfo("statsd: starting go-routine publisher", nil)
 		done := app.Context().Done()
 		t := time.NewTicker(10 * time.Second)
 		tickerChan := t.C
@@ -65,7 +65,7 @@ func (s *StatsD) Start(app App) error {
 			select {
 			case <-done:
 				t.Stop()
-				logInfo("halting go-routine publisher")
+				logInfo("halting go-routine publisher", nil)
 				return
 			case <-tickerChan:
 				s.client.Gauge("go_routine_count", int64(runtime.NumGoroutine()), 1.0)

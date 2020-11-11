@@ -8,16 +8,15 @@ import (
 	"time"
 )
 
+var consumerLogContext = map[string]interface{}{"component": "consumer"}
+
 const DefaultPollTimeout = 100 * time.Millisecond
 
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
-	if err != nil {
-		consumerLogger.Error().Err(err).Msg("[ZIG CONSUMER]")
-	}
-	if subscribeErr := consumer.SubscribeTopics(topics, nil); subscribeErr != nil {
-		consumerLogger.Error().Err(subscribeErr).Msg("")
-	}
+	logError(err, "ziggurat consumer", consumerLogContext)
+	subscribeErr := consumer.SubscribeTopics(topics, nil)
+	logError(subscribeErr, "ziggurat consumer", consumerLogContext)
 	return consumer
 }
 
@@ -34,7 +33,7 @@ func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) erro
 }
 
 func startConsumer(routerCtx context.Context, app App, handlerFunc HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
-	consumerLogger.Info().Str("consumer-instance-id", instanceID).Msg("[ZIG CONSUMER] starting consumer")
+	logInfo("ziggurat consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
 		for {
@@ -46,7 +45,7 @@ func startConsumer(routerCtx context.Context, app App, handlerFunc HandlerFunc, 
 				msg, err := c.ReadMessage(DefaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					consumerLogger.Error().Err(err).Msg("[ZIG CONSUMER] stopping consumer poll, all brokers down")
+					logError(err, "ziggurat consumer", nil)
 					wg.Done()
 					return
 				}
@@ -63,9 +62,7 @@ func startConsumer(routerCtx context.Context, app App, handlerFunc HandlerFunc, 
 						Attributes:        make(map[string]interface{}),
 					}
 					MessageHandler(app, handlerFunc)(messageEvent)
-					if commitErr := storeOffsets(consumer, msg.TopicPartition); commitErr != nil {
-						consumerLogger.Error().Err(commitErr).Msg("[ZIG CONSUMER] offset commit error")
-					}
+					logError(storeOffsets(consumer, msg.TopicPartition), "ziggurat consumer", nil)
 				}
 			}
 		}

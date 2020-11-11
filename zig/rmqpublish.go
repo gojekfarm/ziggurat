@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 	amqpsafe "github.com/xssnick/amqp-safe"
 	"time"
@@ -50,9 +49,12 @@ func publishMessage(ctx context.Context, c *amqpsafe.Connector, exchangeName str
 			return nil
 		default:
 			if publishErr := c.Publish(exchangeName, "", publishing); publishErr != nil {
-				log.Error().Err(publishErr).Msg("[RABBITMQ] retrying publish")
-				time.Sleep(2 * time.Second)
-				continue
+				if publishErr == amqpsafe.ErrNoChannel {
+					logError(publishErr, "rmq publish: retrying publish", map[string]interface{}{"exchange-name": exchangeName})
+					time.Sleep(2 * time.Second)
+					continue
+				}
+				return publishErr
 			}
 		}
 		return nil

@@ -2,7 +2,6 @@ package zig
 
 import (
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 	amqpsafe "github.com/xssnick/amqp-safe"
 )
@@ -16,7 +15,7 @@ func declareExchanges(c *amqpsafe.Connector, topicEntities []string, serviceName
 	for _, te := range topicEntities {
 		for _, et := range exchangeTypes {
 			exchName := constructExchangeName(serviceName, te, et)
-			log.Info().Str("exchange-name", exchName).Msg("creating exchange")
+			logInfo("rmq queues: creating exchange", map[string]interface{}{"exchange-name": exchName})
 			c.ExchangeDeclare(exchName, amqpsafe.ExchangeFanout, true, false, false, false, nil)
 		}
 	}
@@ -28,7 +27,10 @@ func createAndBindQueue(c *amqpsafe.Connector, queueName string, exchangeName st
 	if queueErr != nil {
 		return queueErr
 	}
-	log.Info().Str("queue-name", queueName).Str("exchange-name", exchangeName).Msg("binding queue to exchange")
+	logInfo("rmq queues: binding queue to exchange", map[string]interface{}{
+		"queue-name":    queueName,
+		"exchange-name": exchangeName,
+	})
 	bindErr := c.QueueBind(queueName, "", exchangeName, false, nil)
 	return bindErr
 }
@@ -45,9 +47,9 @@ func createInstantQueues(c *amqpsafe.Connector, topicEntities []string, serviceN
 	for _, te := range topicEntities {
 		queueName := constructQueueName(serviceName, te, QueueTypeInstant)
 		exchangeName := constructExchangeName(serviceName, te, QueueTypeInstant)
-		if bindErr := createAndBindQueue(c, queueName, exchangeName, nil); bindErr != nil {
-			log.Error().Err(bindErr).Msg("queue bind error")
-		}
+		bindErr := createAndBindQueue(c, queueName, exchangeName, nil)
+		logError(bindErr, "rmq queues: error binding queue", nil)
+
 	}
 }
 
@@ -59,9 +61,8 @@ func createDelayQueues(c *amqpsafe.Connector, topicEntities []string, serviceNam
 		args := amqp.Table{
 			"x-dead-letter-exchange": deadLetterExchangeName,
 		}
-		if bindErr := createAndBindQueue(c, queueName, exchangeName, args); bindErr != nil {
-			log.Error().Err(bindErr).Msg("queue bind error")
-		}
+		bindErr := createAndBindQueue(c, queueName, exchangeName, args)
+		logError(bindErr, "rmq queues: error binding queue", nil)
 	}
 }
 
@@ -69,8 +70,7 @@ func createDeadLetterQueues(c *amqpsafe.Connector, topicEntities []string, servi
 	for _, te := range topicEntities {
 		queueName := constructQueueName(serviceName, te, QueueTypeDL)
 		exchangeName := constructExchangeName(serviceName, te, QueueTypeDL)
-		if bindErr := createAndBindQueue(c, queueName, exchangeName, nil); bindErr != nil {
-			log.Error().Err(bindErr).Msg("queue bind error")
-		}
+		bindErr := createAndBindQueue(c, queueName, exchangeName, nil)
+		logError(bindErr, "rmq queues: error binding queue", nil)
 	}
 }

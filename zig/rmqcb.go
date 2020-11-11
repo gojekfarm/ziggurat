@@ -3,7 +3,6 @@ package zig
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/rs/zerolog/log"
 	amqpsafe "github.com/xssnick/amqp-safe"
 )
 
@@ -18,23 +17,24 @@ func decodeMessage(body []byte) (MessageEvent, error) {
 	return *messageEvent, nil
 }
 
-func createSetupCallback(connector *amqpsafe.Connector, app App) func() {
+func createSetupCallback(consConn *amqpsafe.Connector, app App) func() {
 	topicEntities := app.Router().GetTopicEntityNames()
 	handlerMap := app.Router().GetHandlerFunctionMap()
 	return func() {
-		declareExchanges(connector, topicEntities, app.Config().ServiceName)
-		createInstantQueues(connector, topicEntities, app.Config().ServiceName)
-		createDelayQueues(connector, topicEntities, app.Config().ServiceName)
-		createDeadLetterQueues(connector, topicEntities, app.Config().ServiceName)
+		declareExchanges(consConn, topicEntities, app.Config().ServiceName)
+		createInstantQueues(consConn, topicEntities, app.Config().ServiceName)
+		createDelayQueues(consConn, topicEntities, app.Config().ServiceName)
+		createDeadLetterQueues(consConn, topicEntities, app.Config().ServiceName)
 		for _, te := range topicEntities {
 			queueName := constructQueueName(app.Config().ServiceName, te, QueueTypeInstant)
-			connector.Consume(queueName, queueName+"_consumer", func(body []byte) amqpsafe.Result {
+			consConn.Consume(queueName, queueName+"_consumer", func(body []byte) amqpsafe.Result {
 				msg, err := decodeMessage(body)
 				if err != nil {
-					return amqpsafe.ResultReject
+					logError(err, "ziggurat rmq consumer: message decode error", map[string]interface{}{"topic-entity": te})
+					return amqpsafe.ResultError
 				}
 				MessageHandler(app, handlerMap[te].HandlerFunc)(msg)
-				log.Info().Msg("[RABBITMQ CONSUMER] message consumed successfully")
+				logInfo("ziggurat rmq consumer: processed message successfully", map[string]interface{}{"topic-entity": te})
 				return amqpsafe.ResultOK
 			})
 		}

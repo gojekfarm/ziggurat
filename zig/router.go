@@ -3,7 +3,6 @@ package zig
 import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/rs/zerolog/log"
 	"strings"
 	"sync"
 )
@@ -77,11 +76,9 @@ func makeKV(key string, value string) string {
 
 func (dr *DefaultRouter) stop() {
 	for _, te := range dr.GetTopicEntities() {
-		log.Info().Str("topic-entity", te.entityName).Msg("[ZIG ROUTER] stopping consumers")
+		logInfo("stopping consumers", map[string]interface{}{"topic-entity": te.entityName})
 		for i, _ := range te.consumers {
-			if closeErr := te.consumers[i].Close(); closeErr != nil {
-				routerLogger.Error().Err(closeErr)
-			}
+			logError(te.consumers[i].Close(), "consumer close error", nil)
 		}
 	}
 }
@@ -89,8 +86,9 @@ func (dr *DefaultRouter) stop() {
 func (dr *DefaultRouter) validate(config *Config) {
 	srmap := config.StreamRouter
 	for entityName, _ := range dr.handlerFunctionMap {
-		if _, ok := srmap[entityName]; !ok {
-			routerLogger.Warn().Str("registered-route", entityName).Err(ErrInvalidRouteRegistered).Msg("[ZIG ROUTER]")
+		if cfgRouteName, ok := srmap[entityName]; !ok {
+			args := map[string]interface{}{"config-registered-route": cfgRouteName, "handler-registered-route": entityName}
+			logWarn("ziggurat router: invalid route registered", args)
 		}
 	}
 }
@@ -103,7 +101,7 @@ func (dr *DefaultRouter) Start(app App) (chan int, error) {
 	srConfig := config.StreamRouter
 	hfMap := dr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		routerLogger.Fatal().Err(ErrNoHandlersRegistered).Msg("[ZIG ROUTER]")
+		logFatal(fmt.Errorf("no stream routes registered, exiting app"), "ziggurat router", nil)
 	}
 
 	dr.validate(config)
@@ -115,11 +113,11 @@ func (dr *DefaultRouter) Start(app App) (chan int, error) {
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
 		if setErr := consumerConfig.Set(bootstrapServers); setErr != nil {
-			routerLogger.Error().Err(setErr).Msg("")
+			logError(setErr, "ziggurat router", nil)
 			return nil, setErr
 		}
 		if setErr := consumerConfig.Set(groupID); setErr != nil {
-			routerLogger.Error().Err(setErr).Msg("[ZIG ROUTER]")
+			logError(setErr, "ziggurat router", nil)
 			return nil, setErr
 		}
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")

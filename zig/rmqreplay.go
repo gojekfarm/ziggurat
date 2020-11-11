@@ -1,7 +1,6 @@
 package zig
 
 import (
-	"github.com/rs/zerolog/log"
 	"github.com/streadway/amqp"
 	amqpsafe "github.com/xssnick/amqp-safe"
 )
@@ -17,16 +16,16 @@ func replayMessages(app App, connector *amqpsafe.Connector, channel *amqp.Channe
 		exchangeName := constructExchangeName(serviceName, topicEntity, QueueTypeInstant)
 		decodedMsg, decodeErr := decodeMessage(delivery.Body)
 		if decodeErr != nil {
-			log.Error().Err(decodeErr).Msg("[RABBITMQ REPLAY]")
+			logError(decodeErr, "ziggurat rmq replay", nil)
 			return decodeErr
 		}
 		pubErr := publishMessage(ctx, connector, exchangeName, decodedMsg, expiration)
 		if pubErr != nil {
-			log.Error().Err(pubErr).Msg("[RABBITMQ REPLAY]")
+			logError(pubErr, "ziggurat rmq replay", nil)
 			return pubErr
 		}
 		if ackErr := delivery.Ack(false); ackErr != nil {
-			log.Error().Err(ackErr).Msg("[RABBITMQ REPLAY]")
+			logError(ackErr, "ziggurat rmq replay", nil)
 			return ackErr
 		}
 	}

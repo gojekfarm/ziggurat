@@ -1,9 +1,6 @@
 package zig
 
-import (
-	"errors"
-	"github.com/rs/zerolog/log"
-)
+import "errors"
 
 type RabbitMQConfig struct {
 	host                 string
@@ -13,7 +10,7 @@ type RabbitMQConfig struct {
 func parseRabbitMQConfig(config ConfigReader) *RabbitMQConfig {
 	rawConfig := config.GetByKey("rabbitmq")
 	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
-		log.Error().Err(errors.New("error parsing rabbitmq appconf")).Msg("")
+		logError(errors.New("errors parsing rabbitmq config"), "rmq config: parse error", nil)
 		return &RabbitMQConfig{
 			host:                 "amqp://user:guest@localhost:5672/",
 			delayQueueExpiration: "2000",
