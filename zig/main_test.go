@@ -1,7 +1,6 @@
 package zig
 
 import (
-	"github.com/rs/zerolog"
 	"os"
 	"testing"
 )
@@ -12,5 +11,19 @@ func TestMain(m *testing.M) {
 }
 
 func turnOffLogger() {
-	zerolog.SetGlobalLevel(zerolog.Disabled)
+	configureLogger("disabled")
+	logInfo = func(msg string, args map[string]interface{}) {
+
+	}
+	logError = func(err error, msg string, args map[string]interface{}) {
+
+	}
+
+	logFatal = func(err error, msg string, args map[string]interface{}) {
+
+	}
+
+	logWarn = func(msg string, args map[string]interface{}) {
+
+	}
 }
