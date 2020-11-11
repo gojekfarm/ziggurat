@@ -2,11 +2,15 @@ package zig
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/golang/protobuf/proto"
-	"github.com/rs/zerolog/log"
 	"reflect"
 	"time"
 )
+
+var getCurrTime = func() time.Time {
+	return time.Now()
+}
 
 func JSONDeserializer(model interface{}) MiddlewareFunc {
 	return func(next HandlerFunc) HandlerFunc {
@@ -15,7 +19,7 @@ func JSONDeserializer(model interface{}) MiddlewareFunc {
 			typeModel := reflect.TypeOf(model)
 			res := reflect.New(typeModel).Interface()
 			if err := json.Unmarshal(messageValueBytes, res); err != nil {
-				logError(err, "JSON middlerware:")
+				logError(err, "JSON middleware:", nil)
 				message.MessageValue = nil
 				return next(message, app)
 			}
@@ -27,12 +31,13 @@ func JSONDeserializer(model interface{}) MiddlewareFunc {
 
 func MessageLogger(next HandlerFunc) HandlerFunc {
 	return func(messageEvent MessageEvent, app App) ProcessStatus {
-		log.Info().
-			Str("topic-entity", messageEvent.TopicEntity).
-			Str("kafka-topic", messageEvent.Topic).
-			Str("kafka-time-stamp", messageEvent.KafkaTimestamp.String()).
-			Str("message-value", string(messageEvent.MessageValueBytes)).
-			Msg("JSON middlware")
+		args := map[string]interface{}{
+			"topic-entity":  messageEvent.TopicEntity,
+			"kafka-topic":   messageEvent.Topic,
+			"kafka-ts":      messageEvent.KafkaTimestamp.String(),
+			"message-value": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
+		}
+		logInfo("Msg logger middleware", args)
 		return next(messageEvent, app)
 	}
 }
@@ -48,11 +53,11 @@ func ProtobufDeserializer(protoMessage interface{}) MiddlewareFunc {
 			protoRes, ok := res.(proto.Message)
 
 			if !ok {
-				log.Error().Err(ErrInterfaceNotProtoMessage).Msg("[PROTOBUF-MIDDLEWARE]")
+				logError(ErrInterfaceNotProtoMessage, "Protobuf middleware", nil)
 				return next(messageEvent, app)
 			}
 			if err := proto.Unmarshal(messageValueBytes, protoRes); err != nil {
-				log.Error().Err(err).Msg("[PROTOBUF-MIDDLEWARE]")
+				logError(err, "protobuf middleware unmarshal error", nil)
 				return next(messageEvent, app)
 			}
 			messageEvent.MessageValue = protoRes
@@ -67,7 +72,7 @@ func MessageMetricsPublisher(next HandlerFunc) HandlerFunc {
 			"topic_entity": messageEvent.TopicEntity,
 			"kafka_topic":  messageEvent.Topic,
 		}
-		currTime := time.Now()
+		currTime := getCurrTime()
 		kafkaTimestamp := messageEvent.KafkaTimestamp
 		delayInMS := currTime.Sub(kafkaTimestamp).Milliseconds()
 		app.MetricPublisher().IncCounter("message_count", 1, args)
