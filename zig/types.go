@@ -16,7 +16,7 @@ type MiddlewareFunc func(next HandlerFunc) HandlerFunc
 type HttpServer interface {
 	Start(app App)
 	ConfigureHTTPRoutes(a App, configFunc func(a App, h http.Handler))
-	Stop() error
+	Stop(ctx context.Context) error
 }
 
 type MetricPublisher interface {
@@ -51,13 +51,14 @@ type App interface {
 	HTTPServer() HttpServer
 	Config() *Config
 	Stop()
+	IsRunning() bool
 }
 
 type ConfigReader interface {
 	Config() *Config
 	Parse(options CommandLineOptions)
 	GetByKey(key string) interface{}
-	Validate() error
+	Validate(rules map[string]func(c *Config) error) error
 }
 
 // Public constants
