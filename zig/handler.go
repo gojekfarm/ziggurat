@@ -18,17 +18,19 @@ func MessageHandler(app App, handlerFunc HandlerFunc) func(event MessageEvent) {
 		switch status {
 		case ProcessingSuccess:
 			app.MetricPublisher().IncCounter("message_processing_success", 1, metricTags)
-			logInfo("ziggurat message handler: successfully processed message")
+			logInfo("message handler: successfully processed message", nil)
 		case SkipMessage:
 			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
-			logInfo("ziggurat message handler: skipping message")
+			logInfo("message handler: skipping message", nil)
 		case RetryMessage:
-			logInfo("ziggurat message handler: retrying message")
+			logInfo("message handler: retrying message", nil)
 			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
 			retryErr := app.MessageRetry().Retry(app, event)
-			panic(retryErr)
+			if retryErr != nil {
+				panic(retryErr)
+			}
 		default:
-			logError(fmt.Errorf("invalid handler return code got %d", status), "")
+			logError(fmt.Errorf("invalid handler return code got %d", status), "", nil)
 		}
 	}
 }
