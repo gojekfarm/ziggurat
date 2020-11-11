@@ -41,3 +41,6 @@ kafka.produce:
 pkg.release:
 	./scripts/release.sh ${VERSION}
 
+app.test-coverage:
+	go test ./zig -coverprofile cp.out
+	go tool cover -html=cp.out
