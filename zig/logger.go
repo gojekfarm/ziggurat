@@ -3,56 +3,60 @@ package zig
 import (
 	"fmt"
 	"github.com/rs/zerolog"
-	"github.com/rs/zerolog/log"
 	"os"
 	"strings"
 	"time"
 )
 
+const callerFrameSkipCount = 3
+
 var logLevelMapping = map[string]zerolog.Level{
-	"off":   zerolog.NoLevel,
-	"debug": zerolog.DebugLevel,
-	"info":  zerolog.InfoLevel,
-	"warn":  zerolog.WarnLevel,
-	"error": zerolog.ErrorLevel,
-	"fatal": zerolog.FatalLevel,
-	"panic": zerolog.PanicLevel,
+	"off":      zerolog.NoLevel,
+	"debug":    zerolog.DebugLevel,
+	"info":     zerolog.InfoLevel,
+	"warn":     zerolog.WarnLevel,
+	"error":    zerolog.ErrorLevel,
+	"fatal":    zerolog.FatalLevel,
+	"panic":    zerolog.PanicLevel,
+	"disabled": zerolog.Disabled,
 }
 
-var routerLogger zerolog.Logger
-var consumerLogger zerolog.Logger
-var serverLogger zerolog.Logger
-var metricLogger zerolog.Logger
+var consoleLogger = zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
+	w.Out = os.Stderr
+	w.NoColor = true
+	w.TimeFormat = time.RFC3339
+	w.FormatMessage = func(i interface{}) string {
+		return fmt.Sprintf("[ziggurat] [%s]", i)
+	}
+	w.FormatLevel = func(i interface{}) string {
+		return strings.ToUpper(fmt.Sprintf("[%s]", i))
+	}
+})
+
+var loggerInst = zerolog.New(consoleLogger).With().Timestamp().Logger()
+var errLoggerInst = zerolog.New(consoleLogger).With().Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger()
 
 func configureLogger(logLevel string) {
-	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	logLevelInt := logLevelMapping[logLevel]
-	zerolog.SetGlobalLevel(logLevelInt)
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr, NoColor: true, TimeFormat: time.RFC3339,
-		FormatMessage: func(i interface{}) string {
-			return fmt.Sprintf("[%s]", i)
-		},
-		FormatLevel: func(i interface{}) string {
-			return strings.ToUpper(fmt.Sprintf("|%s|", i))
-		}})
-	routerLogger = log.With().Str("component", "router").Logger()
-	consumerLogger = log.With().Str("component", "consumer").Logger()
-	serverLogger = log.With().Str("component", "http-server").Logger()
-	metricLogger = log.With().Str("component", "metrics").Logger()
+	loggerInst.Level(logLevelInt)
 }
 
-func logError(err error, msg string) {
+var logError = func(err error, msg string, args map[string]interface{}) {
 	if err != nil {
-		log.Error().Err(err).Msg(msg)
+		errLoggerInst.Err(err).Fields(args).Msg(msg)
 	}
 }
 
-func logErrAndExit(err error, msg string) {
+var logFatal = func(err error, msg string, args map[string]interface{}) {
 	if err != nil {
-		log.Fatal().Err(err).Msg(msg)
+		errLoggerInst.Fatal().Fields(args).Err(err).Msg(msg)
 	}
 }
 
-func logInfo(msg string) {
-	log.Info().Msg(msg)
+var logInfo = func(msg string, args map[string]interface{}) {
+	loggerInst.Info().Fields(args).Msg(msg)
+}
+
+var logWarn = func(msg string, args map[string]interface{}) {
+	loggerInst.Warn().Fields(args).Msg(msg)
 }
