@@ -1,12 +1,13 @@
 package zig
 
 import (
+	"errors"
 	"os"
 	"reflect"
 	"testing"
 )
 
-func TestConfig_parseConfig(t *testing.T) {
+func TestViperConfig_Parse(t *testing.T) {
 	vc := NewViperConfig()
 	expectedConfig := Config{
 		StreamRouter: map[string]StreamRouterConfig{
@@ -30,12 +31,12 @@ func TestConfig_parseConfig(t *testing.T) {
 	vc.Parse(CommandLineOptions{ConfigFilePath: "../config/config.test.yaml"})
 	actualConfig := vc.Config()
 	if !reflect.DeepEqual(expectedConfig, *actualConfig) {
-		t.Errorf("expected confg %+v, actual appconf %+v", expectedConfig, actualConfig)
+		t.Errorf("expected config %+v, actual appconf %+v", expectedConfig, actualConfig)
 	}
 
 }
 
-func TestEnvOverride(t *testing.T) {
+func TestViperConfig_EnvOverride(t *testing.T) {
 	overriddenValue := "localhost:9094"
 	vc := NewViperConfig()
 	if err := os.Setenv("ZIGGURAT_STREAM_ROUTER_PLAIN_TEXT_LOG_BOOTSTRAP_SERVERS", overriddenValue); err != nil {
@@ -47,4 +48,43 @@ func TestEnvOverride(t *testing.T) {
 	if !(actualValue == overriddenValue) {
 		t.Errorf("expected value of bootstrap servers to be %s but got %s", overriddenValue, actualValue)
 	}
+}
+
+func TestViperConfig_Validate(t *testing.T) {
+	vc := NewViperConfig()
+	vc.parsedConfig = &Config{
+		StreamRouter: nil,
+		LogLevel:     "",
+		ServiceName:  "foo",
+		Retry:        RetryConfig{},
+		HTTPServer:   HTTPServerConfig{},
+	}
+
+	validationError := errors.New("service cannot be foo")
+
+	rules := map[string]func(c *Config) error{
+		"serviceNameValidation": func(c *Config) error {
+			if c.ServiceName == "foo" {
+				return validationError
+			}
+			return nil
+		},
+	}
+
+	err := vc.Validate(rules)
+	if err == nil {
+		t.Errorf("expected error to be %v, got %v", validationError, err)
+	}
+}
+
+func TestViperConfig_GetByKey(t *testing.T) {
+	vc := NewViperConfig()
+	vc.Parse(CommandLineOptions{ConfigFilePath: "../config/config.test.yaml"})
+	expectedStatsDConf := map[string]interface{}{"host": "localhost:8125"}
+	statsdCfg := vc.GetByKey("statsd").(map[string]interface{})
+
+	if !reflect.DeepEqual(expectedStatsDConf, statsdCfg) {
+		t.Errorf("expected %v got %v", expectedStatsDConf, statsdCfg)
+	}
+
 }
