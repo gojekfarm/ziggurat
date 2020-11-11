@@ -1,6 +1,7 @@
 package zig
 
 import (
+	"context"
 	"net/http"
 	"reflect"
 	"testing"
@@ -38,7 +39,7 @@ func (m *mViperConf) GetByKey(key string) interface{} {
 	return nil
 }
 
-func (m *mViperConf) Validate() error {
+func (m *mViperConf) Validate(rules map[string]func(c *Config) error) error {
 	return nil
 }
 
@@ -99,7 +100,7 @@ func (m *mockRouter) Start(app App) (chan int, error) {
 	startCount++
 	closeChan := make(chan int)
 	go func() {
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 1)
 		close(closeChan)
 	}()
 	return closeChan, nil
@@ -121,7 +122,7 @@ func (mh *mockHTTP) Start(app App) {
 	startCount++
 }
 
-func (mh *mockHTTP) Stop() error {
+func (mh *mockHTTP) Stop(ctx context.Context) error {
 	stopCount++
 	return nil
 }
@@ -145,7 +146,7 @@ func teardown() {
 	stopCount = 0
 }
 
-func TestApp_Start(t *testing.T) {
+func TestApp_start(t *testing.T) {
 	setup()
 	defer teardown()
 	startCallbackCalled := false
@@ -164,7 +165,7 @@ func TestApp_Start(t *testing.T) {
 	}
 }
 
-func TestApp_Stop(t *testing.T) {
+func TestZiggurat_Stop(t *testing.T) {
 	setup()
 	defer teardown()
 	stopCallbackCalled := false
@@ -180,7 +181,7 @@ func TestApp_Stop(t *testing.T) {
 	}
 }
 
-func TestAppLoadConfig(t *testing.T) {
+func TestZiggurat_LoadConfig(t *testing.T) {
 	cfg := Config{
 		StreamRouter: nil,
 		LogLevel:     "1",
@@ -195,4 +196,56 @@ func TestAppLoadConfig(t *testing.T) {
 	if !reflect.DeepEqual(parsedConfig, cfg) {
 		t.Errorf("expected app config to be %+v but got %+v", cfg, parsedConfig)
 	}
+}
+
+func TestZiggurat_Run(t *testing.T) {
+	setup()
+	defer teardown()
+	<-app.Run(mrouter, RunOptions{
+		StartCallback: func(a App) {
+			if !a.IsRunning() {
+				t.Errorf("failed to start app")
+			}
+		},
+		StopCallback: func() {
+			if app.IsRunning() {
+				t.Errorf("failed to stop app")
+			}
+		},
+	})
+
+}
+
+func TestZiggurat_IsRunning(t *testing.T) {
+	setup()
+	defer teardown()
+
+	<-app.Run(mrouter, RunOptions{
+		StartCallback: func(a App) {
+			a.Stop()
+		},
+		StopCallback: func() {
+			if app.IsRunning() {
+				t.Error("app failed to stop")
+			}
+		}})
+}
+
+func TestZiggurat_Configure(t *testing.T) {
+	setup()
+	defer teardown()
+	app.Configure(func(app App) Options {
+		return Options{
+			HttpServer:      nil,
+			Retrier:         nil,
+			MetricPublisher: nil,
+		}
+	})
+	app.Run(mrouter, RunOptions{
+		StartCallback: func(a App) {
+			if a.MessageRetry() == nil || a.HTTPServer() == nil || a.MetricPublisher() == nil {
+				t.Error("failed to configure app")
+			}
+		},
+	})
 }
