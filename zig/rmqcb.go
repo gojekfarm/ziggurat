@@ -3,7 +3,6 @@ package zig
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	amqpsafe "github.com/xssnick/amqp-safe"
 )
 
@@ -30,7 +29,6 @@ func createSetupCallback(consConn *amqpsafe.Connector, app App) func() {
 			tecopy := te
 			queueName := constructQueueName(app.Config().ServiceName, tecopy, QueueTypeInstant)
 			consConn.Consume(queueName, queueName+"_consumer", func(body []byte) amqpsafe.Result {
-				fmt.Println("TOPIC_ENTITY=> ", tecopy)
 				msg, err := decodeMessage(body)
 				if err != nil {
 					logError(err, "ziggurat rmq consumer: message decode error", map[string]interface{}{"topic-entity": tecopy})
