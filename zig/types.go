@@ -27,7 +27,7 @@ type MetricPublisher interface {
 }
 
 type MessageRetry interface {
-	Start(app App) (chan int, error)
+	Start(app App) error
 	Retry(app App, payload MessageEvent) error
 	Stop() error
 	Replay(app App, topicEntity string, count int) error

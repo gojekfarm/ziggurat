@@ -100,7 +100,7 @@ func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{}
 	}
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
-		z.start(runOptions.StartCallback, runOptions.StopCallback)
+		z.start(runOptions.StartCallback)
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)
 		close(z.doneChan)
@@ -108,14 +108,15 @@ func (z *Ziggurat) Run(router StreamRouter, runOptions RunOptions) chan struct{}
 	return z.doneChan
 }
 
-func (z *Ziggurat) start(startCallback StartFunction, stopCallback StopFunction) {
+func (z *Ziggurat) start(startCallback StartFunction) {
 	logError(z.metricPublisher.Start(z), "", nil)
 
 	z.httpServer.Start(z)
 
 	if z.appconf.Config().Retry.Enabled {
-		_, err := z.messageRetry.Start(z)
-		logError(err, "", nil)
+		logInfo("ziggurat: starting retry component", nil)
+		err := z.messageRetry.Start(z)
+		logError(err, "ziggurat: error starting retries", nil)
 	}
 
 	routerStopChan, routerStartErr := z.router.Start(z)
