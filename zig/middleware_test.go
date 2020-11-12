@@ -1,6 +1,7 @@
 package zig
 
 import (
+	"context"
 	testproto "github.com/gojekfarm/ziggurat-go/protobuf"
 	"github.com/golang/protobuf/proto"
 	"reflect"
@@ -12,6 +13,50 @@ type JSONMessage struct {
 	ID        string `json:"id"`
 	Name      string `json:"name"`
 	SecretNum int    `json:"secretNum"`
+}
+
+type mwMockApp struct {
+	t *testing.T
+}
+
+func (m mwMockApp) Context() context.Context {
+	return nil
+}
+
+func (m mwMockApp) Router() StreamRouter {
+	return nil
+}
+
+func (m mwMockApp) MessageRetry() MessageRetry {
+	return nil
+}
+
+func (m mwMockApp) Run(router StreamRouter, options RunOptions) chan struct{} {
+	return nil
+}
+
+func (m mwMockApp) Configure(configFunc func(o App) Options) {
+
+}
+
+func (m mwMockApp) MetricPublisher() MetricPublisher {
+	return &mockMetrics{m.t}
+}
+
+func (m mwMockApp) HTTPServer() HttpServer {
+	return nil
+}
+
+func (m mwMockApp) Config() *Config {
+	return nil
+}
+
+func (m mwMockApp) Stop() {
+
+}
+
+func (m mwMockApp) IsRunning() bool {
+	return false
 }
 
 type mockMetrics struct {
@@ -82,7 +127,7 @@ func TestJSONDeserializer(t *testing.T) {
 	}
 	result := jsonDeserializer(handler)(MessageEvent{
 		MessageValueBytes: []byte(jsonMessage),
-	}, &Ziggurat{})
+	}, &mwMockApp{})
 
 	if result == SkipMessage {
 		t.Errorf("expected %v but got %v", ProcessingSuccess, result)
@@ -107,7 +152,7 @@ func TestProtobufDeserializer(t *testing.T) {
 		return ProcessingSuccess
 	})(MessageEvent{
 		MessageValueBytes: bytes,
-	}, &Ziggurat{})
+	}, &mwMockApp{})
 
 }
 
@@ -124,6 +169,9 @@ func TestMessageLogger(t *testing.T) {
 		"message-value": string(messageVal),
 	}
 	origLogInfo := logInfo
+	defer func() {
+		logInfo = origLogInfo
+	}()
 	logInfo = func(msg string, args map[string]interface{}) {
 		if msg != expectedMsg {
 			t.Errorf("expected msg to be %s but got %s", expectedMsg, msg)
@@ -132,10 +180,6 @@ func TestMessageLogger(t *testing.T) {
 			t.Errorf("expected args to be %+v but got %+v", expectedArgs, args)
 		}
 	}
-	defer func() {
-		logInfo = origLogInfo
-	}()
-
 	msgLogger := MessageLogger(func(messageEvent MessageEvent, app App) ProcessStatus {
 		return ProcessingSuccess
 	})
@@ -150,7 +194,7 @@ func TestMessageLogger(t *testing.T) {
 		KafkaTimestamp:    time.Time{},
 		TimestampType:     "",
 		Attributes:        nil,
-	}, &Ziggurat{})
+	}, &mwMockApp{})
 }
 
 func TestMessageMetricsPublisher(t *testing.T) {
@@ -174,7 +218,5 @@ func TestMessageMetricsPublisher(t *testing.T) {
 		KafkaTimestamp:    time.Time{},
 		TimestampType:     "",
 		Attributes:        nil,
-	}, &Ziggurat{
-		metricPublisher: mockMetrics{t: t},
-	})
+	}, &mwMockApp{t})
 }

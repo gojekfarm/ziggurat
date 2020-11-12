@@ -23,6 +23,10 @@ type DefaultRouter struct {
 	handlerFunctionMap TopicEntityHandlerMap
 }
 
+var setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) error {
+	return consumerConfigMap.Set(kv)
+}
+
 func newConsumerConfig() *kafka.ConfigMap {
 	return &kafka.ConfigMap{
 		"bootstrap.servers":        "localhost:9092",
@@ -86,9 +90,9 @@ func (dr *DefaultRouter) stop() {
 func (dr *DefaultRouter) validate(config *Config) {
 	srmap := config.StreamRouter
 	for entityName, _ := range dr.handlerFunctionMap {
-		if cfgRouteName, ok := srmap[entityName]; !ok {
-			args := map[string]interface{}{"config-registered-route": cfgRouteName, "handler-registered-route": entityName}
-			logWarn("ziggurat router: invalid route registered", args)
+		if _, ok := srmap[entityName]; !ok {
+			args := map[string]interface{}{"invalid-entity-name": entityName}
+			logWarn("router: registered route not found in config", args)
 		}
 	}
 }
@@ -101,7 +105,7 @@ func (dr *DefaultRouter) Start(app App) (chan int, error) {
 	srConfig := config.StreamRouter
 	hfMap := dr.handlerFunctionMap
 	if len(hfMap) == 0 {
-		logFatal(fmt.Errorf("no stream routes registered, exiting app"), "ziggurat router", nil)
+		logFatal(ErrNoHandlersRegistered, "ziggurat router", nil)
 	}
 
 	dr.validate(config)
@@ -112,11 +116,11 @@ func (dr *DefaultRouter) Start(app App) (chan int, error) {
 		consumerConfig := newConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
-		if setErr := consumerConfig.Set(bootstrapServers); setErr != nil {
+		if setErr := setConsumerConfig(consumerConfig, bootstrapServers); setErr != nil {
 			logError(setErr, "ziggurat router", nil)
 			return nil, setErr
 		}
-		if setErr := consumerConfig.Set(groupID); setErr != nil {
+		if setErr := setConsumerConfig(consumerConfig, groupID); setErr != nil {
 			logError(setErr, "ziggurat router", nil)
 			return nil, setErr
 		}
@@ -132,4 +136,5 @@ func (dr *DefaultRouter) Start(app App) (chan int, error) {
 	}()
 
 	return stopChan, nil
+
 }

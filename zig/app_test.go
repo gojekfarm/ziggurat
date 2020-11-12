@@ -56,13 +56,9 @@ var stopCount = 0
 var expectedStopCount = 3
 var expectedStartCount = 4
 
-func (m *mockRabbitMQ) Start(app App) (chan int, error) {
+func (m *mockRabbitMQ) Start(app App) error {
 	startCount++
-	stopChan := make(chan int)
-	go func() {
-		close(stopChan)
-	}()
-	return stopChan, nil
+	return nil
 }
 
 func (m *mockRabbitMQ) Retry(app App, payload MessageEvent) error {
@@ -146,7 +142,7 @@ func teardown() {
 	stopCount = 0
 }
 
-func TestApp_start(t *testing.T) {
+func TestZiggurat_start(t *testing.T) {
 	setup()
 	defer teardown()
 	startCallbackCalled := false
@@ -154,7 +150,7 @@ func TestApp_start(t *testing.T) {
 		startCallbackCalled = true
 	}
 
-	app.start(startCallback, nil)
+	app.start(startCallback)
 
 	if startCount < expectedStartCount {
 		t.Errorf("expected start count to be %v but got %v", expectedStartCount, startCount)
@@ -234,6 +230,7 @@ func TestZiggurat_IsRunning(t *testing.T) {
 func TestZiggurat_Configure(t *testing.T) {
 	setup()
 	defer teardown()
+	dialTimeout = 100 * time.Millisecond
 	app.Configure(func(app App) Options {
 		return Options{
 			HttpServer:      nil,
@@ -241,7 +238,7 @@ func TestZiggurat_Configure(t *testing.T) {
 			MetricPublisher: nil,
 		}
 	})
-	app.Run(mrouter, RunOptions{
+	<-app.Run(mrouter, RunOptions{
 		StartCallback: func(a App) {
 			if a.MessageRetry() == nil || a.HTTPServer() == nil || a.MetricPublisher() == nil {
 				t.Error("failed to configure app")

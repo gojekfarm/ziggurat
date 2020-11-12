@@ -69,7 +69,7 @@ func startConsumer(routerCtx context.Context, app App, handlerFunc HandlerFunc, 
 	}(routerCtx, consumer, instanceID, wg)
 }
 
-func startConsumers(routerCtx context.Context, app App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+var startConsumers = func(routerCtx context.Context, app App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)

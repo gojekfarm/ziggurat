@@ -116,7 +116,7 @@ func (z *Ziggurat) start(startCallback StartFunction) {
 	if z.appconf.Config().Retry.Enabled {
 		logInfo("ziggurat: starting retry component", nil)
 		err := z.messageRetry.Start(z)
-		logError(err, "ziggurat: error starting retries", nil)
+		logFatal(err, "ziggurat: error starting retries", nil)
 	}
 
 	routerStopChan, routerStartErr := z.router.Start(z)

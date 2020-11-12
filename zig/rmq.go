@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const dialTimeout = 10 * time.Second
+var dialTimeout = 30 * time.Second
 
 type RabbitMQRetry struct {
 	pubConn  *amqpsafe.Connector
@@ -36,9 +36,9 @@ func (r *RabbitMQRetry) Start(app App) error {
 	})
 
 	go func() {
-		tchan := time.After(dialTimeout)
+		timerChan := time.After(dialTimeout)
 		select {
-		case <-tchan:
+		case <-timerChan:
 			dialErrChan <- errors.New("dial timeout exceeded")
 			r.pubConn.Close()
 			r.consConn.Close()
@@ -47,16 +47,14 @@ func (r *RabbitMQRetry) Start(app App) error {
 		}
 	}()
 
-	wg.Add(1)
+	wg.Add(2)
 	r.pubConn.Start().OnReady(func() {
 		wg.Done()
 	})
-
-	wg.Add(1)
 	setupCallback := createSetupCallback(r.consConn, app)
-	r.consConn.OnReady(func() {
-		setupCallback()
+	r.consConn.Start().OnReady(func() {
 		wg.Done()
+		setupCallback()
 	})
 
 	go func() {
@@ -64,10 +62,14 @@ func (r *RabbitMQRetry) Start(app App) error {
 		close(connWaitChan)
 	}()
 
+	done := app.Context().Done()
 	select {
+	case <-done:
+		return nil
 	case err := <-dialErrChan:
 		return err
 	case <-connWaitChan:
+		logInfo("rmq: connected to rabbitmq!", map[string]interface{}{"host": r.config.host})
 		return nil
 	}
 

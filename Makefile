@@ -23,7 +23,7 @@ app.start:
 	./ziggurat-go --config=./config/config.sample.yaml
 
 app.test:
-	go test -v ./zig
+	go test -count 1 -v ./zig
 
 app.start-race:
 	go build -race
@@ -42,5 +42,5 @@ pkg.release:
 	./scripts/release.sh ${VERSION}
 
 app.test-coverage:
-	go test ./zig -coverprofile cp.out
+	go test -count 1 -p 2 ./zig -coverprofile cp.out
 	go tool cover -html=cp.out

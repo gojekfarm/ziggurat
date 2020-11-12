@@ -21,7 +21,7 @@ stream-router:
 log-level: "debug"
 retry:
   enabled: true
-  count: 5
+  count: 2
 rabbitmq:
   host: "amqp://user:bitnami@localhost:5672/"
   delay-queue-expiration: "1000"

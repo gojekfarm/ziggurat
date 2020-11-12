@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	ErrNoHandlersRegistered     = errors.New("error: no handlers registered")
+	ErrNoHandlersRegistered     = errors.New("no handlers registered")
 	ErrStreamRouteValidation    = errors.New("appconf validation error,stream-routes count is 0")
 	ErrServiceNameValidation    = errors.New("appconf validation error, service-name is empty")
 	ErrOffsetCommit             = errors.New("cannot commit errored message")

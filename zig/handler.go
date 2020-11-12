@@ -18,12 +18,12 @@ func MessageHandler(app App, handlerFunc HandlerFunc) func(event MessageEvent) {
 		switch status {
 		case ProcessingSuccess:
 			app.MetricPublisher().IncCounter("message_processing_success", 1, metricTags)
-			logInfo("message handler: successfully processed message", nil)
+			logInfo("message handler: successfully processed message", map[string]interface{}{"msg": string(event.MessageValueBytes)})
 		case SkipMessage:
 			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
 			logInfo("message handler: skipping message", nil)
 		case RetryMessage:
-			logInfo("message handler: retrying message", nil)
+			logInfo("message handler: retrying message", map[string]interface{}{"msg": string(event.MessageValueBytes)})
 			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
 			retryErr := app.MessageRetry().Retry(app, event)
 			if retryErr != nil {
