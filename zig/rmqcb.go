@@ -3,6 +3,7 @@ package zig
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
 	amqpsafe "github.com/xssnick/amqp-safe"
 )
 
@@ -26,15 +27,17 @@ func createSetupCallback(consConn *amqpsafe.Connector, app App) func() {
 		createDelayQueues(consConn, topicEntities, app.Config().ServiceName)
 		createDeadLetterQueues(consConn, topicEntities, app.Config().ServiceName)
 		for _, te := range topicEntities {
-			queueName := constructQueueName(app.Config().ServiceName, te, QueueTypeInstant)
+			tecopy := te
+			queueName := constructQueueName(app.Config().ServiceName, tecopy, QueueTypeInstant)
 			consConn.Consume(queueName, queueName+"_consumer", func(body []byte) amqpsafe.Result {
+				fmt.Println("TOPIC_ENTITY=> ", tecopy)
 				msg, err := decodeMessage(body)
 				if err != nil {
-					logError(err, "ziggurat rmq consumer: message decode error", map[string]interface{}{"topic-entity": te})
+					logError(err, "ziggurat rmq consumer: message decode error", map[string]interface{}{"topic-entity": tecopy})
 					return amqpsafe.ResultError
 				}
-				MessageHandler(app, handlerMap[te].HandlerFunc)(msg)
-				logInfo("ziggurat rmq consumer: processed message successfully", map[string]interface{}{"topic-entity": te})
+				MessageHandler(app, handlerMap[tecopy].HandlerFunc)(msg)
+				logInfo("ziggurat rmq consumer: processed message successfully", map[string]interface{}{"topic-entity": tecopy})
 				return amqpsafe.ResultOK
 			})
 		}
