@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-type MetricConfig struct {
+type StatsDConf struct {
 	host string
 }
 
 type StatsD struct {
 	client       statsd.Statter
-	metricConfig *MetricConfig
+	metricConfig *StatsDConf
 	appName      string
 }
 
@@ -26,14 +26,12 @@ func NewStatsD(config ConfigReader) MetricPublisher {
 	}
 }
 
-func parseStatsDConfig(config ConfigReader) *MetricConfig {
-	rawConfig := config.GetByKey("statsd")
-	if sanitizedConfig, ok := rawConfig.(map[string]interface{}); !ok {
-		logError(ErrParsingStatsDConfig, "ziggurat stasd", nil)
-		return &MetricConfig{host: "localhost:8125"}
-	} else {
-		return &MetricConfig{host: sanitizedConfig["host"].(string)}
+func parseStatsDConfig(config ConfigReader) *StatsDConf {
+	statsDConf := &StatsDConf{}
+	if err := config.UnmarshalByKey("statsd", config); err != nil {
+		return &StatsDConf{host: "localhost:8125"}
 	}
+	return statsDConf
 }
 
 func constructTags(tags map[string]string) string {

@@ -2,9 +2,9 @@ package zig
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/golang/protobuf/proto"
-	"reflect"
 	"time"
 )
 
@@ -12,20 +12,12 @@ var getCurrTime = func() time.Time {
 	return time.Now()
 }
 
-func JSONDeserializer(model interface{}) MiddlewareFunc {
-	return func(next HandlerFunc) HandlerFunc {
-		return func(message MessageEvent, app App) ProcessStatus {
-			messageValueBytes := message.MessageValueBytes
-			typeModel := reflect.TypeOf(model)
-			res := reflect.New(typeModel).Interface()
-			if err := json.Unmarshal(messageValueBytes, res); err != nil {
-				logError(err, "JSON middleware:", nil)
-				message.MessageValue = nil
-				return next(message, app)
-			}
-			message.MessageValue = res
-			return next(message, app)
+func JSONDecoder(next HandlerFunc) HandlerFunc {
+	return func(message MessageEvent, app App) ProcessStatus {
+		message.DecodeValue = func(model interface{}) error {
+			return json.Unmarshal(message.MessageValueBytes, model)
 		}
+		return next(message, app)
 	}
 }
 
@@ -42,27 +34,16 @@ func MessageLogger(next HandlerFunc) HandlerFunc {
 	}
 }
 
-func ProtobufDeserializer(protoMessage interface{}) MiddlewareFunc {
-	return func(next HandlerFunc) HandlerFunc {
-		return func(messageEvent MessageEvent, app App) ProcessStatus {
-			messageValueBytes := messageEvent.MessageValueBytes
-
-			typeModel := reflect.TypeOf(protoMessage)
-			res := reflect.New(typeModel).Interface()
-
-			protoRes, ok := res.(proto.Message)
-
-			if !ok {
-				logError(ErrInterfaceNotProtoMessage, "Protobuf middleware", nil)
-				return next(messageEvent, app)
+func ProtoDecoder(next HandlerFunc) HandlerFunc {
+	return func(messageEvent MessageEvent, app App) ProcessStatus {
+		messageEvent.DecodeValue = func(model interface{}) error {
+			if protoMessage, ok := model.(proto.Message); !ok {
+				return errors.New("model not of type `proto.Message`")
+			} else {
+				return proto.Unmarshal(messageEvent.MessageValueBytes, protoMessage)
 			}
-			if err := proto.Unmarshal(messageValueBytes, protoRes); err != nil {
-				logError(err, "protobuf middleware unmarshal error", nil)
-				return next(messageEvent, app)
-			}
-			messageEvent.MessageValue = protoRes
-			return next(messageEvent, app)
 		}
+		return next(messageEvent, app)
 	}
 }
 

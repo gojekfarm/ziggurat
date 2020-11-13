@@ -59,6 +59,7 @@ type ConfigReader interface {
 	Parse(options CommandLineOptions)
 	GetByKey(key string) interface{}
 	Validate(rules map[string]func(c *Config) error) error
+	UnmarshalByKey(key string, model interface{}) error
 }
 
 // Public constants

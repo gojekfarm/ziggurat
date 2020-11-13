@@ -29,10 +29,10 @@ func (r *RabbitMQRetry) Start(app App) error {
 	connWaitChan := make(chan struct{})
 	dialErrChan := make(chan error)
 	r.pubConn = amqpsafe.NewConnector(amqpsafe.Config{
-		Hosts: []string{r.config.host},
+		Hosts: []string{r.config.Host},
 	})
 	r.consConn = amqpsafe.NewConnector(amqpsafe.Config{
-		Hosts: []string{r.config.host},
+		Hosts: []string{r.config.Host},
 	})
 
 	go func() {
@@ -48,9 +48,11 @@ func (r *RabbitMQRetry) Start(app App) error {
 	}()
 
 	wg.Add(2)
-	r.pubConn.Start().OnReady(func() {
+	pc := r.pubConn.Start()
+	pc.OnReady(func() {
 		wg.Done()
 	})
+
 	setupCallback := createSetupCallback(r.consConn, app)
 	r.consConn.Start().OnReady(func() {
 		wg.Done()
@@ -69,7 +71,7 @@ func (r *RabbitMQRetry) Start(app App) error {
 	case err := <-dialErrChan:
 		return err
 	case <-connWaitChan:
-		logInfo("rmq: connected to rabbitmq!", map[string]interface{}{"host": r.config.host})
+		logInfo("rmq: connected to rabbitmq!", map[string]interface{}{"host": r.config.Host})
 		return nil
 	}
 
@@ -77,7 +79,7 @@ func (r *RabbitMQRetry) Start(app App) error {
 
 func (r *RabbitMQRetry) Retry(app App, payload MessageEvent) error {
 	if app.Config().Retry.Enabled {
-		return retry(app.Context(), r.pubConn, app.Config(), payload, r.config.delayQueueExpiration)
+		return retry(app.Context(), r.pubConn, app.Config(), payload, r.config.DelayQueueExpiration)
 	}
 	return fmt.Errorf("cannot retry message, `Retry.Enabled` is %v", app.Config().Retry.Enabled)
 }
@@ -103,7 +105,7 @@ func (r *RabbitMQRetry) Replay(app App, topicEntity string, count int) error {
 		return fmt.Errorf("invalid count error: requested count %d is less than 1", count)
 	}
 
-	conn, dialErr := amqp.Dial(r.config.host)
+	conn, dialErr := amqp.Dial(r.config.Host)
 	if dialErr != nil {
 		return dialErr
 	}
@@ -112,5 +114,5 @@ func (r *RabbitMQRetry) Replay(app App, topicEntity string, count int) error {
 	if chanOpenErr != nil {
 		return chanOpenErr
 	}
-	return replayMessages(app, r.pubConn, channel, topicEntity, count, r.config.delayQueueExpiration)
+	return replayMessages(app, r.pubConn, channel, topicEntity, count, r.config.DelayQueueExpiration)
 }

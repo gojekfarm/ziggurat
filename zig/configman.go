@@ -53,6 +53,10 @@ func (vc *ViperConfig) GetByKey(key string) interface{} {
 	return vc.v.Get(key)
 }
 
+func (vc *ViperConfig) UnmarshalByKey(key string, model interface{}) error {
+	return vc.v.UnmarshalKey(key, model)
+}
+
 func (vc *ViperConfig) Parse(options CommandLineOptions) {
 	vc.v.SetConfigFile(options.ConfigFilePath)
 	vc.v.SetEnvPrefix("ziggurat")

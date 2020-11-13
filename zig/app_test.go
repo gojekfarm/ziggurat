@@ -25,6 +25,10 @@ func (m *mViperConf) Config() *Config {
 	}
 }
 
+func (m *mViperConf) UnmarshalByKey(key string, model interface{}) error {
+	return nil
+}
+
 func (m *mViperConf) Parse(options CommandLineOptions) {
 	m.parsedCfg = &Config{
 		StreamRouter: nil,

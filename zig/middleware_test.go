@@ -112,20 +112,20 @@ func (m mockMetrics) Gauge(metricName string, value int64, arguments map[string]
 
 func TestJSONDeserializer(t *testing.T) {
 	jsonMessage := `{"id":"xyzzyspoonshift1","name":"road_rash","secretNum":1}`
-	jsonDeserializer := JSONDeserializer(JSONMessage{})
 	expectedMessage := JSONMessage{
 		ID:        "xyzzyspoonshift1",
 		Name:      "road_rash",
 		SecretNum: 1,
 	}
 	handler := func(event MessageEvent, app App) ProcessStatus {
-		message := *event.MessageValue.(*JSONMessage)
-		if message == expectedMessage {
+		msg := &JSONMessage{}
+		event.DecodeValue(msg)
+		if *msg == expectedMessage {
 			return ProcessingSuccess
 		}
 		return SkipMessage
 	}
-	result := jsonDeserializer(handler)(MessageEvent{
+	result := JSONDecoder(handler)(MessageEvent{
 		MessageValueBytes: []byte(jsonMessage),
 	}, &mwMockApp{})
 
@@ -135,7 +135,6 @@ func TestJSONDeserializer(t *testing.T) {
 }
 
 func TestProtobufDeserializer(t *testing.T) {
-	testProtoModel := testproto.TestMessage{}
 	expectedMessage := testproto.TestMessage{
 		Id:        "1",
 		SecretNum: 0,
@@ -143,10 +142,10 @@ func TestProtobufDeserializer(t *testing.T) {
 	}
 	bytes, _ := proto.Marshal(&expectedMessage)
 	//go vet complains copying lockers by value
-	protoDeserializer := ProtobufDeserializer(testProtoModel)
-	protoDeserializer(func(messageEvent MessageEvent, app App) ProcessStatus {
-		tm := messageEvent.MessageValue.(*testproto.TestMessage)
-		if !proto.Equal(tm, &expectedMessage) {
+	ProtoDecoder(func(messageEvent MessageEvent, app App) ProcessStatus {
+		testProtoModel := testproto.TestMessage{}
+		messageEvent.DecodeValue(&testProtoModel)
+		if !proto.Equal(&testProtoModel, &expectedMessage) {
 			t.Errorf("proto messages are not equal")
 		}
 		return ProcessingSuccess
@@ -185,8 +184,6 @@ func TestMessageLogger(t *testing.T) {
 	})
 
 	msgLogger(MessageEvent{
-		MessageKey:        nil,
-		MessageValue:      nil,
 		MessageValueBytes: messageVal,
 		MessageKeyBytes:   nil,
 		Topic:             kafkaTopic,
@@ -209,8 +206,6 @@ func TestMessageMetricsPublisher(t *testing.T) {
 		return ProcessingSuccess
 	})
 	messageMetricsPublisher(MessageEvent{
-		MessageKey:        nil,
-		MessageValue:      nil,
 		MessageValueBytes: nil,
 		MessageKeyBytes:   nil,
 		Topic:             "topic-1",

@@ -4,13 +4,18 @@ import (
 	"bytes"
 	"encoding/gob"
 	amqpsafe "github.com/xssnick/amqp-safe"
+	"sync"
 )
 
 func decodeMessage(body []byte) (MessageEvent, error) {
 	buff := bytes.Buffer{}
 	buff.Write(body)
 	decoder := gob.NewDecoder(&buff)
-	messageEvent := &MessageEvent{Attributes: map[string]interface{}{}}
+	messageEvent := &MessageEvent{Attributes: map[string]interface{}{},
+		DecodeValue: func(model interface{}) error { return nil },
+		DecodeKey:   func(model interface{}) error { return nil },
+		amutex:      &sync.Mutex{},
+	}
 	if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
 		return *messageEvent, decodeErr
 	}

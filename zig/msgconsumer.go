@@ -50,17 +50,7 @@ func startConsumer(routerCtx context.Context, app App, handlerFunc HandlerFunc, 
 					return
 				}
 				if msg != nil {
-					messageEvent := MessageEvent{
-						MessageKey:        nil,
-						MessageValue:      nil,
-						MessageValueBytes: msg.Value,
-						MessageKeyBytes:   msg.Key,
-						Topic:             *msg.TopicPartition.Topic,
-						TopicEntity:       topicEntity,
-						TimestampType:     msg.TimestampType.String(),
-						KafkaTimestamp:    msg.Timestamp,
-						Attributes:        make(map[string]interface{}),
-					}
+					messageEvent := NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, topicEntity, msg.TimestampType.String(), msg.Timestamp)
 					MessageHandler(app, handlerFunc)(messageEvent)
 					logError(storeOffsets(consumer, msg.TopicPartition), "ziggurat consumer", nil)
 				}
