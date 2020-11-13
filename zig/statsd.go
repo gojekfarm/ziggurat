@@ -8,7 +8,7 @@ import (
 )
 
 type StatsDConf struct {
-	host string
+	Host string `mapstructure:"host"`
 }
 
 type StatsD struct {
@@ -29,7 +29,7 @@ func NewStatsD(config ConfigReader) MetricPublisher {
 func parseStatsDConfig(config ConfigReader) *StatsDConf {
 	statsDConf := &StatsDConf{}
 	if err := config.UnmarshalByKey("statsd", config); err != nil {
-		return &StatsDConf{host: "localhost:8125"}
+		return &StatsDConf{Host: "localhost:8125"}
 	}
 	return statsDConf
 }
@@ -45,7 +45,7 @@ func constructTags(tags map[string]string) string {
 func (s *StatsD) Start(app App) error {
 	config := &statsd.ClientConfig{
 		Prefix:  app.Config().ServiceName,
-		Address: s.metricConfig.host,
+		Address: s.metricConfig.Host,
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
