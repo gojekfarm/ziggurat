@@ -3,7 +3,6 @@ package zig
 import (
 	"fmt"
 	"github.com/streadway/amqp"
-	amqpsafe "github.com/xssnick/amqp-safe"
 )
 
 const QueueTypeDelay = "delay"

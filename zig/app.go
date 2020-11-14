@@ -187,3 +187,7 @@ func (z *Ziggurat) IsRunning() bool {
 	}
 	return false
 }
+
+func (z *Ziggurat) ConfigReader() ConfigReader {
+	return z.appconf
+}

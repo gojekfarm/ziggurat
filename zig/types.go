@@ -50,6 +50,7 @@ type App interface {
 	MetricPublisher() MetricPublisher
 	HTTPServer() HttpServer
 	Config() *Config
+	ConfigReader() ConfigReader
 	Stop()
 	IsRunning() bool
 }
