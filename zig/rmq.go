@@ -1,118 +1,121 @@
 package zig
 
 import (
-	"errors"
+	"context"
 	"fmt"
+	"github.com/makasim/amqpextra"
+	"github.com/makasim/amqpextra/logger"
+	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
-	amqpsafe "github.com/xssnick/amqp-safe"
-	"sync"
-	"time"
+	"strings"
 )
 
-var dialTimeout = 30 * time.Second
+type RabbitMQConfig struct {
+	Hosts                string
+	DelayQueueExpiration string
+}
+
+func parseRabbitMQConfig(config ConfigReader) *RabbitMQConfig {
+	rmqcfg := &RabbitMQConfig{}
+	if err := config.UnmarshalByKey("rabbitmq", rmqcfg); err != nil {
+		logError(err, "rmq config unmarshall error", nil)
+		return &RabbitMQConfig{
+			Hosts:                "amqp://user:bitnami@localhost:5672/",
+			DelayQueueExpiration: "2000",
+		}
+	}
+	return rmqcfg
+}
+
+func splitHosts(hosts string) []string {
+	return strings.Split(hosts, ",")
+}
+
+var rmqLogger logger.Func = func(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v)
+	logInfo(msg, nil)
+}
 
 type RabbitMQRetry struct {
-	pubConn  *amqpsafe.Connector
-	config   *RabbitMQConfig
-	consConn *amqpsafe.Connector
+	pdialer *amqpextra.Dialer
+	cdialer *amqpextra.Dialer
+	cfg     *RabbitMQConfig
 }
 
 func NewRabbitMQRetry(config ConfigReader) *RabbitMQRetry {
 	cfg := parseRabbitMQConfig(config)
 	return &RabbitMQRetry{
-		config: cfg,
+		cfg: cfg,
 	}
 }
 
-func (r *RabbitMQRetry) Start(app App) error {
-	wg := &sync.WaitGroup{}
-	connWaitChan := make(chan struct{})
-	dialErrChan := make(chan error)
-	r.pubConn = amqpsafe.NewConnector(amqpsafe.Config{
-		Hosts: []string{r.config.Host},
-	})
-	r.consConn = amqpsafe.NewConnector(amqpsafe.Config{
-		Hosts: []string{r.config.Host},
-	})
-
-	go func() {
-		timerChan := time.After(dialTimeout)
-		select {
-		case <-timerChan:
-			dialErrChan <- errors.New("dial timeout exceeded")
-			r.pubConn.Close()
-			r.consConn.Close()
-		case <-connWaitChan:
-			return
-		}
-	}()
-
-	wg.Add(2)
-	pc := r.pubConn.Start()
-	pc.OnReady(func() {
-		wg.Done()
-	})
-
-	setupCallback := createSetupCallback(r.consConn, app)
-	r.consConn.Start().OnReady(func() {
-		wg.Done()
-		setupCallback()
-	})
-
-	go func() {
-		wg.Wait()
-		close(connWaitChan)
-	}()
-
-	done := app.Context().Done()
-	select {
-	case <-done:
-		return nil
-	case err := <-dialErrChan:
+func withChannel(connection *amqp.Connection, cb func(c *amqp.Channel) error) error {
+	c, err := connection.Channel()
+	defer c.Close()
+	if err != nil {
 		return err
-	case <-connWaitChan:
-		logInfo("rmq: connected to rabbitmq!", map[string]interface{}{"host": r.config.Host})
+	}
+	cberr := cb(c)
+	return cberr
+}
+
+func createDialer(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
+	d, cfgErr := amqpextra.NewDialer(
+		amqpextra.WithURL(hosts...),
+		amqpextra.WithContext(ctx))
+	if cfgErr != nil {
+		return nil, cfgErr
+	}
+	return d, nil
+}
+
+func (R *RabbitMQRetry) Start(app App) error {
+	publishDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts))
+	if err != nil {
+		return err
+	}
+	R.pdialer = publishDialer
+	conn, err := publishDialer.Connection(app.Context())
+	if err != nil {
+		return err
+	}
+
+	consumerDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts))
+	if err != nil {
+		return err
+	}
+	R.cdialer = consumerDialer
+
+	if err := setupConsumers(app, consumerDialer); err != nil {
+		return err
+	}
+
+	return withChannel(conn, func(c *amqp.Channel) error {
+		createAndBindQueues(c, app.Router().GetTopicEntityNames(), app.Config().ServiceName)
 		return nil
-	}
-
+	})
 }
 
-func (r *RabbitMQRetry) Retry(app App, payload MessageEvent) error {
-	if app.Config().Retry.Enabled {
-		return retry(app.Context(), r.pubConn, app.Config(), payload, r.config.DelayQueueExpiration)
+func (R *RabbitMQRetry) Retry(app App, payload MessageEvent) error {
+	options := []publisher.Option{publisher.WithContext(app.Context())}
+	p, err := R.pdialer.Publisher(options...)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("cannot retry message, `Retry.Enabled` is %v", app.Config().Retry.Enabled)
+	return retry(app.Context(), p, app.Config(), payload, "1000")
 }
 
-func (r *RabbitMQRetry) Stop() error {
-	if r.pubConn != nil {
-		return r.pubConn.Close()
+func (R *RabbitMQRetry) Stop() error {
+	if R.pdialer != nil {
+		R.pdialer.Close()
 	}
-	if r.consConn != nil {
-		return r.consConn.Close()
+
+	if R.cdialer != nil {
+		R.cdialer.Close()
 	}
 	return nil
 }
 
-func (r *RabbitMQRetry) Replay(app App, topicEntity string, count int) error {
-	// amqp-safe does not expose the `channel.Get` method,
-	//dialing a new connection and using the `streadway/amqp` to consume single messages
-	hfmap := app.Router().GetHandlerFunctionMap()
-	if _, ok := hfmap[topicEntity]; !ok {
-		return fmt.Errorf("error: topic-entity %s not registered", topicEntity)
-	}
-	if count < 1 {
-		return fmt.Errorf("invalid count error: requested count %d is less than 1", count)
-	}
-
-	conn, dialErr := amqp.Dial(r.config.Host)
-	if dialErr != nil {
-		return dialErr
-	}
-
-	channel, chanOpenErr := conn.Channel()
-	if chanOpenErr != nil {
-		return chanOpenErr
-	}
-	return replayMessages(app, r.pubConn, channel, topicEntity, count, r.config.DelayQueueExpiration)
+func (R *RabbitMQRetry) Replay(app App, topicEntity string, count int) error {
+	return nil
 }
