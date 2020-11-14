@@ -30,6 +30,7 @@ func createSetupCallback(consConn *amqpsafe.Connector, app App) func() {
 		createInstantQueues(consConn, topicEntities, app.Config().ServiceName)
 		createDelayQueues(consConn, topicEntities, app.Config().ServiceName)
 		createDeadLetterQueues(consConn, topicEntities, app.Config().ServiceName)
+		logError(consConn.Qos(1, 0, false), "rmq consumer: failed to set QOS", nil)
 		for _, te := range topicEntities {
 			teCopy := te
 			queueName := constructQueueName(app.Config().ServiceName, teCopy, QueueTypeInstant)
