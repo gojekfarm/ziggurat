@@ -35,19 +35,21 @@ func setupConsumers(app App, dialer *amqpextra.Dialer) error {
 		queueName := constructQueueName(serviceName, entity, QueueTypeInstant)
 		messageHandler := MessageHandler(app, topicEntity.HandlerFunc)
 		consumerCTAG := fmt.Sprintf("%s_%s_%s", queueName, serviceName, "ctag")
+
 		options := []consumer.Option{
 			consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 				channel, err := conn.(*amqp.Connection).Channel()
 				if err != nil {
 					return nil, err
 				}
-				logError(channel.Qos(1, 0, false), "rmq cosumer: error setting QOS", nil)
+				logError(channel.Qos(1, 0, false), "rmq consumer: error setting QOS", nil)
 				return channel, nil
 			}),
 			consumer.WithContext(ctx),
 			consumer.WithConsumeArgs(consumerCTAG, false, false, false, false, nil),
 			consumer.WithQueue(queueName),
 			consumer.WithHandler(consumer.HandlerFunc(func(ctx context.Context, msg amqp.Delivery) interface{} {
+				logInfo("rmq consumer: processing message", map[string]interface{}{"queue-name": queueName})
 				msgEvent, err := decodeMessage(msg.Body)
 				if err != nil {
 					return msg.Reject(true)
@@ -60,14 +62,11 @@ func setupConsumers(app App, dialer *amqpextra.Dialer) error {
 		if err != nil {
 			return err
 		}
-
 		go func() {
-			for {
-				<-c.NotifyClosed()
-				logError(fmt.Errorf("consumer closed"), "rmq consumer: closed", nil)
-			}
+			<-c.NotifyClosed()
+			logError(fmt.Errorf("consumer closed"), "rmq consumer: closed", nil)
+
 		}()
-		return err
 	}
 	return nil
 }
