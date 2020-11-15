@@ -30,7 +30,7 @@ func NewStatsD(config z.ConfigReader) z.MetricPublisher {
 
 func parseStatsDConfig(config z.ConfigReader) *StatsDConf {
 	statsDConf := &StatsDConf{}
-	if err := config.UnmarshalByKey("statsd", config); err != nil {
+	if err := config.UnmarshalByKey("statsd", &statsDConf); err != nil {
 		return &StatsDConf{Host: "localhost:8125"}
 	}
 	return statsDConf

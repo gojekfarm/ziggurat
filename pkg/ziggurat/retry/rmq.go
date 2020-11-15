@@ -98,6 +98,7 @@ func (R *RabbitMQRetry) Retry(app z.App, payload basic.MessageEvent) error {
 	if err != nil {
 		return err
 	}
+	defer p.Close()
 	return retry(app.Context(), p, app.Config(), payload, "1000")
 }
 
