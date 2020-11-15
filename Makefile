@@ -23,7 +23,7 @@ app.start:
 	./ziggurat-go --config=./config/config.sample.yaml
 
 app.test:
-	go test -count 1 -v ./zig
+	go test -count 1 -v `go list ./pkg/ziggurat/* | grep -v basic | grep -v "ziggurat/z"`
 
 app.start-race:
 	go build -race
