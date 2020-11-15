@@ -19,6 +19,10 @@ type mwMockApp struct {
 	t *testing.T
 }
 
+func (m mwMockApp) ConfigReader() ConfigReader {
+	panic("implement me")
+}
+
 func (m mwMockApp) Context() context.Context {
 	return nil
 }

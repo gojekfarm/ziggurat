@@ -2,9 +2,7 @@ package zig
 
 import (
 	"context"
-	"fmt"
 	"github.com/makasim/amqpextra"
-	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"strings"
@@ -29,11 +27,6 @@ func parseRabbitMQConfig(config ConfigReader) *RabbitMQConfig {
 
 func splitHosts(hosts string) []string {
 	return strings.Split(hosts, ",")
-}
-
-var rmqLogger logger.Func = func(format string, v ...interface{}) {
-	msg := fmt.Sprintf(format, v)
-	logInfo(msg, nil)
 }
 
 type RabbitMQRetry struct {

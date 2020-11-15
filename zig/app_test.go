@@ -137,7 +137,7 @@ func setup() {
 	app.metricPublisher = mstatsd
 	app.messageRetry = mrabbitmq
 	app.cancelFun = func() {}
-	app.appconf = mappconf
+	app.cfgReader = mappconf
 }
 
 func teardown() {
@@ -234,7 +234,7 @@ func TestZiggurat_IsRunning(t *testing.T) {
 func TestZiggurat_Configure(t *testing.T) {
 	setup()
 	defer teardown()
-	dialTimeout = 100 * time.Millisecond
+
 	app.Configure(func(app App) Options {
 		return Options{
 			HttpServer:      nil,

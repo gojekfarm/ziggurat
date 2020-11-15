@@ -11,6 +11,10 @@ import (
 
 type routerTestMockApp struct{}
 
+func (r routerTestMockApp) ConfigReader() ConfigReader {
+	panic("implement me")
+}
+
 func (r routerTestMockApp) Context() context.Context {
 	return context.Background()
 }

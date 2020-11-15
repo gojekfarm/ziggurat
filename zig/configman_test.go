@@ -31,7 +31,7 @@ func TestViperConfig_Parse(t *testing.T) {
 	vc.Parse(CommandLineOptions{ConfigFilePath: "../config/config.test.yaml"})
 	actualConfig := vc.Config()
 	if !reflect.DeepEqual(expectedConfig, *actualConfig) {
-		t.Errorf("expected config %+v, actual appconf %+v", expectedConfig, actualConfig)
+		t.Errorf("expected config %+v, actual cfgReader %+v", expectedConfig, actualConfig)
 	}
 
 }

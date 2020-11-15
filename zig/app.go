@@ -19,7 +19,7 @@ type Options struct {
 type Ziggurat struct {
 	httpServer      HttpServer
 	messageRetry    MessageRetry
-	appconf         ConfigReader
+	cfgReader       ConfigReader
 	router          StreamRouter
 	metricPublisher MetricPublisher
 	interruptChan   chan os.Signal
@@ -42,7 +42,7 @@ func NewApp() *Ziggurat {
 	z := &Ziggurat{
 		ctx:           ctx,
 		cancelFun:     cancelFn,
-		appconf:       NewViperConfig(),
+		cfgReader:     NewViperConfig(),
 		stopFunc:      func() {},
 		interruptChan: make(chan os.Signal),
 		doneChan:      make(chan struct{}),
@@ -60,14 +60,14 @@ func (z *Ziggurat) Configure(configFunc func(app App) Options) {
 
 func (z *Ziggurat) configureDefaults() {
 	if z.metricPublisher == nil {
-		z.metricPublisher = NewStatsD(z.appconf)
+		z.metricPublisher = NewStatsD(z.cfgReader)
 	}
 	if z.messageRetry == nil {
-		z.messageRetry = NewRabbitMQRetry(z.appconf)
+		z.messageRetry = NewRabbitMQRetry(z.cfgReader)
 	}
 
 	if z.httpServer == nil {
-		z.httpServer = NewDefaultHTTPServer(z.appconf)
+		z.httpServer = NewDefaultHTTPServer(z.cfgReader)
 	}
 }
 
@@ -77,12 +77,12 @@ func (z *Ziggurat) configureHTTPRoutes(configFunc func(a App, h http.Handler)) {
 
 func (z *Ziggurat) loadConfig() error {
 	commandLineOptions := ParseCommandLineArguments()
-	z.appconf.Parse(commandLineOptions)
+	z.cfgReader.Parse(commandLineOptions)
 	logInfo("successfully parsed application config", nil)
-	if validationErr := z.appconf.Validate(configRules); validationErr != nil {
+	if validationErr := z.cfgReader.Validate(configRules); validationErr != nil {
 		return validationErr
 	}
-	configureLogger(z.appconf.Config().LogLevel)
+	configureLogger(z.cfgReader.Config().LogLevel)
 	return nil
 }
 
@@ -113,7 +113,7 @@ func (z *Ziggurat) start(startCallback StartFunction) {
 
 	z.httpServer.Start(z)
 
-	if z.appconf.Config().Retry.Enabled {
+	if z.cfgReader.Config().Retry.Enabled {
 		logInfo("ziggurat: starting retry component", nil)
 		err := z.messageRetry.Start(z)
 		logFatal(err, "ziggurat: error starting retries", nil)
@@ -178,7 +178,7 @@ func (z *Ziggurat) HTTPServer() HttpServer {
 }
 
 func (z *Ziggurat) Config() *Config {
-	return z.appconf.Config()
+	return z.cfgReader.Config()
 }
 
 func (z *Ziggurat) IsRunning() bool {
@@ -189,5 +189,5 @@ func (z *Ziggurat) IsRunning() bool {
 }
 
 func (z *Ziggurat) ConfigReader() ConfigReader {
-	return z.appconf
+	return z.cfgReader
 }
