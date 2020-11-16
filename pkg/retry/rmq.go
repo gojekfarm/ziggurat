@@ -12,8 +12,8 @@ import (
 )
 
 type RabbitMQConfig struct {
-	Hosts                string
-	DelayQueueExpiration string
+	Hosts                string `mapstructure:"hosts"`
+	DelayQueueExpiration string `mapstructure:"delay-queue-expiration"`
 }
 
 func parseRabbitMQConfig(config z.ConfigReader) *RabbitMQConfig {
@@ -99,7 +99,7 @@ func (R *RabbitMQRetry) Retry(app z.App, payload basic.MessageEvent) error {
 		return err
 	}
 	defer p.Close()
-	return retry(app.Context(), p, app.Config(), payload, "1000")
+	return retry(app.Context(), p, app.Config(), payload, R.cfg.DelayQueueExpiration)
 }
 
 func (R *RabbitMQRetry) Stop() error {
@@ -114,5 +114,17 @@ func (R *RabbitMQRetry) Stop() error {
 }
 
 func (R *RabbitMQRetry) Replay(app z.App, topicEntity string, count int) error {
-	return nil
+	p, perror := R.pdialer.Publisher(publisher.WithContext(app.Context()))
+	if perror != nil {
+		return perror
+	}
+	queueName := constructQueueName(app.Config().ServiceName, topicEntity, QueueTypeDL)
+	exchangeOut := constructExchangeName(app.Config().ServiceName, topicEntity, QueueTypeInstant)
+	conn, err := R.pdialer.Connection(app.Context())
+	if err != nil {
+		return err
+	}
+	return withChannel(conn, func(c *amqp.Channel) error {
+		return replayMessages(app.Context(), c, p, queueName, exchangeOut, count, R.cfg.DelayQueueExpiration)
+	})
 }

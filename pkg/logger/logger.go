@@ -26,7 +26,7 @@ var consoleLogger = zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
 	w.NoColor = true
 	w.TimeFormat = time.RFC3339
 	w.FormatMessage = func(i interface{}) string {
-		return fmt.Sprintf("[ziggurat] [%s]", i)
+		return fmt.Sprintf("[ziggurat] : %s", i)
 	}
 	w.FormatLevel = func(i interface{}) string {
 		return strings.ToUpper(fmt.Sprintf("[%s]", i))
