@@ -282,22 +282,24 @@ var Main = `package main
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/zig"
+	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/mw"
+	"github.com/gojekfarm/ziggurat-go/pkg/streams"
+	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zig"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
 
 func main() {
 	app := zig.NewApp()
-	router := zig.NewRouter()
+	router := streams.NewRouter()
 
-	router.HandlerFunc("{{.TopicEntity}}", func(messageEvent zig.MessageEvent, app zig.App) zig.ProcessStatus {
+	router.HandlerFunc("{{.TopicEntity}}", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+		return z.RetryMessage
+	})
 
-		return zig.ProcessingSuccess
-
-	}, zig.MessageLogger)
-
-	startFunc := func(a zig.App) {
+	startFunc := func(a z.App) {
 		fmt.Println("starting app")
 	}
 
@@ -305,18 +307,17 @@ func main() {
 		fmt.Println("stopping app")
 	}
 
-	<-app.Run(router, zig.RunOptions{
+	<-app.Run(router, z.RunOptions{
 		StartCallback: startFunc,
 		StopCallback:  stopFunc,
-		HTTPConfigFunc: func(a zig.App, h http.Handler) {
+		HTTPConfigFunc: func(a z.App, h http.Handler) {
 			r, _ := h.(*httprouter.Router)
 			r.GET("/if_you_dont_eat_your_meat", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 				writer.Write([]byte("you can't have any pudding"))
 			})
 		},
 	})
-}
-`
+}`
 
 var Makefile = `.PHONY: all
 
