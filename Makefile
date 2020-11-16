@@ -23,7 +23,7 @@ app.start:
 	./ziggurat-go --config=./config/config.sample.yaml
 
 app.test:
-	go test -count 1 -v `go list ./pkg/ziggurat/* | grep -v basic | grep -v "ziggurat/z"`
+	go test -count 1 -v `go list ./pkg/* | grep -v basic | grep -v "pkg/z" | grep -v "zerror"`
 
 app.start-race:
 	go build -race
@@ -42,5 +42,5 @@ pkg.release:
 	./scripts/release.sh ${VERSION}
 
 app.test-coverage:
-	go test -count 1 -p 2 ./zig -coverprofile cp.out
+	go test -count 1 -v `go list ./pkg/* | grep -v basic | grep -v "pkg/z" | grep -v "zerror"` -coverprofile cp.out
 	go tool cover -html=cp.out

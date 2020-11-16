@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var getCurrTime = func() time.Time {
+var GetCurrTime = func() time.Time {
 	return time.Now()
 }
 
@@ -56,7 +56,7 @@ func MessageMetricsPublisher(next z.HandlerFunc) z.HandlerFunc {
 			"topic_entity": messageEvent.TopicEntity,
 			"kafka_topic":  messageEvent.Topic,
 		}
-		currTime := getCurrTime()
+		currTime := GetCurrTime()
 		kafkaTimestamp := messageEvent.KafkaTimestamp
 		delayInMS := currTime.Sub(kafkaTimestamp).Milliseconds()
 		app.MetricPublisher().IncCounter("message_count", 1, args)

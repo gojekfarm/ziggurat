@@ -1,12 +1,15 @@
 package cons
 
 import (
+	"bytes"
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/handler"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"sync"
 	"testing"
+	"time"
 )
 
 type consumerTestMockApp struct{}
@@ -74,4 +77,51 @@ func TestConsumer_create(t *testing.T) {
 	if len(consumers) < 2 {
 		t.Errorf("could not start consuemrs")
 	}
+}
+
+func TestConsumer_start(t *testing.T) {
+	expectedBytes := []byte("foo")
+	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
+		t := ""
+		return &kafka.Message{
+			TopicPartition: kafka.TopicPartition{
+				Topic:     &t,
+				Partition: 0,
+				Offset:    0,
+				Metadata:  nil,
+				Error:     nil,
+			},
+			Value:         expectedBytes,
+			Key:           expectedBytes,
+			Timestamp:     time.Time{},
+			TimestampType: 0,
+			Opaque:        nil,
+			Headers:       nil,
+		}, nil
+	}
+	app := &consumerTestMockApp{}
+	var handlerFunc z.HandlerFunc = func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
+			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
+		}
+		return z.ProcessingSuccess
+	}
+	c := &kafka.Consumer{}
+	handler.MessageHandler = func(app z.App, handlerFunc z.HandlerFunc) func(event basic.MessageEvent) {
+		return func(event basic.MessageEvent) {
+			handlerFunc(event, app)
+		}
+	}
+	storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition) error {
+		return nil
+	}
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
+	ctx, cancelFunc := context.WithCancel(context.Background())
+	go func() {
+		time.Sleep(1 * time.Second)
+		cancelFunc()
+	}()
+	startConsumer(ctx, app, handlerFunc, c, "", "", wg)
+	wg.Wait()
 }

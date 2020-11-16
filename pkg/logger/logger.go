@@ -39,6 +39,7 @@ var errLoggerInst = zerolog.New(consoleLogger).With().Timestamp().CallerWithSkip
 func ConfigureLogger(logLevel string) {
 	logLevelInt := logLevelMapping[logLevel]
 	loggerInst.Level(logLevelInt)
+	errLoggerInst.Level(logLevelInt)
 }
 
 var LogError = func(err error, msg string, args map[string]interface{}) {

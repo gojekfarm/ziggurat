@@ -1,4 +1,4 @@
-package streams
+package stream
 
 import (
 	"fmt"
@@ -91,10 +91,10 @@ func (dr *DefaultRouter) validate(config *basic.Config) {
 	}
 }
 
-func (dr *DefaultRouter) Start(app z.App) (chan int, error) {
+func (dr *DefaultRouter) Start(app z.App) (chan struct{}, error) {
 	ctx := app.Context()
 	config := app.Config()
-	stopChan := make(chan int)
+	stopChan := make(chan struct{})
 	var wg sync.WaitGroup
 	srConfig := config.StreamRouter
 	hfMap := dr.handlerFunctionMap

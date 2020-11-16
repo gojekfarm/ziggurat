@@ -116,12 +116,12 @@ func (z *Ziggurat) start(startCallback z.StartFunction) {
 	}
 
 	routerStopChan, routerStartErr := z.router.Start(z)
-	logger.LogFatal(routerStartErr, "", nil)
+	logger.LogFatal(routerStartErr, "ziggurat: router start error", nil)
 
 	if startCallback != nil {
 		startCallback(z)
 	}
-	halt := func(routerStopChan chan int) {
+	halt := func(routerStopChan chan struct{}) {
 		z.cancelFun()
 		if routerStopChan != nil {
 			<-routerStopChan

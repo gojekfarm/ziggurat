@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func MessageHandler(app at.App, handlerFunc at.HandlerFunc) func(event basic.MessageEvent) {
+var MessageHandler = func(app at.App, handlerFunc at.HandlerFunc) func(event basic.MessageEvent) {
 	return func(event basic.MessageEvent) {
 		metricTags := map[string]string{
 			"topic_entity": event.TopicEntity,

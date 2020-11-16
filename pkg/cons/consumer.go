@@ -8,36 +8,15 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/handler"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
 	"sync"
 	"time"
 )
 
 var consumerLogContext = map[string]interface{}{"component": "consumer"}
 
-const DefaultPollTimeout = 100 * time.Millisecond
+const defaultPollTimeout = 100 * time.Millisecond
 
-func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
-	consumer, err := kafka.NewConsumer(consumerConfig)
-	logger.LogError(err, "ziggurat consumer", consumerLogContext)
-	subscribeErr := consumer.SubscribeTopics(topics, nil)
-	logger.LogError(subscribeErr, "ziggurat consumer", consumerLogContext)
-	return consumer
-}
-
-func storeOffsets(consumer *kafka.Consumer, partition kafka.TopicPartition) error { // at least once delivery
-	if partition.Error != nil {
-		return zerror.ErrOffsetCommit
-	}
-	offsets := []kafka.TopicPartition{partition}
-	offsets[0].Offset++
-	if _, err := consumer.StoreOffsets(offsets); err != nil {
-		return err
-	}
-	return nil
-}
-
-func startConsumer(routerCtx context.Context, app z.App, handlerFunc z.HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	logger.LogInfo("ziggurat consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
@@ -47,7 +26,7 @@ func startConsumer(routerCtx context.Context, app z.App, handlerFunc z.HandlerFu
 				wg.Done()
 				return
 			default:
-				msg, err := c.ReadMessage(DefaultPollTimeout)
+				msg, err := readMessage(c, defaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
 					logger.LogError(err, "ziggurat consumer", nil)
@@ -61,7 +40,7 @@ func startConsumer(routerCtx context.Context, app z.App, handlerFunc z.HandlerFu
 				}
 			}
 		}
-	}(routerCtx, consumer, instanceID, wg)
+	}(ctx, consumer, instanceID, wg)
 }
 
 var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc z.HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {

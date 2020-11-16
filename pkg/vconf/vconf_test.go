@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-const testConfPath = "../../../config/config.test.yaml"
+const testConfPath = "../../config/config.test.yaml"
 
 func TestViperConfig_Parse(t *testing.T) {
 	vc := NewViperConfig()
@@ -55,7 +55,7 @@ func TestViperConfig_EnvOverride(t *testing.T) {
 
 func TestViperConfig_Validate(t *testing.T) {
 	vc := NewViperConfig()
-	vc.parsedConfig = &basic.Config{
+	vc.ParsedConfig = &basic.Config{
 		StreamRouter: nil,
 		LogLevel:     "",
 		ServiceName:  "foo",

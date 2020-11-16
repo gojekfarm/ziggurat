@@ -5,7 +5,7 @@ import (
 	at "github.com/gojekfarm/ziggurat-go/pkg/z"
 )
 
-func PipeHandlers(funcs ...at.MiddlewareFunc) func(handlerFunc at.HandlerFunc) at.HandlerFunc {
+var PipeHandlers = func(funcs ...at.MiddlewareFunc) func(handlerFunc at.HandlerFunc) at.HandlerFunc {
 	return func(next at.HandlerFunc) at.HandlerFunc {
 		return func(messageEvent basic.MessageEvent, app at.App) at.ProcessStatus {
 			var handlerResult at.HandlerFunc

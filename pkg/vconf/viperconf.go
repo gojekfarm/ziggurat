@@ -9,7 +9,7 @@ import (
 
 type ViperConfig struct {
 	v            *viper.Viper
-	parsedConfig *basic.Config
+	ParsedConfig *basic.Config
 }
 
 func NewViperConfig() *ViperConfig {
@@ -20,7 +20,7 @@ func NewViperConfig() *ViperConfig {
 
 func (vc *ViperConfig) Validate(rules map[string]func(c *basic.Config) error) error {
 	for _, validationFn := range rules {
-		if err := validationFn(vc.parsedConfig); err != nil {
+		if err := validationFn(vc.ParsedConfig); err != nil {
 			return err
 		}
 	}
@@ -43,9 +43,9 @@ func (vc *ViperConfig) Parse(options basic.CommandLineOptions) {
 	logger.LogFatal(vc.v.ReadInConfig(), "failed to read from config file", nil)
 	replacer := strings.NewReplacer("-", "_", ".", "_")
 	vc.v.SetEnvKeyReplacer(replacer)
-	logger.LogFatal(vc.v.Unmarshal(&vc.parsedConfig), "failed to parse app config", nil)
+	logger.LogFatal(vc.v.Unmarshal(&vc.ParsedConfig), "failed to parse app config", nil)
 }
 
 func (vc *ViperConfig) Config() *basic.Config {
-	return vc.parsedConfig
+	return vc.ParsedConfig
 }
