@@ -15,6 +15,7 @@ import (
 var consumerLogContext = map[string]interface{}{"component": "consumer"}
 
 const defaultPollTimeout = 100 * time.Millisecond
+const brokerRetryTimeout = 2 * time.Second
 
 func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	logger.LogInfo("ziggurat consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
@@ -30,9 +31,9 @@ func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, co
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					logger.LogError(err, "ziggurat consumer", nil)
-					wg.Done()
-					return
+					logger.LogError(err, "consumer: retrying broker...", nil)
+					time.Sleep(brokerRetryTimeout)
+					continue
 				}
 				if msg != nil {
 					messageEvent := basic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, topicEntity, msg.TimestampType.String(), msg.Timestamp)

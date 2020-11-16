@@ -87,7 +87,8 @@ func (z *Ziggurat) Run(router z.StreamRouter, runOptions z.RunOptions) chan stru
 		logger.LogError(errors.New("attempted to call `Run` on an already running app"), "ziggurat app run", nil)
 		return nil
 	}
-	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT)
+	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
+	go interruptHandler(z.interruptChan, z.cancelFun)
 	logger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
 	z.router = router
 	z.configureDefaults()
@@ -186,4 +187,9 @@ func (z *Ziggurat) IsRunning() bool {
 
 func (z *Ziggurat) ConfigReader() z.ConfigReader {
 	return z.cfgReader
+}
+
+func interruptHandler(c chan os.Signal, cancelFunc context.CancelFunc) {
+	<-c
+	cancelFunc()
 }

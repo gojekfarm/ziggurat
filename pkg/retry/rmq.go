@@ -6,6 +6,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/makasim/amqpextra"
+	alogger "github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"strings"
@@ -58,6 +59,7 @@ func withChannel(connection *amqp.Connection, cb func(c *amqp.Channel) error) er
 func createDialer(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 	d, cfgErr := amqpextra.NewDialer(
 		amqpextra.WithURL(hosts...),
+		amqpextra.WithLogger(alogger.Std),
 		amqpextra.WithContext(ctx))
 	if cfgErr != nil {
 		return nil, cfgErr
