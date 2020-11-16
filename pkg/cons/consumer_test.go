@@ -125,3 +125,19 @@ func TestConsumer_start(t *testing.T) {
 	startConsumer(ctx, app, handlerFunc, c, "", "", wg)
 	wg.Wait()
 }
+
+func TestConsumer_AllBrokersDown(t *testing.T) {
+	app := &consumerTestMockApp{}
+	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
+		return nil, kafka.NewError(kafka.ErrAllBrokersDown, "", true)
+	}
+
+	wg := &sync.WaitGroup{}
+	c := &kafka.Consumer{}
+	hf := func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+		return z.ProcessingSuccess
+	}
+	wg.Add(1)
+	startConsumer(context.Background(), app, hf, c, "", "", wg)
+	wg.Wait()
+}

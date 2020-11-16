@@ -27,7 +27,8 @@ func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, co
 				return
 			default:
 				msg, err := readMessage(c, defaultPollTimeout)
-				if err != nil && err.(kafka.Error).Code() != kafka.ErrTimedOut {
+				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
+					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
 					logger.LogError(err, "ziggurat consumer", nil)
 					wg.Done()
