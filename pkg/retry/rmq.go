@@ -6,15 +6,21 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/makasim/amqpextra"
-	alogger "github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"strings"
+	"time"
 )
 
 type RabbitMQConfig struct {
 	Hosts                string `mapstructure:"hosts"`
 	DelayQueueExpiration string `mapstructure:"delay-queue-expiration"`
+	DialTimeoutInS       int    `mapstructure:"dial-timeout-seconds"`
+}
+
+func createContextWithDeadline(parentCtx context.Context, afterTimeInS int) (context.Context, context.CancelFunc) {
+	deadlineTime := time.Now().Add(time.Duration(afterTimeInS) * time.Second)
+	return context.WithDeadline(parentCtx, deadlineTime)
 }
 
 func parseRabbitMQConfig(config z.ConfigReader) *RabbitMQConfig {
@@ -56,10 +62,9 @@ func withChannel(connection *amqp.Connection, cb func(c *amqp.Channel) error) er
 	return cberr
 }
 
-func createDialer(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
+func createDialer(ctx context.Context, dialTimeoutInS int, hosts []string) (*amqpextra.Dialer, error) {
 	d, cfgErr := amqpextra.NewDialer(
 		amqpextra.WithURL(hosts...),
-		amqpextra.WithLogger(alogger.Std),
 		amqpextra.WithContext(ctx))
 	if cfgErr != nil {
 		return nil, cfgErr
@@ -68,23 +73,25 @@ func createDialer(ctx context.Context, hosts []string) (*amqpextra.Dialer, error
 }
 
 func (R *RabbitMQRetry) Start(app z.App) error {
-	publishDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts))
+	ctxWithDeadline, cancelFunc := createContextWithDeadline(app.Context(), R.cfg.DialTimeoutInS)
+	defer cancelFunc()
+	publishDialer, err := createDialer(ctxWithDeadline, R.cfg.DialTimeoutInS, splitHosts(R.cfg.Hosts))
 	if err != nil {
 		return err
 	}
 	R.pdialer = publishDialer
-	conn, err := publishDialer.Connection(app.Context())
-	if err != nil {
-		return err
-	}
 
-	consumerDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts))
+	consumerDialer, err := createDialer(ctxWithDeadline, R.cfg.DialTimeoutInS, splitHosts(R.cfg.Hosts))
 	if err != nil {
 		return err
 	}
 	R.cdialer = consumerDialer
-
 	if err := setupConsumers(app, consumerDialer); err != nil {
+		return err
+	}
+
+	conn, err := publishDialer.Connection(app.Context())
+	if err != nil {
 		return err
 	}
 
