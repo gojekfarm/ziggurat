@@ -2,4 +2,5 @@
 main.go
 ziggurat-go
 /data
-cp.out.DS_Store
+cp.out
+.DS_Store
