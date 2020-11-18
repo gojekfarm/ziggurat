@@ -35,7 +35,7 @@ type Ziggurat struct {
 
 func NewApp() *Ziggurat {
 	ctx, cancelFn := context.WithCancel(context.Background())
-	z := &Ziggurat{
+	ziggurat := &Ziggurat{
 		ctx:           ctx,
 		cancelFun:     cancelFn,
 		cfgReader:     vconf.NewViperConfig(),
@@ -43,7 +43,7 @@ func NewApp() *Ziggurat {
 		interruptChan: make(chan os.Signal),
 		doneChan:      make(chan struct{}),
 	}
-	return z
+	return ziggurat
 }
 
 func (z *Ziggurat) Configure(configFunc func(app z.App) z.Options) {
