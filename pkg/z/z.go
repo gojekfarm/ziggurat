@@ -73,6 +73,12 @@ type App interface {
 	IsRunning() bool
 }
 
+type StreamWorker interface {
+	Push(app App, event basic.MessageEvent) error
+	Start(app App)
+	Stop()
+}
+
 type RunOptions struct {
 	HTTPConfigFunc func(a App, h http.Handler)
 	StartCallback  func(a App)

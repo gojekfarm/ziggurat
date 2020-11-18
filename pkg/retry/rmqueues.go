@@ -74,10 +74,9 @@ func createDeadLetterQueues(c *amqp.Channel, topicEntities []string, serviceName
 	}
 }
 
-func createAndBindQueues(c *amqp.Channel, topicEntities []string, serviceName string) {
+var createAndBindQueues = func(c *amqp.Channel, topicEntities []string, serviceName string) {
 	declareExchanges(c, topicEntities, serviceName)
 	createInstantQueues(c, topicEntities, serviceName)
 	createDelayQueues(c, topicEntities, serviceName)
 	createDeadLetterQueues(c, topicEntities, serviceName)
-
 }

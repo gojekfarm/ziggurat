@@ -30,6 +30,7 @@ func newConsumerConfig() *kafka.ConfigMap {
 		"auto.commit.interval.ms":  2000,
 		"debug":                    "consumer,broker",
 		"enable.auto.offset.store": false,
+		//disable for atleast once delivery
 	}
 }
 

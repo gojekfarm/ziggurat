@@ -127,17 +127,25 @@ func TestConsumer_start(t *testing.T) {
 }
 
 func TestConsumer_AllBrokersDown(t *testing.T) {
+	callCount := 0
 	app := &consumerTestMockApp{}
 	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
+		callCount++
 		return nil, kafka.NewError(kafka.ErrAllBrokersDown, "", true)
 	}
 
 	wg := &sync.WaitGroup{}
 	c := &kafka.Consumer{}
+	deadlineTime := time.Now().Add(time.Second * 6)
+	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
+	defer cancelFunc()
 	hf := func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	}
 	wg.Add(1)
-	startConsumer(context.Background(), app, hf, c, "", "", wg)
+	startConsumer(ctx, app, hf, c, "", "", wg)
 	wg.Wait()
+	if callCount < 1 {
+		t.Errorf("expected call count to be atleast 2")
+	}
 }

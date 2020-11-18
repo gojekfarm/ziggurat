@@ -1,7 +1,6 @@
 package retry
 
 import (
-	"context"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
@@ -16,11 +15,6 @@ type RabbitMQConfig struct {
 	Hosts                string `mapstructure:"hosts"`
 	DelayQueueExpiration string `mapstructure:"delay-queue-expiration"`
 	DialTimeoutInS       int    `mapstructure:"dial-timeout-seconds"`
-}
-
-func createContextWithDeadline(parentCtx context.Context, afterTimeInS int) (context.Context, context.CancelFunc) {
-	deadlineTime := time.Now().Add(time.Duration(afterTimeInS) * time.Second)
-	return context.WithDeadline(parentCtx, deadlineTime)
 }
 
 func parseRabbitMQConfig(config z.ConfigReader) *RabbitMQConfig {
@@ -52,36 +46,15 @@ func NewRabbitMQRetry(config z.ConfigReader) *RabbitMQRetry {
 	}
 }
 
-func withChannel(connection *amqp.Connection, cb func(c *amqp.Channel) error) error {
-	c, err := connection.Channel()
-	defer c.Close()
-	if err != nil {
-		return err
-	}
-	cberr := cb(c)
-	return cberr
-}
-
-func createDialer(ctx context.Context, dialTimeoutInS int, hosts []string) (*amqpextra.Dialer, error) {
-	d, cfgErr := amqpextra.NewDialer(
-		amqpextra.WithURL(hosts...),
-		amqpextra.WithContext(ctx))
-	if cfgErr != nil {
-		return nil, cfgErr
-	}
-	return d, nil
-}
-
 func (R *RabbitMQRetry) Start(app z.App) error {
-	ctxWithDeadline, cancelFunc := createContextWithDeadline(app.Context(), R.cfg.DialTimeoutInS)
-	defer cancelFunc()
-	publishDialer, err := createDialer(ctxWithDeadline, R.cfg.DialTimeoutInS, splitHosts(R.cfg.Hosts))
+	var err error
+	publishDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts), time.Duration(R.cfg.DialTimeoutInS))
 	if err != nil {
 		return err
 	}
 	R.pdialer = publishDialer
 
-	consumerDialer, err := createDialer(ctxWithDeadline, R.cfg.DialTimeoutInS, splitHosts(R.cfg.Hosts))
+	consumerDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts), time.Duration(R.cfg.DialTimeoutInS))
 	if err != nil {
 		return err
 	}
@@ -90,7 +63,7 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 		return err
 	}
 
-	conn, err := publishDialer.Connection(app.Context())
+	conn, err := getConnectionFromDialer(app.Context(), publishDialer)
 	if err != nil {
 		return err
 	}
@@ -102,13 +75,13 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 }
 
 func (R *RabbitMQRetry) Retry(app z.App, payload basic.MessageEvent) error {
-	options := []publisher.Option{publisher.WithContext(app.Context())}
-	p, err := R.pdialer.Publisher(options...)
+	ctx := app.Context()
+	p, err := createPublisher(ctx, R.pdialer)
 	if err != nil {
 		return err
 	}
 	defer p.Close()
-	return retry(app.Context(), p, app.Config(), payload, R.cfg.DelayQueueExpiration)
+	return retry(p, app.Config(), payload, R.cfg.DelayQueueExpiration)
 }
 
 func (R *RabbitMQRetry) Stop() error {
@@ -129,7 +102,7 @@ func (R *RabbitMQRetry) Replay(app z.App, topicEntity string, count int) error {
 	}
 	queueName := constructQueueName(app.Config().ServiceName, topicEntity, QueueTypeDL)
 	exchangeOut := constructExchangeName(app.Config().ServiceName, topicEntity, QueueTypeInstant)
-	conn, err := R.pdialer.Connection(app.Context())
+	conn, err := getConnectionFromDialer(app.Context(), R.pdialer)
 	if err != nil {
 		return err
 	}

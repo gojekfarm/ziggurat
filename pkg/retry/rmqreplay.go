@@ -18,7 +18,7 @@ func replayMessages(ctx context.Context, c *amqp.Channel, p *publisher.Publisher
 		if decodeErr != nil {
 			return decodeErr
 		}
-		publishErr := publishMessage(ctx, exchangeOutName, p, msg, expiry)
+		publishErr := publishMessage(exchangeOutName, p, msg, expiry)
 		if publishErr != nil {
 			return publishErr
 		}

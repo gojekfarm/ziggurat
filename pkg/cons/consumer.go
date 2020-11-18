@@ -51,7 +51,7 @@ var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *
 		consumer := createConsumer(consumerConfig, topics)
 		consumers = append(consumers, consumer)
 		groupID, _ := consumerConfig.Get("group.id", "")
-		instanceID := fmt.Sprintf("%s-%s-%d", topicEntity, groupID, i)
+		instanceID := fmt.Sprintf("%s_%s_%d", topicEntity, groupID, i)
 		wg.Add(1)
 		startConsumer(routerCtx, app, handlerFunc, consumer, topicEntity, instanceID, wg)
 	}

@@ -2,33 +2,32 @@ package retry
 
 import (
 	"bytes"
-	"context"
 	"encoding/gob"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )
 
-const RetryCount = "retryCount"
+const retryCount = "retryCount"
 
 func getRetryCount(m *basic.MessageEvent) int {
-	if value := m.GetMessageAttribute(RetryCount); value == nil {
+	if value := m.GetMessageAttribute(retryCount); value == nil {
 		return 0
 	}
-	return m.GetMessageAttribute(RetryCount).(int)
+	return m.GetMessageAttribute(retryCount).(int)
 }
 
 func setRetryCount(m *basic.MessageEvent) {
-	value := m.GetMessageAttribute(RetryCount)
+	value := m.GetMessageAttribute(retryCount)
 
 	if value == nil {
-		m.SetMessageAttribute(RetryCount, 1)
+		m.SetMessageAttribute(retryCount, 1)
 		return
 	}
-	m.SetMessageAttribute(RetryCount, value.(int)+1)
+	m.SetMessageAttribute(retryCount, value.(int)+1)
 }
 
-func publishMessage(ctx context.Context, exchangeName string, p *publisher.Publisher, payload basic.MessageEvent, expirationInMS string) error {
+func publishMessage(exchangeName string, p *publisher.Publisher, payload basic.MessageEvent, expirationInMS string) error {
 	buff := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buff)
 	if encodeErr := encoder.Encode(payload); encodeErr != nil {
@@ -48,13 +47,13 @@ func publishMessage(ctx context.Context, exchangeName string, p *publisher.Publi
 	return err
 }
 
-func retry(ctx context.Context, p *publisher.Publisher, config *basic.Config, payload basic.MessageEvent, expiry string) error {
+func retry(p *publisher.Publisher, config *basic.Config, payload basic.MessageEvent, expiry string) error {
 	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, QueueTypeDelay)
 	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, QueueTypeDL)
 	retryCount := getRetryCount(&payload)
 	if retryCount == config.Retry.Count {
-		return publishMessage(ctx, deadLetterExchangeName, p, payload, "")
+		return publishMessage(deadLetterExchangeName, p, payload, "")
 	}
 	setRetryCount(&payload)
-	return publishMessage(ctx, exchangeName, p, payload, expiry)
+	return publishMessage(exchangeName, p, payload, expiry)
 }
