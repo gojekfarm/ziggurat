@@ -1,6 +1,7 @@
 package retry
 
 import (
+	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
@@ -78,9 +79,8 @@ func (R *RabbitMQRetry) Retry(app z.App, payload basic.MessageEvent) error {
 	ctx := app.Context()
 	p, err := createPublisher(ctx, R.pdialer)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating publisher: %s", err.Error())
 	}
-	defer p.Close()
 	return retry(p, app.Config(), payload, R.cfg.DelayQueueExpiration)
 }
 
