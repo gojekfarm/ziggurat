@@ -60,28 +60,23 @@ package main
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/ziggurat"
+	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/stream"
+	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zig"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
 
-type JSONMessage struct {
-	Value int `json:"value"`
-}
-
 func main() {
 	app := zig.NewApp()
-	router := zig.NewRouter()
+	router := stream.NewRouter()
 
-	router.HandlerFunc("plain-text-log", func(messageEvent zig.MessageEvent, a *zig.App) zig.ProcessStatus {
-		return zig.ProcessingSuccess
-	}, zig.MessageMetricsPublisher, zig.MessageLogger)
+	router.HandlerFunc("plain-text-log", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+		return z.ProcessingSuccess
+	})
 
-	router.HandlerFunc("json-log", func(messageEvent zig.MessageEvent, app *zig.App) zig.ProcessStatus {
-		return zig.ProcessingSuccess
-	}, zig.MessageLogger, zig.JSONDeserializer(JSONMessage{}))
-
-	startFunc := func(a *zig.App) {
+	startFunc := func(a z.App) {
 		fmt.Println("starting app")
 	}
 
@@ -89,14 +84,15 @@ func main() {
 		fmt.Println("stopping app")
 	}
 
-	<-app.Run(router, zig.RunOptions{
-		HTTPConfigFunc: func(a *zig.App, r *httprouter.Router) {
-			r.GET("/test_ping", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-				writer.Write([]byte("TEST_PONG"))
-			})
-		},
+	<-app.Run(router, z.RunOptions{
 		StartCallback: startFunc,
 		StopCallback:  stopFunc,
+		HTTPConfigFunc: func(a z.App, h http.Handler) {
+			r, _ := h.(*httprouter.Router)
+			r.GET("/if_you_dont_eat_your_meat", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+				writer.Write([]byte("you can't have any pudding"))
+			})
+		},
 	})
 }
 ```
@@ -127,8 +123,8 @@ func Logger(handlerFunc HandlerFunc) HandlerFunc {
 Ziggurat provides  middlewares for logging and de-serializing kafka messages
 
 ## Known issues
-- Data race occurs when rabbitmq is trying to re-connect, this doesn't lead to any adverse effects or message loss.
-However this is not caused by ziggurat-go but by a library called `amqp-safe`.
+- <Data race occurs when rabbitmq is trying to re-connect, this doesn't lead to any adverse effects or message loss.
+However this is not caused by ziggurat-go but by a library called `amqp-safe`. [Fixed]
 
 
 #### TODO

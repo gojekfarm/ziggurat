@@ -12,8 +12,9 @@ retry:
   enabled: true
   count: 5
 rabbitmq:
-  host: "amqp://user:bitnami@localhost:5672/"
+  hosts: "amqp://user:bitnami@localhost:5672/"
   delay-queue-expiration: "1000"
+	dial-timeout-seconds: 30
 statsd:
   host: "localhost:8125"
 http-server:
@@ -83,7 +84,7 @@ var GoMod = `module {{.AppName}}
 go 1.14
 
 require (
-	github.com/gojekfarm/ziggurat-go v0.7.0
+	github.com/gojekfarm/ziggurat-go v0.8.0
 	github.com/julienschmidt/httprouter v1.2.0
 )`
 
@@ -283,8 +284,7 @@ var Main = `package main
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/mw"
-	"github.com/gojekfarm/ziggurat-go/pkg/streams"
+	"github.com/gojekfarm/ziggurat-go/pkg/stream"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zig"
 	"github.com/julienschmidt/httprouter"
@@ -293,10 +293,10 @@ import (
 
 func main() {
 	app := zig.NewApp()
-	router := streams.NewRouter()
+	router := stream.NewRouter()
 
-	router.HandlerFunc("{{.TopicEntity}}", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
-		return z.RetryMessage
+	router.HandlerFunc("plain-text-log", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+		return z.ProcessingSuccess
 	})
 
 	startFunc := func(a z.App) {
