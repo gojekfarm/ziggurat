@@ -1,7 +1,7 @@
 package basic
 
 import (
-	"fmt"
+	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
 	"sync"
 	"time"
 )
@@ -25,10 +25,10 @@ type MessageEvent struct {
 func NewMessageEvent(key []byte, value []byte, topic string, entity string, timestampType string, ktimestamp time.Time) MessageEvent {
 	return MessageEvent{
 		DecodeValue: func(model interface{}) error {
-			return fmt.Errorf("no decoder found")
+			return zerror.ErrNoDecoderFound
 		},
 		DecodeKey: func(model interface{}) error {
-			return fmt.Errorf("no decoder found")
+			return zerror.ErrNoDecoderFound
 		},
 		Attributes:        map[string]interface{}{},
 		amutex:            &sync.Mutex{},
