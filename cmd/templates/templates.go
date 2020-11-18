@@ -13,8 +13,8 @@ retry:
   count: 5
 rabbitmq:
   hosts: "amqp://user:bitnami@localhost:5672/"
-  delay-queue-expiration: "1000"
-	dial-timeout-seconds: 30
+  delay-queue-expiration: "1000" 
+  dial-timeout-seconds: 30
 statsd:
   host: "localhost:8125"
 http-server:
