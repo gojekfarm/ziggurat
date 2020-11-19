@@ -11,7 +11,6 @@ require (
 	github.com/rs/zerolog v1.19.0
 	github.com/spf13/viper v1.7.0
 	github.com/streadway/amqp v1.0.1-0.20200716223359-e6b33f460591
-	github.com/xssnick/amqp-safe v1.1.0
 	golang.org/x/sys v0.0.0-20201027090413-e1471140ff15 // indirect
 	google.golang.org/protobuf v1.23.0
 )
