@@ -1,13 +1,12 @@
 package retry
 
 import (
-	"context"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )
 
-func replayMessages(ctx context.Context, c *amqp.Channel, p *publisher.Publisher, queueName string, exchangeOutName string, count int, expiry string) error {
+func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, exchangeOutName string, count int, expiry string) error {
 	for i := 0; i < count; i++ {
 		delivery, ok, deliveryError := c.Get(queueName, false)
 		if deliveryError != nil || !ok {

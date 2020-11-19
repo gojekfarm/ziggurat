@@ -3,35 +3,12 @@ package retry
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
-	"strings"
+	"time"
 )
-
-type RabbitMQConfig struct {
-	Hosts                string `mapstructure:"hosts"`
-	DelayQueueExpiration string `mapstructure:"delay-queue-expiration"`
-	DialTimeoutInS       int    `mapstructure:"dial-timeout-seconds"`
-}
-
-func parseRabbitMQConfig(config z.ConfigReader) *RabbitMQConfig {
-	rmqcfg := &RabbitMQConfig{}
-	if err := config.UnmarshalByKey("rabbitmq", rmqcfg); err != nil {
-		logger.LogError(err, "rmq config unmarshall error", nil)
-		return &RabbitMQConfig{
-			Hosts:                "amqp://user:bitnami@localhost:5672/",
-			DelayQueueExpiration: "2000",
-		}
-	}
-	return rmqcfg
-}
-
-func splitHosts(hosts string) []string {
-	return strings.Split(hosts, ",")
-}
 
 type RabbitMQRetry struct {
 	pdialer *amqpextra.Dialer
@@ -60,7 +37,7 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 	}
 	R.cdialer = consumerDialer
 
-	conn, err := getConnectionFromDialer(app.Context(), publishDialer)
+	conn, err := getConnectionFromDialer(app.Context(), publishDialer, time.Duration(R.cfg.DialTimeoutInS))
 	if err != nil {
 		return err
 	}
@@ -106,11 +83,11 @@ func (R *RabbitMQRetry) Replay(app z.App, topicEntity string, count int) error {
 	}
 	queueName := constructQueueName(app.Config().ServiceName, topicEntity, QueueTypeDL)
 	exchangeOut := constructExchangeName(app.Config().ServiceName, topicEntity, QueueTypeInstant)
-	conn, err := getConnectionFromDialer(app.Context(), R.pdialer)
+	conn, err := getConnectionFromDialer(app.Context(), R.pdialer, 30*time.Second)
 	if err != nil {
 		return err
 	}
 	return withChannel(conn, func(c *amqp.Channel) error {
-		return replayMessages(app.Context(), c, p, queueName, exchangeOut, count, R.cfg.DelayQueueExpiration)
+		return replayMessages(c, p, queueName, exchangeOut, count, R.cfg.DelayQueueExpiration)
 	})
 }

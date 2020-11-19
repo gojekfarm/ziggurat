@@ -119,7 +119,7 @@ func TestRabbitMQRetry_StartWithDialerError(t *testing.T) {
 	defer func() {
 		createDialer = oldCreateDialer
 	}()
-	createDialer = func(ctx context.Context, hosts []string, dialTimeout time.Duration) (*amqpextra.Dialer, error) {
+	createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 		return nil, dialerError
 	}
 	err := rmq.Start(app)
@@ -134,13 +134,13 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 	expectedEntities := []string{entityName}
 	app := &retryMockApp{}
 	rmq := NewRabbitMQRetry(retryMockConfigReader)
-	createDialer = func(ctx context.Context, hosts []string, dialTimeout time.Duration) (*amqpextra.Dialer, error) {
+	createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 		return &amqpextra.Dialer{}, nil
 	}
 	setupConsumers = func(app z.App, dialer *amqpextra.Dialer) error {
 		return nil
 	}
-	getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer) (*amqp.Connection, error) {
+	getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
 		return &amqp.Connection{}, nil
 	}
 	withChannel = func(connection *amqp.Connection, cb func(c *amqp.Channel) error) error {
