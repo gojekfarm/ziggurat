@@ -50,7 +50,7 @@ func (z *Ziggurat) Configure(configFunc func(app z.App) z.Options) {
 	options := configFunc(z)
 	z.metricPublisher = options.MetricPublisher
 	z.httpServer = options.HttpServer
-	z.messageRetry = options.Retrier
+	z.messageRetry = options.Retry
 	//configure defaults if components are nil
 }
 

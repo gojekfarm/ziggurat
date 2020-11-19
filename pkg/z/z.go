@@ -87,7 +87,7 @@ type RunOptions struct {
 
 type Options struct {
 	HttpServer      HttpServer
-	Retrier         MessageRetry
+	Retry           MessageRetry
 	MetricPublisher MetricPublisher
 }
 

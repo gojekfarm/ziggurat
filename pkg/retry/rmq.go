@@ -59,19 +59,23 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 		return err
 	}
 	R.cdialer = consumerDialer
-	if err := setupConsumers(app, consumerDialer); err != nil {
-		return err
-	}
 
 	conn, err := getConnectionFromDialer(app.Context(), publishDialer)
 	if err != nil {
 		return err
 	}
 
-	return withChannel(conn, func(c *amqp.Channel) error {
+	if err := withChannel(conn, func(c *amqp.Channel) error {
 		createAndBindQueues(c, app.Router().GetTopicEntityNames(), app.Config().ServiceName)
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	if err := setupConsumers(app, consumerDialer); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (R *RabbitMQRetry) Retry(app z.App, payload basic.MessageEvent) error {
@@ -80,6 +84,7 @@ func (R *RabbitMQRetry) Retry(app z.App, payload basic.MessageEvent) error {
 	if err != nil {
 		return fmt.Errorf("error creating publisher: %s", err.Error())
 	}
+	defer p.Close()
 	return retry(p, app.Config(), payload, R.cfg.DelayQueueExpiration)
 }
 
