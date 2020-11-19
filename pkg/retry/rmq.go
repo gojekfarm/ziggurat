@@ -9,7 +9,6 @@ import (
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"strings"
-	"time"
 )
 
 type RabbitMQConfig struct {
@@ -49,13 +48,13 @@ func NewRabbitMQRetry(config z.ConfigReader) *RabbitMQRetry {
 
 func (R *RabbitMQRetry) Start(app z.App) error {
 	var err error
-	publishDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts), time.Duration(R.cfg.DialTimeoutInS))
+	publishDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts))
 	if err != nil {
 		return err
 	}
 	R.pdialer = publishDialer
 
-	consumerDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts), time.Duration(R.cfg.DialTimeoutInS))
+	consumerDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts))
 	if err != nil {
 		return err
 	}

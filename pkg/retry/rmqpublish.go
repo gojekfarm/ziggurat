@@ -28,7 +28,6 @@ func setRetryCount(m *basic.MessageEvent) {
 }
 
 func publishMessage(exchangeName string, p *publisher.Publisher, payload basic.MessageEvent, expirationInMS string) error {
-	defer p.Close()
 	buff := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buff)
 	if encodeErr := encoder.Encode(payload); encodeErr != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/consumer"
+	amqpl "github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"time"
@@ -26,21 +27,24 @@ var withChannel = func(connection *amqp.Connection, cb func(c *amqp.Channel) err
 	return cberr
 }
 
-var createDialer = func(ctx context.Context, hosts []string, dialTimeout time.Duration) (*amqpextra.Dialer, error) {
-	deadlineTime := time.Now().Add(dialTimeout * time.Second)
-	ctxWithDeadline, cancelFunc := context.WithDeadline(ctx, deadlineTime)
+var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 	d, cfgErr := amqpextra.NewDialer(
 		amqpextra.WithURL(hosts...),
-		amqpextra.WithContext(ctxWithDeadline))
+		amqpextra.WithLogger(amqpl.Std),
+		amqpextra.WithContext(ctx))
 	if cfgErr != nil {
-		cancelFunc()
 		return nil, cfgErr
 	}
 	return d, nil
 }
 
 var getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer) (*amqp.Connection, error) {
-	return d.Connection(ctx)
+	connCtx, cancelFunc := context.WithDeadline(ctx, time.Now().Add(time.Second*30))
+	conn, err := d.Connection(connCtx)
+	if err != nil {
+		cancelFunc()
+	}
+	return conn, err
 }
 
 var createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {

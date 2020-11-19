@@ -62,3 +62,7 @@ var LogInfo = func(msg string, args map[string]interface{}) {
 var LogWarn = func(msg string, args map[string]interface{}) {
 	loggerInst.Warn().Fields(args).Msg(msg)
 }
+
+var LogDebug = func(msg string, args map[string]interface{}) {
+	loggerInst.Debug().Fields(args).Msg(msg)
+}
