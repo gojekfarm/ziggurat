@@ -30,3 +30,16 @@ var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition
 var readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
 	return c.ReadMessage(pollTimeout)
 }
+
+func NewConsumerConfig() *kafka.ConfigMap {
+	return &kafka.ConfigMap{
+		"bootstrap.servers":        "localhost:9092",
+		"group.id":                 "myGroup",
+		"auto.offset.reset":        "earliest",
+		"enable.auto.commit":       true,
+		"auto.commit.interval.ms":  2000,
+		"debug":                    "consumer,broker",
+		"enable.auto.offset.store": false,
+		//disable for at-least once delivery
+	}
+}
