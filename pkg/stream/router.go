@@ -21,19 +21,6 @@ var setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) erro
 	return consumerConfigMap.Set(kv)
 }
 
-func newConsumerConfig() *kafka.ConfigMap {
-	return &kafka.ConfigMap{
-		"bootstrap.servers":        "localhost:9092",
-		"group.id":                 "myGroup",
-		"auto.offset.reset":        "earliest",
-		"enable.auto.commit":       true,
-		"auto.commit.interval.ms":  2000,
-		"debug":                    "consumer,broker",
-		"enable.auto.offset.store": false,
-		//disable for atleast once delivery
-	}
-}
-
 func NewRouter() *DefaultRouter {
 	return &DefaultRouter{
 		handlerFunctionMap: make(map[string]*z.TopicEntity),
@@ -108,7 +95,7 @@ func (dr *DefaultRouter) Start(app z.App) (chan struct{}, error) {
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
 
-		consumerConfig := newConsumerConfig()
+		consumerConfig := cons.NewConsumerConfig()
 		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
 		groupID := makeKV("group.id", streamRouterCfg.GroupID)
 		if setErr := setConsumerConfig(consumerConfig, bootstrapServers); setErr != nil {

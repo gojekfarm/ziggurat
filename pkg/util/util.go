@@ -2,13 +2,13 @@ package util
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	at "github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
 
-var PipeHandlers = func(funcs ...at.MiddlewareFunc) func(handlerFunc at.HandlerFunc) at.HandlerFunc {
-	return func(next at.HandlerFunc) at.HandlerFunc {
-		return func(messageEvent basic.MessageEvent, app at.App) at.ProcessStatus {
-			var handlerResult at.HandlerFunc
+var PipeHandlers = func(funcs ...z.MiddlewareFunc) func(handlerFunc z.HandlerFunc) z.HandlerFunc {
+	return func(next z.HandlerFunc) z.HandlerFunc {
+		return func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+			var handlerResult z.HandlerFunc
 			last := len(funcs) - 1
 			for i := last; i >= 0; i-- {
 				f := funcs[i]
