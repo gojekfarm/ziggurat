@@ -7,7 +7,7 @@ stream-router:
     instance-count: 2
     origin-topics: "{{.OriginTopics}}"
     group-id: "{{.ConsumerGroup}}"
-log-level: "debug"
+log-level: "info"
 retry:
   enabled: true
   count: 5

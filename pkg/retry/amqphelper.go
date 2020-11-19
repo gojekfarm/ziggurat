@@ -2,6 +2,7 @@ package retry
 
 import (
 	"context"
+	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/makasim/amqpextra"
@@ -30,7 +31,10 @@ var withChannel = func(connection *amqp.Connection, cb func(c *amqp.Channel) err
 var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 	d, cfgErr := amqpextra.NewDialer(
 		amqpextra.WithURL(hosts...),
-		amqpextra.WithLogger(amqpl.Std),
+		amqpextra.WithLogger(amqpl.Func(func(format string, v ...interface{}) {
+			msg := fmt.Sprintf(format, v...)
+			logger.LogDebug(msg, nil)
+		})),
 		amqpextra.WithContext(ctx))
 	if cfgErr != nil {
 		return nil, cfgErr

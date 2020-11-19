@@ -18,7 +18,7 @@ stream-router:
     instance-count: 2
     origin-topics: "json-log"
     group-id: "json_log_consumer"
-log-level: "debug"
+log-level: "info"
 retry:
   enabled: true
   count: 2
