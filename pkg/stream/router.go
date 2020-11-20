@@ -79,7 +79,6 @@ func (dr *DefaultRouter) Use(middlewareFunc z.MiddlewareFunc, excludeFunc z.Excl
 func (dr *DefaultRouter) attachMiddleware() {
 	for _, te := range dr.handlerFunctionMap {
 		middlewares := getMiddlewaresForTopicEntity(dr.middleware, te.EntityName)
-		fmt.Println("MIDDLEWARES", middlewares)
 		if len(middlewares) > 0 {
 			origHandler := dr.handlerFunctionMap[te.EntityName].HandlerFunc
 			dr.handlerFunctionMap[te.EntityName].HandlerFunc = util.PipeHandlers(middlewares...)(origHandler)
