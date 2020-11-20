@@ -284,6 +284,7 @@ var Main = `package main
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/mw"
 	"github.com/gojekfarm/ziggurat-go/pkg/stream"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zig"
@@ -298,6 +299,9 @@ func main() {
 	router.HandlerFunc("plain-text-log", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
+
+	router.Use(mw.MessageLogger, nil)
+	router.Use(mw.MessageMetricsPublisher, nil)
 
 	startFunc := func(a z.App) {
 		fmt.Println("starting app")
