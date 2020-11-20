@@ -43,7 +43,7 @@ var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer,
 }
 
 var getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
-	connCtx, cancelFunc := context.WithDeadline(ctx, time.Now().Add(timeout))
+	connCtx, cancelFunc := context.WithDeadline(ctx, time.Now().Add(timeout*time.Second))
 	conn, err := d.Connection(connCtx)
 	if err != nil {
 		cancelFunc()

@@ -7,12 +7,19 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/handler"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/rs/zerolog"
+	"os"
 	"sync"
 	"testing"
 	"time"
 )
 
 type consumerTestMockApp struct{}
+
+func TestMain(m *testing.M) {
+	zerolog.SetGlobalLevel(zerolog.Disabled)
+	os.Exit(m.Run())
+}
 
 func (c consumerTestMockApp) Context() context.Context {
 	panic("implement me")
