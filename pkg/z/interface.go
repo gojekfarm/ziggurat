@@ -28,9 +28,10 @@ type MessageRetry interface {
 
 type StreamRouter interface {
 	Start(app App) (chan struct{}, error)
-	HandlerFunc(topicEntityName string, handlerFn HandlerFunc, mw ...MiddlewareFunc)
+	HandlerFunc(topicEntityName string, handlerFn HandlerFunc)
 	GetTopicEntities() []*TopicEntity
 	GetHandlerFunctionMap() map[string]*TopicEntity
+	Use(middlewareFunc MiddlewareFunc, excludeFunc ExcludeFunc)
 	GetTopicEntityNames() []string
 }
 
