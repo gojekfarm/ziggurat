@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-type Decoder func(model interface{}) error
+type DecoderHook func(model interface{}) error
 
 type MessageEvent struct {
 	MessageValueBytes []byte
@@ -14,8 +14,8 @@ type MessageEvent struct {
 	Topic             string
 	TopicEntity       string
 	KafkaTimestamp    time.Time
-	DecodeValue       Decoder
-	DecodeKey         Decoder
+	ValueDecoderHook  DecoderHook
+	KeyDecoderHook    DecoderHook
 	TimestampType     string
 	Attributes        map[string]interface{}
 	attrMutex         *sync.Mutex
@@ -24,10 +24,10 @@ type MessageEvent struct {
 
 func NewMessageEvent(key []byte, value []byte, topic string, entity string, timestampType string, ktimestamp time.Time) MessageEvent {
 	return MessageEvent{
-		DecodeValue: func(model interface{}) error {
+		ValueDecoderHook: func(model interface{}) error {
 			return zerror.ErrNoDecoderFound
 		},
-		DecodeKey: func(model interface{}) error {
+		KeyDecoderHook: func(model interface{}) error {
 			return zerror.ErrNoDecoderFound
 		},
 		Attributes:        map[string]interface{}{},
