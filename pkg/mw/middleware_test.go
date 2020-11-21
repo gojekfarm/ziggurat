@@ -163,7 +163,6 @@ func TestProtobufDeserializer(t *testing.T) {
 }
 
 func TestMessageLogger(t *testing.T) {
-	expectedMsg := "Msg logger middleware"
 	ts := time.Time{}
 	messageVal := []byte("foo bar")
 	topicEntity := "te-1"
@@ -179,9 +178,6 @@ func TestMessageLogger(t *testing.T) {
 		logger.LogInfo = origLogInfo
 	}()
 	logger.LogInfo = func(msg string, args map[string]interface{}) {
-		if msg != expectedMsg {
-			t.Errorf("expected msg to be %s but got %s", expectedMsg, msg)
-		}
 		if !reflect.DeepEqual(expectedArgs, args) {
 			t.Errorf("expected args to be %+v but got %+v", expectedArgs, args)
 		}
