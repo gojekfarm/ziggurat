@@ -22,7 +22,7 @@ type TopicEntityHandlerMap = map[string]*TopicEntity
 type HandlerFunc func(messageEvent basic.MessageEvent, app App) ProcessStatus
 
 func (h HandlerFunc) HandleMessage(event basic.MessageEvent, app App) ProcessStatus {
-	return h.HandleMessage(event, app)
+	return h(event, app)
 }
 
 type StartFunction func(a App)
