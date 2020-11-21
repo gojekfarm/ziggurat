@@ -16,6 +16,7 @@ import (
 type DefaultRouter struct {
 	handlerFunctionMap z.TopicEntityHandlerMap
 	routerMiddleware   []z.MiddlewareFunc
+	entityNames        []string
 }
 
 var setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) error {
@@ -24,34 +25,27 @@ var setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) erro
 
 func NewRouter() *DefaultRouter {
 	return &DefaultRouter{
-		handlerFunctionMap: make(map[string]*z.TopicEntity),
+		handlerFunctionMap: map[string]*z.TopicEntity{},
+		routerMiddleware:   []z.MiddlewareFunc{},
+		entityNames:        []string{},
 	}
 }
 
-func (dr *DefaultRouter) GetHandlerFunctionMap() map[string]*z.TopicEntity {
-	return dr.handlerFunctionMap
+func (dr *DefaultRouter) HandlerFuncMap() map[string]z.HandlerFunc {
+	result := map[string]z.HandlerFunc{}
+	for entity, handler := range dr.handlerFunctionMap {
+		result[entity] = handler.HandlerFunc
+	}
+	return result
 }
 
-func (dr *DefaultRouter) GetTopicEntities() []*z.TopicEntity {
-	var topicEntities []*z.TopicEntity
-	for _, te := range dr.handlerFunctionMap {
-		topicEntities = append(topicEntities, te)
-	}
-	return topicEntities
-}
-
-func (dr *DefaultRouter) GetTopicEntityNames() []string {
-	tes := dr.GetTopicEntities()
-	var names []string
-	for _, te := range tes {
-		names = append(names, te.EntityName)
-	}
-	return names
+func (dr *DefaultRouter) TopicEntities() []string {
+	return dr.entityNames
 }
 
 func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn z.HandlerFunc, mw ...z.MiddlewareFunc) {
+	dr.entityNames = append(dr.entityNames, topicEntityName)
 	dr.handlerFunctionMap[topicEntityName] = &z.TopicEntity{HandlerFunc: handlerFn, EntityName: topicEntityName, Middleware: mw}
-
 }
 
 func (dr *DefaultRouter) Use(middlewareFunc z.MiddlewareFunc) {
@@ -75,7 +69,7 @@ func makeKV(key string, value string) string {
 }
 
 func (dr *DefaultRouter) stop() {
-	for _, te := range dr.GetTopicEntities() {
+	for _, te := range dr.handlerFunctionMap {
 		logger.LogInfo("stopping consumers", map[string]interface{}{"topic-entity": te.EntityName})
 		for i, _ := range te.Consumers {
 			logger.LogError(te.Consumers[i].Close(), "consumer close error", nil)

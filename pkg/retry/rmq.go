@@ -43,7 +43,7 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 	}
 
 	if err := withChannel(conn, func(c *amqp.Channel) error {
-		createAndBindQueues(c, app.Router().GetTopicEntityNames(), app.Config().ServiceName)
+		createAndBindQueues(c, app.Router().TopicEntities(), app.Config().ServiceName)
 		return nil
 	}); err != nil {
 		return err

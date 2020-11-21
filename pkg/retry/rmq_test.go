@@ -26,6 +26,13 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func (r retryMockRouter) TopicEntities() []string {
+	return []string{"foo"}
+}
+
+func (r retryMockRouter) HandlerFuncMap() map[string]z.HandlerFunc {
+	panic("implement me")
+}
 func (r retryMockRouter) Start(app z.App) (chan struct{}, error) {
 	panic("implement me")
 }
@@ -46,14 +53,6 @@ func (r retryMockRouter) GetTopicEntities() []*z.TopicEntity {
 		Consumers:  nil,
 		EntityName: entityName,
 	}}
-}
-
-func (r retryMockRouter) GetHandlerFunctionMap() map[string]*z.TopicEntity {
-	panic("implement me")
-}
-
-func (r retryMockRouter) GetTopicEntityNames() []string {
-	return []string{entityName}
 }
 
 func (r retryMockApp) Context() context.Context {

@@ -186,8 +186,8 @@ func TestDefaultRouter_GetTopicEntityNames(t *testing.T) {
 	}
 	dr.HandlerFunc("foo", hf)
 	dr.HandlerFunc("bar", hf)
-	if !reflect.DeepEqual(expectedEntities, dr.GetTopicEntityNames()) {
-		t.Errorf("expected %v got %v", expectedEntities, dr.GetTopicEntityNames())
+	if !reflect.DeepEqual(expectedEntities, dr.TopicEntities()) {
+		t.Errorf("expected %v got %v", expectedEntities, dr.TopicEntities())
 	}
 }
 
