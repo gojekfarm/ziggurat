@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var consumerLogContext = map[string]interface{}{"component": "consumer"}
+
 var createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
 	logger.LogError(err, "ziggurat consumer", consumerLogContext)
