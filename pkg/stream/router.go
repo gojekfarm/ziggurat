@@ -13,14 +13,9 @@ import (
 	"sync"
 )
 
-type middlewareConfig struct {
-	mwFunc      z.MiddlewareFunc
-	excludeFunc z.ExcludeFunc
-}
-
 type DefaultRouter struct {
 	handlerFunctionMap z.TopicEntityHandlerMap
-	middleware         []middlewareConfig
+	routerMiddleware   []z.MiddlewareFunc
 }
 
 var setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) error {
@@ -30,7 +25,6 @@ var setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) erro
 func NewRouter() *DefaultRouter {
 	return &DefaultRouter{
 		handlerFunctionMap: make(map[string]*z.TopicEntity),
-		middleware:         []middlewareConfig{},
 	}
 }
 
@@ -55,33 +49,23 @@ func (dr *DefaultRouter) GetTopicEntityNames() []string {
 	return names
 }
 
-func getMiddlewaresForTopicEntity(mwConfig []middlewareConfig, entity string) []z.MiddlewareFunc {
-	result := []z.MiddlewareFunc{}
-	for _, mw := range mwConfig {
-		if mw.excludeFunc == nil || !mw.excludeFunc(entity) {
-			result = append(result, mw.mwFunc)
-		}
-	}
-	return result
+func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn z.HandlerFunc, mw ...z.MiddlewareFunc) {
+	dr.handlerFunctionMap[topicEntityName] = &z.TopicEntity{HandlerFunc: handlerFn, EntityName: topicEntityName, Middleware: mw}
+
 }
 
-func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn z.HandlerFunc) {
-	dr.handlerFunctionMap[topicEntityName] = &z.TopicEntity{HandlerFunc: handlerFn, EntityName: topicEntityName}
-}
-
-func (dr *DefaultRouter) Use(middlewareFunc z.MiddlewareFunc, excludeFunc z.ExcludeFunc) {
-	dr.middleware = append(dr.middleware, middlewareConfig{
-		mwFunc:      middlewareFunc,
-		excludeFunc: excludeFunc,
-	})
+func (dr *DefaultRouter) Use(middlewareFunc z.MiddlewareFunc) {
+	dr.routerMiddleware = append(dr.routerMiddleware, middlewareFunc)
 }
 
 func (dr *DefaultRouter) attachMiddleware() {
-	for _, te := range dr.handlerFunctionMap {
-		middlewares := getMiddlewaresForTopicEntity(dr.middleware, te.EntityName)
-		if len(middlewares) > 0 {
-			origHandler := dr.handlerFunctionMap[te.EntityName].HandlerFunc
-			dr.handlerFunctionMap[te.EntityName].HandlerFunc = util.PipeHandlers(middlewares...)(origHandler)
+	for _, topicEntity := range dr.handlerFunctionMap {
+		allMiddleware := []z.MiddlewareFunc{}
+		allMiddleware = append(allMiddleware, dr.routerMiddleware...)
+		allMiddleware = append(allMiddleware, topicEntity.Middleware...)
+		origHandler := topicEntity.HandlerFunc
+		if len(allMiddleware) > 0 {
+			topicEntity.HandlerFunc = util.PipeHandlers(allMiddleware...)(origHandler)
 		}
 	}
 }

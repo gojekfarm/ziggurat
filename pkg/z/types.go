@@ -12,6 +12,7 @@ type TopicEntity struct {
 	bootstrapServers string
 	originTopics     []string
 	EntityName       string
+	Middleware       []MiddlewareFunc
 }
 
 type Middleware = []MiddlewareFunc

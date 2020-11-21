@@ -87,11 +87,11 @@ func TestDefaultRouter_HandlerFunc(t *testing.T) {
 }
 
 func TestDefaultRouter_HandlerFuncMW(t *testing.T) {
-	middleware := z.Middleware{mw.MessageLogger, mw.ProtoDecoder}
+	expectedMiddlewareCount := 3
 	dr := NewRouter()
 	util.PipeHandlers = func(funcs ...z.MiddlewareFunc) func(handlerFunc z.HandlerFunc) z.HandlerFunc {
-		if len(funcs) < 2 {
-			t.Errorf("expected func to be %d, got %d", len(middleware), len(funcs))
+		if len(funcs) < len(funcs) {
+			t.Errorf("expected func to be %d, got %d", expectedMiddlewareCount, len(funcs))
 		}
 		return func(handlerFunc z.HandlerFunc) z.HandlerFunc {
 			return func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
@@ -101,33 +101,10 @@ func TestDefaultRouter_HandlerFuncMW(t *testing.T) {
 	}
 	dr.HandlerFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
-	})
+	}, mw.MessageLogger)
 
-	dr.Use(mw.MessageMetricsPublisher, nil)
-	dr.Use(mw.ProtoDecoder, nil)
-}
-
-func TestMiddlewareExclusion(t *testing.T) {
-	middleware := z.Middleware{mw.MessageLogger, mw.ProtoDecoder}
-	dr := NewRouter()
-	util.PipeHandlers = func(funcs ...z.MiddlewareFunc) func(handlerFunc z.HandlerFunc) z.HandlerFunc {
-		if len(funcs) > len(middleware)-1 {
-			t.Errorf("expected func to be %d, got %d", len(middleware)-1, len(funcs))
-		}
-		return func(handlerFunc z.HandlerFunc) z.HandlerFunc {
-			return func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
-				return z.ProcessingSuccess
-			}
-		}
-	}
-	dr.HandlerFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
-	})
-
-	dr.Use(mw.MessageMetricsPublisher, func(entity string) bool {
-		return entity == "foo"
-	})
-	dr.Use(mw.ProtoDecoder, nil)
+	dr.Use(mw.MessageMetricsPublisher)
+	dr.Use(mw.ProtoDecoder)
 }
 
 func TestDefaultRouter_StartNoHandlersRegistered(t *testing.T) {
