@@ -20,8 +20,14 @@ func MessageLogger(next z.HandlerFunc) z.HandlerFunc {
 			"kafka-ts":      messageEvent.KafkaTimestamp.String(),
 			"message-value": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
 		}
-		logger.LogInfo("Msg logger middleware", args)
-		return next(messageEvent, app)
+		status := next(messageEvent, app)
+		switch status {
+		case z.ProcessingSuccess:
+			logger.LogInfo("Msg logger middleware: successfully processed message", args)
+		case z.RetryMessage:
+			logger.LogInfo("Msg logger middleware: retrying message", args)
+		}
+		return status
 	}
 }
 

@@ -21,12 +21,9 @@ var MessageHandler = func(app z.App, handlerFunc z.HandlerFunc) func(event basic
 		switch status {
 		case z.ProcessingSuccess:
 			app.MetricPublisher().IncCounter("message_processing_success", 1, metricTags)
-			logger.LogInfo("message handler: successfully processed message", map[string]interface{}{"msg": string(event.MessageValueBytes)})
 		case z.SkipMessage:
 			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
-			logger.LogInfo("message handler: skipping message", nil)
 		case z.RetryMessage:
-			logger.LogInfo("message handler: retrying message", map[string]interface{}{"msg": string(event.MessageValueBytes)})
 			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
 			retryErr := app.MessageRetry().Retry(app, event)
 			if retryErr != nil {

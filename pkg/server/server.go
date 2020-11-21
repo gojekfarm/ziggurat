@@ -29,7 +29,7 @@ func NewDefaultHTTPServer(config z.ConfigReader) z.HttpServer {
 		port = defaultHTTPPort
 	}
 	router := httprouter.New()
-	server := &http.Server{Addr: ":" + port, Handler: router}
+	server := &http.Server{Addr: ":" + port, Handler: requestLogger(router)}
 	return &DefaultHttpServer{
 		server: server,
 		router: router,
