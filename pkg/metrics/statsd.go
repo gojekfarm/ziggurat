@@ -65,7 +65,7 @@ func (s *StatsD) Start(app z.App) error {
 			select {
 			case <-done:
 				t.Stop()
-				logger.LogInfo("halting go-routine publisher", nil)
+				logger.LogInfo("statsd: halting go-routine publisher", nil)
 				return
 			case <-tickerChan:
 				s.client.Gauge("go_routine_count", int64(runtime.NumGoroutine()), 1.0)
