@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var GetCurrTime = func() time.Time {
+var getCurrentTime = func() time.Time {
 	return time.Now()
 }
 
@@ -26,6 +26,8 @@ func MessageLogger(next z.HandlerFunc) z.HandlerFunc {
 			logger.LogInfo("Msg logger middleware: successfully processed message", args)
 		case z.RetryMessage:
 			logger.LogInfo("Msg logger middleware: retrying message", args)
+		case z.SkipMessage:
+			logger.LogInfo("Msg logger middleware: skipping message", args)
 		}
 		return status
 	}
@@ -37,7 +39,7 @@ func MessageMetricsPublisher(next z.HandlerFunc) z.HandlerFunc {
 			"topic_entity": messageEvent.TopicEntity,
 			"kafka_topic":  messageEvent.Topic,
 		}
-		currTime := GetCurrTime()
+		currTime := getCurrentTime()
 		kafkaTimestamp := messageEvent.KafkaTimestamp
 		delayInMS := currTime.Sub(kafkaTimestamp).Milliseconds()
 		app.MetricPublisher().IncCounter("message_count", 1, args)

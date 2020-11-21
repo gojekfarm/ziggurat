@@ -21,10 +21,6 @@ type retryMockConfigReader struct{}
 type retryMockApp struct{}
 type retryMockRouter struct{}
 
-func (r retryMockRouter) Use(middlewareFunc z.MiddlewareFunc, excludeFunc z.ExcludeFunc) {
-	panic("implement me")
-}
-
 func TestMain(m *testing.M) {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 	os.Exit(m.Run())
@@ -34,7 +30,11 @@ func (r retryMockRouter) Start(app z.App) (chan struct{}, error) {
 	panic("implement me")
 }
 
-func (r retryMockRouter) HandlerFunc(topicEntityName string, handlerFn z.HandlerFunc) {
+func (r retryMockRouter) Use(middlewareFunc z.MiddlewareFunc) {
+	panic("implement me")
+}
+
+func (r retryMockRouter) HandlerFunc(topicEntityName string, handlerFn z.HandlerFunc, middlewareFunc ...z.MiddlewareFunc) {
 	panic("implement me")
 }
 

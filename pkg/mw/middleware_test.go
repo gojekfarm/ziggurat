@@ -202,12 +202,12 @@ func TestMessageLogger(t *testing.T) {
 }
 
 func TestMessageMetricsPublisher(t *testing.T) {
-	origGetCurrTime := GetCurrTime
-	GetCurrTime = func() time.Time {
+	origGetCurrTime := getCurrentTime
+	getCurrentTime = func() time.Time {
 		return time.Time{}
 	}
 	defer func() {
-		GetCurrTime = origGetCurrTime
+		getCurrentTime = origGetCurrTime
 	}()
 	messageMetricsPublisher := MessageMetricsPublisher(func(messageEvent basic.MessageEvent, app at.App) at.ProcessStatus {
 		return at.ProcessingSuccess

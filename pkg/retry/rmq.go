@@ -87,7 +87,9 @@ func (R *RabbitMQRetry) Replay(app z.App, topicEntity string, count int) error {
 	if err != nil {
 		return err
 	}
-	return withChannel(conn, func(c *amqp.Channel) error {
+	channelErr := withChannel(conn, func(c *amqp.Channel) error {
 		return replayMessages(c, p, queueName, exchangeOut, count, R.cfg.DelayQueueExpiration)
 	})
+	conn.Close()
+	return channelErr
 }
