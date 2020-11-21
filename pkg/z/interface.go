@@ -57,8 +57,6 @@ type App interface {
 	IsRunning() bool
 }
 
-type StreamWorker interface {
-	Push(app App, event basic.MessageEvent) error
-	Start(app App)
-	Stop()
+type MessageHandler interface {
+	HandleMessage(event basic.MessageEvent, app App) ProcessStatus
 }
