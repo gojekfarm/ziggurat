@@ -126,7 +126,7 @@ func TestJSONDeserializer(t *testing.T) {
 	}
 	handler := func(event basic.MessageEvent, app at.App) at.ProcessStatus {
 		msg := &JSONMessage{}
-		event.DecodeValue(msg)
+		event.ValueDecoderHook(msg)
 		if *msg == expectedMessage {
 			return at.ProcessingSuccess
 		}
@@ -151,7 +151,7 @@ func TestProtobufDeserializer(t *testing.T) {
 	//go vet complains copying lockers by value
 	ProtoDecoder(func(messageEvent basic.MessageEvent, app at.App) at.ProcessStatus {
 		testProtoModel := testproto.TestMessage{}
-		messageEvent.DecodeValue(&testProtoModel)
+		messageEvent.ValueDecoderHook(&testProtoModel)
 		if !proto.Equal(&testProtoModel, &expectedMessage) {
 			t.Errorf("proto messages are not equal")
 		}
