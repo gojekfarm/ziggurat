@@ -2,7 +2,6 @@ package stream
 
 import (
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/cons"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
@@ -17,10 +16,6 @@ type DefaultRouter struct {
 	handlerFunctionMap z.TopicEntityHandlerMap
 	routerMiddleware   []z.MiddlewareFunc
 	entityNames        []string
-}
-
-var setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) error {
-	return consumerConfigMap.Set(kv)
 }
 
 func NewRouter() *DefaultRouter {

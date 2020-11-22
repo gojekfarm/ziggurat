@@ -145,7 +145,7 @@ func (z *Ziggurat) Stop() {
 
 func (z *Ziggurat) stop(stopFunc z.StopFunction) {
 	logger.LogError(z.messageRetry.Stop(), "failed to stop retries", nil)
-	logger.LogError(z.httpServer.Stop(z.ctx), "failed to stop http server", nil)
+	logger.LogError(z.httpServer.Stop(z), "failed to stop http server", nil)
 	logger.LogError(z.metricPublisher.Stop(), "failed to stop metric publisher", nil)
 
 	if stopFunc != nil {
