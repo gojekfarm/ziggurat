@@ -103,18 +103,7 @@ func (dr *DefaultRouter) Start(app z.App) (chan struct{}, error) {
 
 	for topicEntityName, te := range hfMap {
 		streamRouterCfg := srConfig[topicEntityName]
-
-		consumerConfig := cons.NewConsumerConfig()
-		bootstrapServers := makeKV("bootstrap.servers", streamRouterCfg.BootstrapServers)
-		groupID := makeKV("group.id", streamRouterCfg.GroupID)
-		if setErr := setConsumerConfig(consumerConfig, bootstrapServers); setErr != nil {
-			logger.LogError(setErr, "ziggurat router", nil)
-			return nil, setErr
-		}
-		if setErr := setConsumerConfig(consumerConfig, groupID); setErr != nil {
-			logger.LogError(setErr, "ziggurat router", nil)
-			return nil, setErr
-		}
+		consumerConfig := cons.NewConsumerConfig(streamRouterCfg.BootstrapServers, streamRouterCfg.GroupID)
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
 		consumers := cons.StartConsumers(ctx, app, consumerConfig, topicEntityName, topics, streamRouterCfg.InstanceCount, te.HandlerFunc, &wg)
 		te.Consumers = consumers

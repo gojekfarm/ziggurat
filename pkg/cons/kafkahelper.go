@@ -33,10 +33,10 @@ var readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Mes
 	return c.ReadMessage(pollTimeout)
 }
 
-func NewConsumerConfig() *kafka.ConfigMap {
+func NewConsumerConfig(bootstrapServers string, groupID string) *kafka.ConfigMap {
 	return &kafka.ConfigMap{
-		"bootstrap.servers":        "localhost:9092",
-		"group.id":                 "myGroup",
+		"bootstrap.servers":        bootstrapServers,
+		"group.id":                 groupID,
 		"auto.offset.reset":        "earliest",
 		"enable.auto.commit":       true,
 		"auto.commit.interval.ms":  2000,
