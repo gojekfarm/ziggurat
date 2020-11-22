@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
@@ -70,6 +69,6 @@ func (s *DefaultHttpServer) ConfigureHTTPRoutes(a z.App, configFunc func(a z.App
 	configFunc(a, s.router)
 }
 
-func (s *DefaultHttpServer) Stop(ctx context.Context) error {
-	return s.server.Shutdown(ctx)
+func (s *DefaultHttpServer) Stop(app z.App) error {
+	return s.server.Shutdown(app.Context())
 }

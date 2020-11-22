@@ -9,7 +9,7 @@ import (
 type HttpServer interface {
 	Start(app App)
 	ConfigureHTTPRoutes(a App, configFunc func(a App, h http.Handler))
-	Stop(ctx context.Context) error
+	Stop(app App) error
 }
 
 type MetricPublisher interface {
@@ -28,9 +28,7 @@ type MessageRetry interface {
 
 type StreamRouter interface {
 	Start(app App) (chan struct{}, error)
-	HandlerFunc(topicEntityName string, handlerFn HandlerFunc, middlewareFunc ...MiddlewareFunc)
-	HandlerFuncMap() map[string]HandlerFunc
-	Use(middlewareFunc MiddlewareFunc)
+	HandlerFuncEntityMap() map[string]HandlerFunc
 	TopicEntities() []string
 }
 
@@ -47,7 +45,6 @@ type App interface {
 	Router() StreamRouter
 	MessageRetry() MessageRetry
 	Run(router StreamRouter, options RunOptions) chan struct{}
-	Configure(configFunc func(o App) Options)
 	MetricPublisher() MetricPublisher
 	HTTPServer() HttpServer
 	Config() *basic.Config

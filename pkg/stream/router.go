@@ -31,7 +31,7 @@ func NewRouter() *DefaultRouter {
 	}
 }
 
-func (dr *DefaultRouter) HandlerFuncMap() map[string]z.HandlerFunc {
+func (dr *DefaultRouter) HandlerFuncEntityMap() map[string]z.HandlerFunc {
 	result := map[string]z.HandlerFunc{}
 	for entity, handler := range dr.handlerFunctionMap {
 		result[entity] = handler.HandlerFunc

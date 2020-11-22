@@ -30,7 +30,7 @@ func (r retryMockRouter) TopicEntities() []string {
 	return []string{"foo"}
 }
 
-func (r retryMockRouter) HandlerFuncMap() map[string]z.HandlerFunc {
+func (r retryMockRouter) HandlerFuncEntityMap() map[string]z.HandlerFunc {
 	panic("implement me")
 }
 func (r retryMockRouter) Start(app z.App) (chan struct{}, error) {
