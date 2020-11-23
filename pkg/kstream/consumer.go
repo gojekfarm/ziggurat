@@ -35,7 +35,7 @@ func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, co
 				}
 				if msg != nil {
 					messageEvent := basic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, topicEntity, msg.TimestampType.String(), msg.Timestamp)
-					handler.MessageHandler(app, handlerFunc)(messageEvent)
+					handlerFunc(messageEvent, app)
 					logger.LogError(storeOffsets(consumer, msg.TopicPartition), "ziggurat consumer", nil)
 				}
 			}
@@ -51,7 +51,7 @@ var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", topicEntity, groupID, i)
 		wg.Add(1)
-		startConsumer(routerCtx, app, handlerFunc, consumer, topicEntity, instanceID, wg)
+		startConsumer(routerCtx, app, handler.MessageHandlerMW(handlerFunc), consumer, topicEntity, instanceID, wg)
 	}
 	return consumers
 }

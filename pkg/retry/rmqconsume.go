@@ -26,14 +26,13 @@ func decodeMessage(body []byte) (basic.MessageEvent, error) {
 var setupConsumers = func(app z.App, dialer *amqpextra.Dialer) error {
 	handlerMap := app.Router().HandlerFuncEntityMap()
 	serviceName := app.Config().ServiceName
-	ctx := app.Context()
 
 	for entity, handlerFunc := range handlerMap {
 		queueName := constructQueueName(serviceName, entity, QueueTypeInstant)
-		messageHandler := handler.MessageHandler(app, handlerFunc)
+		messageHandler := handler.MessageHandlerMW(handlerFunc)
 		consumerCTAG := fmt.Sprintf("%s_%s_%s", queueName, serviceName, "ctag")
 
-		c, err := createConsumer(ctx, dialer, consumerCTAG, queueName, messageHandler)
+		c, err := createConsumer(app, dialer, consumerCTAG, queueName, messageHandler)
 
 		if err != nil {
 			return err

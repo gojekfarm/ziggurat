@@ -3,8 +3,8 @@ package retry
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
+	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/consumer"
 	amqpl "github.com/makasim/amqpextra/logger"
@@ -56,7 +56,7 @@ var createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher
 	return d.Publisher(options...)
 }
 
-var createConsumer = func(ctx context.Context, d *amqpextra.Dialer, ctag string, queueName string, msgHandler func(msg basic.MessageEvent)) (*consumer.Consumer, error) {
+var createConsumer = func(app z.App, d *amqpextra.Dialer, ctag string, queueName string, msgHandler z.HandlerFunc) (*consumer.Consumer, error) {
 	options := []consumer.Option{
 		consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 			channel, err := conn.(*amqp.Connection).Channel()
@@ -66,7 +66,7 @@ var createConsumer = func(ctx context.Context, d *amqpextra.Dialer, ctag string,
 			logger.LogError(channel.Qos(1, 0, false), "rmq consumer: error setting QOS", nil)
 			return channel, nil
 		}),
-		consumer.WithContext(ctx),
+		consumer.WithContext(app.Context()),
 		consumer.WithConsumeArgs(ctag, false, false, false, false, nil),
 		consumer.WithQueue(queueName),
 		consumer.WithHandler(consumer.HandlerFunc(func(ctx context.Context, msg amqp.Delivery) interface{} {
@@ -75,7 +75,7 @@ var createConsumer = func(ctx context.Context, d *amqpextra.Dialer, ctag string,
 			if err != nil {
 				return msg.Reject(true)
 			}
-			msgHandler(msgEvent)
+			msgHandler(msgEvent, app)
 			return msg.Ack(false)
 		}))}
 	return d.Consumer(options...)

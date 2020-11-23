@@ -8,14 +8,14 @@ import (
 	"time"
 )
 
-var MessageHandler = func(app z.App, handlerFunc z.HandlerFunc) func(event basic.MessageEvent) {
-	return func(event basic.MessageEvent) {
+var MessageHandlerMW = func(next z.HandlerFunc) z.HandlerFunc {
+	return func(event basic.MessageEvent, app z.App) z.ProcessStatus {
 		metricTags := map[string]string{
 			"topic_entity": event.TopicEntity,
 			"kafka_topic":  event.Topic,
 		}
 		funcExecStartTime := time.Now()
-		status := handlerFunc(event, app)
+		status := next(event, app)
 		funcExecEndTime := time.Now()
 		app.MetricPublisher().Gauge("handler_func_exec_time", funcExecEndTime.Sub(funcExecStartTime).Milliseconds(), metricTags)
 		switch status {
@@ -32,5 +32,6 @@ var MessageHandler = func(app z.App, handlerFunc z.HandlerFunc) func(event basic
 		default:
 			logger.LogError(fmt.Errorf("invalid handler return code got %d", status), "", nil)
 		}
+		return status
 	}
 }
