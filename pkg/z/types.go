@@ -7,10 +7,6 @@ import (
 
 type HandlerFunc func(messageEvent basic.MessageEvent, app App) ProcessStatus
 
-func (h HandlerFunc) HandleMessage(event basic.MessageEvent, app App) ProcessStatus {
-	return h(event, app)
-}
-
 type StartFunction func(a App)
 type StopFunction func()
 type MiddlewareFunc func(next HandlerFunc) HandlerFunc

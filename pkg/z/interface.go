@@ -29,7 +29,6 @@ type MessageRetry interface {
 type StreamRouter interface {
 	HandlerFuncEntityMap() map[string]HandlerFunc
 	TopicEntities() []string
-	MessageHandler
 }
 
 type ConfigReader interface {
@@ -50,8 +49,4 @@ type App interface {
 	Config() *basic.Config
 	ConfigReader() ConfigReader
 	Stop()
-}
-
-type MessageHandler interface {
-	HandleMessage(event basic.MessageEvent, app App) ProcessStatus
 }
