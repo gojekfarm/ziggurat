@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/util"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
@@ -8,6 +9,10 @@ import (
 type DefaultRouter struct {
 	handlerFunctionMap map[string]z.HandlerFunc
 	entityNames        []string
+}
+
+func (dr *DefaultRouter) HandleMessage(event basic.MessageEvent, app z.App) z.ProcessStatus {
+	return dr.handlerFunctionMap[event.TopicEntity].HandleMessage(event, app)
 }
 
 func NewRouter() *DefaultRouter {
@@ -32,7 +37,6 @@ func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn z.Handler
 		return
 	}
 	dr.handlerFunctionMap[topicEntityName] = handlerFn
-
 }
 
 func (dr *DefaultRouter) Use(middlewareFunc ...z.MiddlewareFunc) {

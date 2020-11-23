@@ -1,21 +1,9 @@
 package z
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"net/http"
 )
-
-type TopicEntity struct {
-	HandlerFunc      HandlerFunc
-	Consumers        []*kafka.Consumer
-	bootstrapServers string
-	originTopics     []string
-	EntityName       string
-	Middleware       []MiddlewareFunc
-}
-
-type TopicEntityHandlerMap = map[string]*TopicEntity
 
 type HandlerFunc func(messageEvent basic.MessageEvent, app App) ProcessStatus
 
