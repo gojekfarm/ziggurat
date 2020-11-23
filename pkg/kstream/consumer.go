@@ -1,4 +1,4 @@
-package cons
+package kstream
 
 import (
 	"context"

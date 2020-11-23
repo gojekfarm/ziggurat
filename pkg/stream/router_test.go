@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/cons"
+	"github.com/gojekfarm/ziggurat-go/pkg/kstream"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/mw"
 	"github.com/gojekfarm/ziggurat-go/pkg/util"
@@ -137,7 +137,7 @@ func TestDefaultRouter_validate(t *testing.T) {
 	dr.HandlerFunc("baz", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
-	cons.StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc z.HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+	kstream.StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc z.HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
 		return []*kafka.Consumer{}
 	}
 
@@ -162,7 +162,7 @@ func TestDefaultRouter_Start(t *testing.T) {
 		return z.ProcessingSuccess
 	})
 
-	cons.StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc z.HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+	kstream.StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc z.HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
 		if !reflect.DeepEqual(expectedConsumerConfig, consumerConfig) {
 			t.Errorf("exptected %v but got %v", expectedConsumerConfig, consumerConfig)
 		}

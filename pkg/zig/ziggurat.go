@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/cmdparser"
-	"github.com/gojekfarm/ziggurat-go/pkg/cons"
+	"github.com/gojekfarm/ziggurat-go/pkg/kstream"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/metrics"
 	"github.com/gojekfarm/ziggurat-go/pkg/retry"
@@ -117,7 +117,7 @@ func (z *Ziggurat) start(startCallback z.StartFunction) {
 		logger.LogFatal(err, "ziggurat: error starting retries", nil)
 	}
 
-	streamsStop, streamStartErr := cons.NewKafkaStreams().Start(z)
+	streamsStop, streamStartErr := kstream.NewKafkaStreams().Start(z)
 	logger.LogFatal(streamStartErr, "ziggurat: router start error", nil)
 
 	if startCallback != nil {
