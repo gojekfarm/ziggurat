@@ -27,7 +27,6 @@ type MessageRetry interface {
 }
 
 type StreamRouter interface {
-	Start(app App) (chan struct{}, error)
 	HandlerFuncEntityMap() map[string]HandlerFunc
 	TopicEntities() []string
 }

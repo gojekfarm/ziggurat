@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/cmdparser"
+	"github.com/gojekfarm/ziggurat-go/pkg/cons"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/metrics"
 	"github.com/gojekfarm/ziggurat-go/pkg/retry"
@@ -116,26 +117,26 @@ func (z *Ziggurat) start(startCallback z.StartFunction) {
 		logger.LogFatal(err, "ziggurat: error starting retries", nil)
 	}
 
-	routerStopChan, routerStartErr := z.router.Start(z)
-	logger.LogFatal(routerStartErr, "ziggurat: router start error", nil)
+	streamsStop, streamStartErr := cons.NewKafkaStreams().Start(z)
+	logger.LogFatal(streamStartErr, "ziggurat: router start error", nil)
 
 	if startCallback != nil {
 		startCallback(z)
 	}
-	halt := func(routerStopChan chan struct{}) {
+	halt := func(streamStop chan struct{}) {
 		z.cancelFun()
-		if routerStopChan != nil {
-			<-routerStopChan
+		if streamStop != nil {
+			<-streamStop
 		}
-		logger.LogInfo("ziggurat app: router poll completed without errors", nil)
+		logger.LogInfo("stream poll complete", nil)
 	}
 	// Wait for router poll to complete
 	select {
-	case <-routerStopChan:
+	case <-streamsStop:
 		halt(nil)
 	case <-z.interruptChan:
 		logger.LogInfo("ziggurat app: CTRL+C interrupt received", nil)
-		halt(routerStopChan)
+		halt(streamsStop)
 	}
 }
 

@@ -15,8 +15,6 @@ type TopicEntity struct {
 	Middleware       []MiddlewareFunc
 }
 
-type Middleware = []MiddlewareFunc
-
 type TopicEntityHandlerMap = map[string]*TopicEntity
 
 type HandlerFunc func(messageEvent basic.MessageEvent, app App) ProcessStatus
@@ -28,7 +26,6 @@ func (h HandlerFunc) HandleMessage(event basic.MessageEvent, app App) ProcessSta
 type StartFunction func(a App)
 type StopFunction func()
 type MiddlewareFunc func(next HandlerFunc) HandlerFunc
-type ExcludeFunc func(entity string) bool
 
 type RunOptions struct {
 	HTTPConfigFunc func(a App, h http.Handler)

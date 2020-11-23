@@ -19,7 +19,7 @@ type MessageEvent struct {
 	TimestampType     string
 	Attributes        map[string]interface{}
 	attrMutex         *sync.Mutex
-	// exposes Attributes for gob encoding, use Get and Set for thread safety
+	//exposes Attributes for gob encoding, use Get and Set for thread safety
 }
 
 func NewMessageEvent(key []byte, value []byte, topic string, entity string, timestampType string, ktimestamp time.Time) MessageEvent {
