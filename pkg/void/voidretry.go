@@ -25,5 +25,5 @@ func (v VoidRetry) Stop() error {
 }
 
 func (v VoidRetry) Replay(app z.App, topicEntity string, count int) error {
-	return nil
+	return fmt.Errorf("error, no retry implementation found")
 }
