@@ -15,7 +15,7 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+func startConsumer(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	logger.LogInfo("consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
@@ -35,7 +35,7 @@ func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, co
 				}
 				if msg != nil {
 					messageEvent := basic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, topicEntity, msg.TimestampType.String(), msg.Timestamp)
-					handlerFunc(messageEvent, app)
+					h.HandleMessage(messageEvent, app)
 					logger.LogError(storeOffsets(consumer, msg.TopicPartition), "ziggurat consumer", nil)
 				}
 			}
@@ -43,7 +43,7 @@ func startConsumer(ctx context.Context, app z.App, handlerFunc z.HandlerFunc, co
 	}(ctx, consumer, instanceID, wg)
 }
 
-var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc z.HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h z.MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
@@ -51,7 +51,7 @@ var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", topicEntity, groupID, i)
 		wg.Add(1)
-		startConsumer(routerCtx, app, handler.MessageHandlerMW(handlerFunc), consumer, topicEntity, instanceID, wg)
+		startConsumer(routerCtx, app, handler.DefaultTerminalMW(h), consumer, topicEntity, instanceID, wg)
 	}
 	return consumers
 }

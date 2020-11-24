@@ -12,7 +12,7 @@ type MessageEvent struct {
 	MessageValueBytes []byte
 	MessageKeyBytes   []byte
 	Topic             string
-	TopicEntity       string
+	StreamRoute       string
 	KafkaTimestamp    time.Time
 	ValueDecoderHook  DecoderHook
 	KeyDecoderHook    DecoderHook
@@ -35,7 +35,7 @@ func NewMessageEvent(key []byte, value []byte, topic string, entity string, time
 		MessageValueBytes: value,
 		MessageKeyBytes:   key,
 		Topic:             topic,
-		TopicEntity:       entity,
+		StreamRoute:       entity,
 		TimestampType:     timestampType,
 		KafkaTimestamp:    ktimestamp,
 	}

@@ -5,10 +5,10 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
 
-var PipeHandlers = func(funcs ...z.MiddlewareFunc) func(handlerFunc z.HandlerFunc) z.HandlerFunc {
-	return func(next z.HandlerFunc) z.HandlerFunc {
-		return func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
-			var handlerResult z.HandlerFunc
+var PipeHandlers = func(funcs ...z.MiddlewareFunc) func(handlerFunc z.MessageHandler) z.MessageHandler {
+	return func(next z.MessageHandler) z.MessageHandler {
+		return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+			var handlerResult z.MessageHandler
 			last := len(funcs) - 1
 			for i := last; i >= 0; i-- {
 				f := funcs[i]
@@ -19,9 +19,9 @@ var PipeHandlers = func(funcs ...z.MiddlewareFunc) func(handlerFunc z.HandlerFun
 				}
 			}
 			if handlerResult != nil {
-				return handlerResult(messageEvent, app)
+				return handlerResult.HandleMessage(messageEvent, app)
 			}
-			return next(messageEvent, app)
-		}
+			return next.HandleMessage(messageEvent, app)
+		})
 	}
 }

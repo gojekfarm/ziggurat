@@ -12,6 +12,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/server"
 	"github.com/gojekfarm/ziggurat-go/pkg/vconf"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,7 +24,7 @@ type Ziggurat struct {
 	httpServer      z.HttpServer
 	messageRetry    z.MessageRetry
 	cfgReader       z.ConfigReader
-	router          z.StreamRouter
+	handler         z.MessageHandler
 	metricPublisher z.MetricPublisher
 	interruptChan   chan os.Signal
 	doneChan        chan struct{}
@@ -32,6 +33,7 @@ type Ziggurat struct {
 	ctx             context.Context
 	cancelFun       context.CancelFunc
 	isRunning       int32
+	routes          []string
 }
 
 func NewApp() *Ziggurat {
@@ -47,12 +49,9 @@ func NewApp() *Ziggurat {
 	return ziggurat
 }
 
-func (z *Ziggurat) Configure(configFunc func(app z.App) z.Options) {
-	options := configFunc(z)
-	z.metricPublisher = options.MetricPublisher
-	z.httpServer = options.HttpServer
-	z.messageRetry = options.Retry
-	//configure defaults if components are nil
+func interruptHandler(c chan os.Signal, cancelFunc context.CancelFunc) {
+	<-c
+	cancelFunc()
 }
 
 func (z *Ziggurat) configureDefaults() {
@@ -83,7 +82,11 @@ func (z *Ziggurat) loadConfig() error {
 	return nil
 }
 
-func (z *Ziggurat) Run(router z.StreamRouter, runOptions z.RunOptions) chan struct{} {
+func (z *Ziggurat) Run(router z.MessageHandler, routes []string, runOptions z.RunOptions) chan struct{} {
+	if len(routes) < 1 {
+		logger.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
+	}
+
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		logger.LogError(errors.New("attempted to call `Run` on an already running app"), "ziggurat app run", nil)
 		return nil
@@ -91,7 +94,8 @@ func (z *Ziggurat) Run(router z.StreamRouter, runOptions z.RunOptions) chan stru
 	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
 	go interruptHandler(z.interruptChan, z.cancelFun)
 	logger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
-	z.router = router
+	z.handler = router
+	z.routes = routes
 	z.configureDefaults()
 	if runOptions.HTTPConfigFunc != nil {
 		z.configureHTTPRoutes(runOptions.HTTPConfigFunc)
@@ -104,6 +108,14 @@ func (z *Ziggurat) Run(router z.StreamRouter, runOptions z.RunOptions) chan stru
 		close(z.doneChan)
 	}()
 	return z.doneChan
+}
+
+func (z *Ziggurat) Configure(configFunc func(app z.App) z.Options) {
+	options := configFunc(z)
+	z.metricPublisher = options.MetricPublisher
+	z.httpServer = options.HttpServer
+	z.messageRetry = options.Retry
+	//configure defaults if components are nil
 }
 
 func (z *Ziggurat) start(startCallback z.StartFunction) {
@@ -159,8 +171,12 @@ func (z *Ziggurat) Context() context.Context {
 	return z.ctx
 }
 
-func (z *Ziggurat) Router() z.StreamRouter {
-	return z.router
+func (z *Ziggurat) Routes() []string {
+	return z.routes
+}
+
+func (z *Ziggurat) Handler() z.MessageHandler {
+	return z.handler
 }
 
 func (z *Ziggurat) MessageRetry() z.MessageRetry {
@@ -188,9 +204,4 @@ func (z *Ziggurat) IsRunning() bool {
 
 func (z *Ziggurat) ConfigReader() z.ConfigReader {
 	return z.cfgReader
-}
-
-func interruptHandler(c chan os.Signal, cancelFunc context.CancelFunc) {
-	<-c
-	cancelFunc()
 }

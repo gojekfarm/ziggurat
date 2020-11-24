@@ -26,11 +26,6 @@ type MessageRetry interface {
 	Replay(app App, topicEntity string, count int) error
 }
 
-type StreamRouter interface {
-	RouteHandlerMap() map[string]HandlerFunc
-	Routes() []string
-}
-
 type ConfigReader interface {
 	Config() *basic.Config
 	Parse(options basic.CommandLineOptions)
@@ -41,12 +36,16 @@ type ConfigReader interface {
 
 type App interface {
 	Context() context.Context
-	Router() StreamRouter
+	Routes() []string
 	MessageRetry() MessageRetry
-	Run(router StreamRouter, options RunOptions) chan struct{}
+	Handler() MessageHandler
+	Run(router MessageHandler, routes []string, options RunOptions) chan struct{}
 	MetricPublisher() MetricPublisher
 	HTTPServer() HttpServer
 	Config() *basic.Config
 	ConfigReader() ConfigReader
-	Stop()
+}
+
+type MessageHandler interface {
+	HandleMessage(event basic.MessageEvent, app App) ProcessStatus
 }

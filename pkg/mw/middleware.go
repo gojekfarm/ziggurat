@@ -12,15 +12,15 @@ var getCurrentTime = func() time.Time {
 	return time.Now()
 }
 
-func MessageLogger(next z.HandlerFunc) z.HandlerFunc {
-	return func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+func MessageLogger(next z.MessageHandler) z.MessageHandler {
+	return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		args := map[string]interface{}{
-			"topic-entity":  messageEvent.TopicEntity,
+			"topic-entity":  messageEvent.StreamRoute,
 			"kafka-topic":   messageEvent.Topic,
 			"kafka-ts":      messageEvent.KafkaTimestamp.String(),
 			"message-value": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
 		}
-		status := next(messageEvent, app)
+		status := next.HandleMessage(messageEvent, app)
 		switch status {
 		case z.ProcessingSuccess:
 			logger.LogInfo("Msg logger middleware: successfully processed message", args)
@@ -30,13 +30,13 @@ func MessageLogger(next z.HandlerFunc) z.HandlerFunc {
 			logger.LogInfo("Msg logger middleware: skipping message", args)
 		}
 		return status
-	}
+	})
 }
 
-func MessageMetricsPublisher(next z.HandlerFunc) z.HandlerFunc {
-	return func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+func MessageMetricsPublisher(next z.MessageHandler) z.MessageHandler {
+	return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		args := map[string]string{
-			"topic_entity": messageEvent.TopicEntity,
+			"topic_entity": messageEvent.StreamRoute,
 			"kafka_topic":  messageEvent.Topic,
 		}
 		currTime := getCurrentTime()
@@ -44,6 +44,6 @@ func MessageMetricsPublisher(next z.HandlerFunc) z.HandlerFunc {
 		delayInMS := currTime.Sub(kafkaTimestamp).Milliseconds()
 		app.MetricPublisher().IncCounter("message_count", 1, args)
 		app.MetricPublisher().Gauge("message_delay", delayInMS, args)
-		return next(messageEvent, app)
-	}
+		return next.HandleMessage(messageEvent, app)
+	})
 }

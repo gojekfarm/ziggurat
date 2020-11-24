@@ -48,8 +48,8 @@ var publishMessage = func(exchangeName string, p *publisher.Publisher, payload b
 }
 
 func retry(p *publisher.Publisher, config *basic.Config, payload basic.MessageEvent, expiry string) error {
-	exchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, QueueTypeDelay)
-	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.TopicEntity, QueueTypeDL)
+	exchangeName := constructExchangeName(config.ServiceName, payload.StreamRoute, QueueTypeDelay)
+	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.StreamRoute, QueueTypeDL)
 	retryCount := getRetryCount(&payload)
 	if retryCount == config.Retry.Count {
 		return publishMessage(deadLetterExchangeName, p, payload, "")

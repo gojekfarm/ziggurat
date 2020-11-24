@@ -56,7 +56,7 @@ var createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher
 	return d.Publisher(options...)
 }
 
-var createConsumer = func(app z.App, d *amqpextra.Dialer, ctag string, queueName string, msgHandler z.HandlerFunc) (*consumer.Consumer, error) {
+var createConsumer = func(app z.App, d *amqpextra.Dialer, ctag string, queueName string, msgHandler z.MessageHandler) (*consumer.Consumer, error) {
 	options := []consumer.Option{
 		consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 			channel, err := conn.(*amqp.Connection).Channel()
@@ -75,7 +75,7 @@ var createConsumer = func(app z.App, d *amqpextra.Dialer, ctag string, queueName
 			if err != nil {
 				return msg.Reject(true)
 			}
-			msgHandler(msgEvent, app)
+			msgHandler.HandleMessage(msgEvent, app)
 			return msg.Ack(false)
 		}))}
 	return d.Consumer(options...)

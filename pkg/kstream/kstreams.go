@@ -4,7 +4,6 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
 	"strings"
 	"sync"
 )
@@ -25,17 +24,13 @@ func (k *KafkaStreams) Start(app z.App) (chan struct{}, error) {
 	config := app.Config()
 	stopChan := make(chan struct{})
 	srConfig := config.StreamRouter
-	hfMap := app.Router().RouteHandlerMap()
+	handler := app.Handler()
 
-	if len(hfMap) == 0 {
-		logger.LogFatal(zerror.ErrNoHandlersRegistered, "kafka streams", nil)
-	}
-
-	for te, h := range hfMap {
-		streamRouterCfg := srConfig[te]
+	for _, route := range app.Routes() {
+		streamRouterCfg := srConfig[route]
 		consumerConfig := NewConsumerConfig(streamRouterCfg.BootstrapServers, streamRouterCfg.GroupID)
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
-		k.entityConsumerMap[te] = StartConsumers(ctx, app, consumerConfig, te, topics, streamRouterCfg.InstanceCount, h, &wg)
+		k.entityConsumerMap[route] = StartConsumers(ctx, app, consumerConfig, route, topics, streamRouterCfg.InstanceCount, handler, &wg)
 	}
 
 	go func() {
