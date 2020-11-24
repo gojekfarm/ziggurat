@@ -1,6 +1,7 @@
 package void
 
 import (
+	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
@@ -12,7 +13,7 @@ func NewVoidRetry(c z.ConfigStore) z.MessageRetry {
 }
 
 func (v VoidRetry) Start(app z.App) error {
-	return nil
+	return fmt.Errorf("error, no retry implementation found")
 }
 
 func (v VoidRetry) Retry(app z.App, payload basic.MessageEvent) error {

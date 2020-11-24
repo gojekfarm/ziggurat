@@ -12,7 +12,6 @@ func NewVoidServer(c z.ConfigStore) z.HttpServer {
 }
 
 func (v VoidServer) Start(app z.App) {
-
 }
 
 func (v VoidServer) ConfigureHTTPRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {

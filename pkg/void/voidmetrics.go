@@ -1,6 +1,7 @@
 package void
 
 import (
+	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
 
@@ -11,7 +12,7 @@ func NewVoidMetrics(store z.ConfigStore) z.MetricPublisher {
 }
 
 func (v VoidMetrics) Start(app z.App) error {
-	return nil
+	return fmt.Errorf("error starting metric plublisher, no implementation found")
 }
 
 func (v VoidMetrics) Stop() error {
