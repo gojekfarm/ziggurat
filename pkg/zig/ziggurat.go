@@ -82,7 +82,7 @@ func (z *Ziggurat) loadConfig() error {
 	return nil
 }
 
-func (z *Ziggurat) Run(router z.MessageHandler, routes []string, runOptions z.RunOptions) chan struct{} {
+func (z *Ziggurat) Run(handler z.MessageHandler, routes []string, runOptions z.RunOptions) chan struct{} {
 	if len(routes) < 1 {
 		logger.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
 	}
@@ -94,7 +94,7 @@ func (z *Ziggurat) Run(router z.MessageHandler, routes []string, runOptions z.Ru
 	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
 	go interruptHandler(z.interruptChan, z.cancelFun)
 	logger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
-	z.handler = router
+	z.handler = handler
 	z.routes = routes
 	z.configureDefaults()
 	if runOptions.HTTPConfigFunc != nil {
