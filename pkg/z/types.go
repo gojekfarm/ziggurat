@@ -15,16 +15,15 @@ type StartFunction func(a App)
 type StopFunction func()
 type MiddlewareFunc func(next MessageHandler) MessageHandler
 
-type RunOptions struct {
-	HTTPConfigFunc func(a App, h http.Handler)
-	StartCallback  func(a App)
-	StopCallback   func()
-}
+type Opts = func(ro *RunOptions)
 
-type Options struct {
-	HttpServer      HttpServer
-	Retry           MessageRetry
-	MetricPublisher MetricPublisher
+type RunOptions struct {
+	HTTPConfigFunc  func(a App, h http.Handler)
+	StartCallback   func(a App)
+	StopCallback    func()
+	HTTPServer      func(c ConfigStore) HttpServer
+	Retry           func(c ConfigStore) MessageRetry
+	MetricPublisher func(c ConfigStore) MetricPublisher
 }
 
 const ProcessingSuccess ProcessStatus = 0

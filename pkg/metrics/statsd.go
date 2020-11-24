@@ -19,7 +19,7 @@ type StatsD struct {
 	appName      string
 }
 
-func NewStatsD(config z.ConfigReader) z.MetricPublisher {
+func NewStatsD(config z.ConfigStore) z.MetricPublisher {
 	metricConfig := parseStatsDConfig(config)
 	return &StatsD{
 		client:       nil,
@@ -28,7 +28,7 @@ func NewStatsD(config z.ConfigReader) z.MetricPublisher {
 	}
 }
 
-func parseStatsDConfig(config z.ConfigReader) *StatsDConf {
+func parseStatsDConfig(config z.ConfigStore) *StatsDConf {
 	statsDConf := &StatsDConf{}
 	if err := config.UnmarshalByKey("statsd", &statsDConf); err != nil {
 		return &StatsDConf{Host: "localhost:8125"}

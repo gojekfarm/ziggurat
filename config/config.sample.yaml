@@ -20,7 +20,7 @@ stream-router:
     group-id: "json_log_consumer"
 log-level: "info"
 retry:
-  enabled: false
+  enabled: true
   count: 2
 rabbitmq:
   hosts: "amqp://user:bitnami@localhost:5672/"

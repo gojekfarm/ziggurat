@@ -26,7 +26,7 @@ type MessageRetry interface {
 	Replay(app App, topicEntity string, count int) error
 }
 
-type ConfigReader interface {
+type ConfigStore interface {
 	Config() *basic.Config
 	Parse(options basic.CommandLineOptions)
 	GetByKey(key string) interface{}
@@ -39,11 +39,10 @@ type App interface {
 	Routes() []string
 	MessageRetry() MessageRetry
 	Handler() MessageHandler
-	Run(router MessageHandler, routes []string, options RunOptions) chan struct{}
 	MetricPublisher() MetricPublisher
 	HTTPServer() HttpServer
 	Config() *basic.Config
-	ConfigReader() ConfigReader
+	ConfigStore() ConfigStore
 }
 
 type MessageHandler interface {

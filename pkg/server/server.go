@@ -22,7 +22,7 @@ type ReplayResponse struct {
 	Msg    string `json:"msg"`
 }
 
-func NewDefaultHTTPServer(config z.ConfigReader) z.HttpServer {
+func NewDefaultHTTPServer(config z.ConfigStore) z.HttpServer {
 	port := config.Config().HTTPServer.Port
 	if port == "" {
 		port = defaultHTTPPort

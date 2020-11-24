@@ -18,7 +18,7 @@ import (
 
 type routerTestMockApp struct{}
 
-func (r routerTestMockApp) ConfigReader() z.ConfigReader {
+func (r routerTestMockApp) ConfigReader() z.ConfigStore {
 	panic("implement me")
 }
 
@@ -38,7 +38,7 @@ func (r routerTestMockApp) Run(router z.StreamRouter, options z.RunOptions) chan
 	return nil
 }
 
-func (r routerTestMockApp) Configure(configFunc func(o z.App) z.Options) {
+func (r routerTestMockApp) Configure(configFunc func(o z.App) z.ComponentOpts) {
 
 }
 

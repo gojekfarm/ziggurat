@@ -22,7 +22,7 @@ type mwMockApp struct {
 	t *testing.T
 }
 
-func (m mwMockApp) ConfigReader() at.ConfigReader {
+func (m mwMockApp) ConfigReader() at.ConfigStore {
 	panic("implement me")
 }
 
@@ -42,7 +42,7 @@ func (m mwMockApp) Run(router at.StreamRouter, options at.RunOptions) chan struc
 	return nil
 }
 
-func (m mwMockApp) Configure(configFunc func(o at.App) at.Options) {
+func (m mwMockApp) Configure(configFunc func(o at.App) at.ComponentOpts) {
 
 }
 

@@ -12,7 +12,7 @@ type RabbitMQConfig struct {
 	DialTimeoutInS       int    `mapstructure:"dial-timeout-seconds"`
 }
 
-func parseRabbitMQConfig(config z.ConfigReader) *RabbitMQConfig {
+func parseRabbitMQConfig(config z.ConfigStore) *RabbitMQConfig {
 	rmqcfg := &RabbitMQConfig{}
 	if err := config.UnmarshalByKey("rabbitmq", rmqcfg); err != nil {
 		logger.LogError(err, "rmq config unmarshall error", nil)

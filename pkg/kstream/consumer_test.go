@@ -37,7 +37,7 @@ func (c consumerTestMockApp) Run(router z.StreamRouter, options z.RunOptions) ch
 	panic("implement me")
 }
 
-func (c consumerTestMockApp) Configure(configFunc func(o z.App) z.Options) {
+func (c consumerTestMockApp) Configure(configFunc func(o z.App) z.ComponentOpts) {
 	panic("implement me")
 }
 
@@ -53,7 +53,7 @@ func (c consumerTestMockApp) Config() *basic.Config {
 	panic("implement me")
 }
 
-func (c consumerTestMockApp) ConfigReader() z.ConfigReader {
+func (c consumerTestMockApp) ConfigReader() z.ConfigStore {
 	panic("implement me")
 }
 

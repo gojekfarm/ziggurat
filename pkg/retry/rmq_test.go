@@ -71,7 +71,7 @@ func (r retryMockApp) Run(router z.StreamRouter, options z.RunOptions) chan stru
 	panic("implement me")
 }
 
-func (r retryMockApp) Configure(configFunc func(o z.App) z.Options) {
+func (r retryMockApp) Configure(configFunc func(o z.App) z.ComponentOpts) {
 	panic("implement me")
 }
 
@@ -93,7 +93,7 @@ func (r retryMockApp) Config() *basic.Config {
 	}
 }
 
-func (r retryMockApp) ConfigReader() z.ConfigReader {
+func (r retryMockApp) ConfigReader() z.ConfigStore {
 	panic("implement me")
 }
 
