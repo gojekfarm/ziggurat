@@ -21,7 +21,7 @@ func NewRouter() *defaultRouter {
 	}
 }
 
-func (dr *defaultRouter) HandlerFunc(route string, handlerFunc func(event basic.MessageEvent, app z.App) z.ProcessStatus, mw ...z.MiddlewareFunc) {
+func (dr *defaultRouter) HandlerFunc(route string, handlerFunc func(event basic.MessageEvent, app z.App) z.ProcessStatus) {
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
