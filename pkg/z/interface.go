@@ -27,8 +27,8 @@ type MessageRetry interface {
 }
 
 type StreamRouter interface {
-	HandlerFuncEntityMap() map[string]HandlerFunc
-	TopicEntities() []string
+	RouteHandlerMap() map[string]HandlerFunc
+	Routes() []string
 }
 
 type ConfigReader interface {

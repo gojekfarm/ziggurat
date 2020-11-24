@@ -24,7 +24,7 @@ func decodeMessage(body []byte) (basic.MessageEvent, error) {
 }
 
 var setupConsumers = func(app z.App, dialer *amqpextra.Dialer) error {
-	handlerMap := app.Router().HandlerFuncEntityMap()
+	handlerMap := app.Router().RouteHandlerMap()
 	serviceName := app.Config().ServiceName
 
 	for entity, handlerFunc := range handlerMap {

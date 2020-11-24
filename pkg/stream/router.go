@@ -5,40 +5,50 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
 
-type DefaultRouter struct {
+type defaultRouter struct {
 	handlerFunctionMap map[string]z.HandlerFunc
-	entityNames        []string
+	routeMiddlewareMap map[string][]z.MiddlewareFunc
+	routes             []string
 }
 
-func NewRouter() *DefaultRouter {
-	return &DefaultRouter{
+func NewRouter() *defaultRouter {
+	return &defaultRouter{
 		handlerFunctionMap: map[string]z.HandlerFunc{},
-		entityNames:        []string{},
+		routes:             []string{},
+		routeMiddlewareMap: map[string][]z.MiddlewareFunc{},
 	}
 }
 
-func (dr *DefaultRouter) HandlerFuncEntityMap() map[string]z.HandlerFunc {
+func (dr *defaultRouter) RouteHandlerMap() map[string]z.HandlerFunc {
 	return dr.handlerFunctionMap
 }
 
-func (dr *DefaultRouter) TopicEntities() []string {
-	return dr.entityNames
+func (dr *defaultRouter) Routes() []string {
+	return dr.routes
 }
 
-func (dr *DefaultRouter) HandlerFunc(topicEntityName string, handlerFn z.HandlerFunc, mw ...z.MiddlewareFunc) {
-	dr.entityNames = append(dr.entityNames, topicEntityName)
-	if len(mw) > 0 {
-		dr.handlerFunctionMap[topicEntityName] = util.PipeHandlers(mw...)(handlerFn)
-		return
+func (dr *defaultRouter) Build() {
+	for route, middlewareFuncs := range dr.routeMiddlewareMap {
+		hf := dr.handlerFunctionMap[route]
+		dr.handlerFunctionMap[route] = util.PipeHandlers(middlewareFuncs...)(hf)
 	}
-	dr.handlerFunctionMap[topicEntityName] = handlerFn
 }
 
-func (dr *DefaultRouter) Use(middlewareFunc ...z.MiddlewareFunc) {
-	for te, handler := range dr.handlerFunctionMap {
+func (dr *defaultRouter) HandlerFunc(route string, handlerFn z.HandlerFunc, mw ...z.MiddlewareFunc) *defaultRouter {
+	dr.routes = append(dr.routes, route)
+	if len(mw) > 0 {
+		dr.routeMiddlewareMap[route] = mw
+	}
+	dr.handlerFunctionMap[route] = handlerFn
+	return dr
+}
+
+func (dr *defaultRouter) Use(middlewareFunc ...z.MiddlewareFunc) *defaultRouter {
+	for route, handler := range dr.handlerFunctionMap {
 		origHandler := handler
 		if len(middlewareFunc) > 0 {
-			dr.handlerFunctionMap[te] = util.PipeHandlers(middlewareFunc...)(origHandler)
+			dr.handlerFunctionMap[route] = util.PipeHandlers(middlewareFunc...)(origHandler)
 		}
 	}
+	return dr
 }

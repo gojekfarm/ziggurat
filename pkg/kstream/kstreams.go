@@ -25,7 +25,7 @@ func (k *KafkaStreams) Start(app z.App) (chan struct{}, error) {
 	config := app.Config()
 	stopChan := make(chan struct{})
 	srConfig := config.StreamRouter
-	hfMap := app.Router().HandlerFuncEntityMap()
+	hfMap := app.Router().RouteHandlerMap()
 
 	if len(hfMap) == 0 {
 		logger.LogFatal(zerror.ErrNoHandlersRegistered, "kafka streams", nil)

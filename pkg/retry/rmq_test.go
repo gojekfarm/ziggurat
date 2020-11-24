@@ -26,11 +26,11 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func (r retryMockRouter) TopicEntities() []string {
+func (r retryMockRouter) Routes() []string {
 	return []string{"foo"}
 }
 
-func (r retryMockRouter) HandlerFuncEntityMap() map[string]z.HandlerFunc {
+func (r retryMockRouter) RouteHandlerMap() map[string]z.HandlerFunc {
 	panic("implement me")
 }
 func (r retryMockRouter) Start(app z.App) (chan struct{}, error) {
