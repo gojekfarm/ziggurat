@@ -2,6 +2,7 @@ package stream
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/util"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
@@ -12,7 +13,12 @@ type defaultRouter struct {
 
 func (dr *defaultRouter) HandleMessage(event basic.MessageEvent, app z.App) z.ProcessStatus {
 	route := event.StreamRoute
-	return dr.handlerFunctionMap[route](event, app)
+	if handler, ok := dr.handlerFunctionMap[route]; !ok {
+		logger.LogWarn("no handler found", map[string]interface{}{"ROUTE": route})
+		return z.SkipMessage
+	} else {
+		return handler.HandleMessage(event, app)
+	}
 }
 
 func NewRouter() *defaultRouter {

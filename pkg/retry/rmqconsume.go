@@ -5,8 +5,8 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/handler"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
+	"github.com/gojekfarm/ziggurat-go/pkg/mw"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/makasim/amqpextra"
 	"time"
@@ -30,7 +30,7 @@ var setupConsumers = func(app z.App, dialer *amqpextra.Dialer) error {
 
 	for _, route := range routes {
 		queueName := constructQueueName(serviceName, route, QueueTypeInstant)
-		messageHandler := handler.DefaultTerminalMW(messageHandler)
+		messageHandler := mw.DefaultTerminalMW(messageHandler)
 		consumerCTAG := fmt.Sprintf("%s_%s_%s", queueName, serviceName, "ctag")
 
 		c, err := createConsumer(app, dialer, consumerCTAG, queueName, messageHandler)

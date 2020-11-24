@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/handler"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
+	"github.com/gojekfarm/ziggurat-go/pkg/mw"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"sync"
 	"time"
@@ -51,7 +51,7 @@ var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", topicEntity, groupID, i)
 		wg.Add(1)
-		startConsumer(routerCtx, app, handler.DefaultTerminalMW(h), consumer, topicEntity, instanceID, wg)
+		startConsumer(routerCtx, app, mw.DefaultTerminalMW(h), consumer, topicEntity, instanceID, wg)
 	}
 	return consumers
 }

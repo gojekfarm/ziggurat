@@ -15,19 +15,19 @@ var getCurrentTime = func() time.Time {
 func MessageLogger(next z.MessageHandler) z.MessageHandler {
 	return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		args := map[string]interface{}{
-			"topic-entity":  messageEvent.StreamRoute,
-			"kafka-topic":   messageEvent.Topic,
-			"kafka-ts":      messageEvent.KafkaTimestamp.String(),
-			"message-value": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
+			"ROUTE": messageEvent.StreamRoute,
+			"TOPIC": messageEvent.Topic,
+			"K-TS":  messageEvent.KafkaTimestamp.String(),
+			"VALUE": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
 		}
 		status := next.HandleMessage(messageEvent, app)
 		switch status {
 		case z.ProcessingSuccess:
-			logger.LogInfo("Msg logger middleware: successfully processed message", args)
+			logger.LogInfo("[Msg logger]: successfully processed message", args)
 		case z.RetryMessage:
-			logger.LogInfo("Msg logger middleware: retrying message", args)
+			logger.LogInfo("[Msg logger]: retrying message", args)
 		case z.SkipMessage:
-			logger.LogInfo("Msg logger middleware: skipping message", args)
+			logger.LogInfo("[Msg logger]: skipping message", args)
 		}
 		return status
 	})

@@ -1,12 +1,9 @@
 package basic
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
 	"sync"
 	"time"
 )
-
-type DecoderHook func(model interface{}) error
 
 type MessageEvent struct {
 	MessageValueBytes []byte
@@ -14,8 +11,6 @@ type MessageEvent struct {
 	Topic             string
 	StreamRoute       string
 	KafkaTimestamp    time.Time
-	ValueDecoderHook  DecoderHook
-	KeyDecoderHook    DecoderHook
 	TimestampType     string
 	Attributes        map[string]interface{}
 	attrMutex         *sync.Mutex
@@ -24,12 +19,6 @@ type MessageEvent struct {
 
 func NewMessageEvent(key []byte, value []byte, topic string, entity string, timestampType string, ktimestamp time.Time) MessageEvent {
 	return MessageEvent{
-		ValueDecoderHook: func(model interface{}) error {
-			return zerror.ErrNoDecoderFound
-		},
-		KeyDecoderHook: func(model interface{}) error {
-			return zerror.ErrNoDecoderFound
-		},
 		Attributes:        map[string]interface{}{},
 		attrMutex:         &sync.Mutex{},
 		MessageValueBytes: value,
