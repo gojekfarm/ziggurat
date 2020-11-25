@@ -9,12 +9,12 @@ import (
 )
 
 type KafkaStreams struct {
-	entityConsumerMap map[string][]*kafka.Consumer
+	routeConsumerMap map[string][]*kafka.Consumer
 }
 
 func NewKafkaStreams() *KafkaStreams {
 	return &KafkaStreams{
-		entityConsumerMap: map[string][]*kafka.Consumer{},
+		routeConsumerMap: map[string][]*kafka.Consumer{},
 	}
 }
 
@@ -27,10 +27,13 @@ func (k *KafkaStreams) Start(app z.App) (chan struct{}, error) {
 	handler := app.Handler()
 
 	for _, route := range app.Routes() {
-		streamRouterCfg := srConfig[route]
+		streamRouterCfg, ok := srConfig[route]
+		if !ok {
+			continue
+		}
 		consumerConfig := NewConsumerConfig(streamRouterCfg.BootstrapServers, streamRouterCfg.GroupID)
 		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
-		k.entityConsumerMap[route] = StartConsumers(ctx, app, consumerConfig, route, topics, streamRouterCfg.InstanceCount, handler, &wg)
+		k.routeConsumerMap[route] = StartConsumers(ctx, app, consumerConfig, route, topics, streamRouterCfg.InstanceCount, handler, &wg)
 	}
 
 	go func() {
@@ -43,7 +46,7 @@ func (k *KafkaStreams) Start(app z.App) (chan struct{}, error) {
 }
 
 func (k *KafkaStreams) Stop() {
-	for _, consumers := range k.entityConsumerMap {
+	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
 			logger.LogError(consumers[i].Close(), "consumer close error", nil)
 		}

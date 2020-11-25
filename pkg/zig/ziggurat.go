@@ -143,11 +143,11 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...zt
 
 func (z *Ziggurat) start(startCallback ztype.StartFunction) {
 
-	logger.LogError(z.metricPublisher.Start(z), "", nil)
+	logger.LogError(z.metricPublisher.Start(z), "error starting metric publisher", nil)
 	z.httpServer.Start(z)
 	if z.configStore.Config().Retry.Enabled {
 		err := z.messageRetry.Start(z)
-		logger.LogFatal(err, "ziggurat: error starting retries", nil)
+		logger.LogFatal(err, "error starting retries", nil)
 	}
 	streamsStop, streamStartErr := kstream.NewKafkaStreams().Start(z)
 	logger.LogFatal(streamStartErr, "ziggurat: router start error", nil)

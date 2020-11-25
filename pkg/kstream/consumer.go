@@ -15,7 +15,7 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-func startConsumer(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	logger.LogInfo("consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
