@@ -12,6 +12,26 @@ type ConfigStore struct {
 	UnmarshalByKeyFunc func(key string, model interface{}) error
 }
 
+func NewConfigStore() *ConfigStore {
+	return &ConfigStore{
+		ConfigFunc: func() *basic.Config {
+			return &basic.Config{}
+		},
+		ParseFunc: func(options basic.CommandLineOptions) {
+
+		},
+		GetByKeyFunc: func(key string) interface{} {
+			return nil
+		},
+		ValidateFunc: func(rules map[string]func(c *basic.Config) error) error {
+			return nil
+		},
+		UnmarshalByKeyFunc: func(key string, model interface{}) error {
+			return nil
+		},
+	}
+}
+
 func (c *ConfigStore) Config() *basic.Config {
 	return c.ConfigFunc()
 }
