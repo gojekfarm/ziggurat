@@ -5,15 +5,15 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
 
-type MockRetry struct {
+type Retry struct {
 	StartFunc  func(app z.App) error
 	RetryFunc  func(app z.App, payload basic.MessageEvent) error
 	StopFunc   func() error
 	ReplayFunc func() error
 }
 
-func NewMockRetry() *MockRetry {
-	return &MockRetry{
+func NewMockRetry() *Retry {
+	return &Retry{
 		StartFunc: func(app z.App) error {
 			return nil
 		},
@@ -29,18 +29,18 @@ func NewMockRetry() *MockRetry {
 	}
 }
 
-func (m *MockRetry) Start(app z.App) error {
+func (m *Retry) Start(app z.App) error {
 	return m.StartFunc(app)
 }
 
-func (m *MockRetry) Retry(app z.App, payload basic.MessageEvent) error {
+func (m *Retry) Retry(app z.App, payload basic.MessageEvent) error {
 	return m.Retry(app, payload)
 }
 
-func (m *MockRetry) Stop() error {
+func (m *Retry) Stop() error {
 	return m.StopFunc()
 }
 
-func (m *MockRetry) Replay(app z.App, topicEntity string, count int) error {
+func (m *Retry) Replay(app z.App, topicEntity string, count int) error {
 	return m.ReplayFunc()
 }

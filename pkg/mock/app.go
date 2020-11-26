@@ -6,7 +6,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 )
 
-type MockApp struct {
+type App struct {
 	ContextFunc         func() context.Context
 	RoutesFunc          func() []string
 	MessageRetryFunc    func() z.MessageRetry
@@ -17,34 +17,59 @@ type MockApp struct {
 	ConfigStoreFunc     func() z.ConfigStore
 }
 
-func (m *MockApp) Context() context.Context {
+func NewMockApp() *App {
+	return &App{
+		ContextFunc: func() context.Context {
+			return context.Background()
+		},
+		RoutesFunc: func() []string {
+			return []string{}
+		},
+		MessageHandlerFunc: func() z.MessageHandler {
+			return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+				return z.ProcessingSuccess
+			})
+		},
+		HTTPServerFunc: func() z.HttpServer {
+			return nil
+		},
+		ConfigFunc: func() *basic.Config {
+			return &basic.Config{}
+		},
+		ConfigStoreFunc: func() z.ConfigStore {
+			return nil
+		},
+	}
+}
+
+func (m *App) Context() context.Context {
 	return m.ContextFunc()
 }
 
-func (m *MockApp) Routes() []string {
+func (m *App) Routes() []string {
 	return m.RoutesFunc()
 }
 
-func (m *MockApp) MessageRetry() z.MessageRetry {
+func (m *App) MessageRetry() z.MessageRetry {
 	return m.MessageRetryFunc()
 }
 
-func (m *MockApp) Handler() z.MessageHandler {
+func (m *App) Handler() z.MessageHandler {
 	return m.MessageHandlerFunc()
 }
 
-func (m *MockApp) MetricPublisher() z.MetricPublisher {
+func (m *App) MetricPublisher() z.MetricPublisher {
 	return m.MetricPublisher()
 }
 
-func (m *MockApp) HTTPServer() z.HttpServer {
+func (m *App) HTTPServer() z.HttpServer {
 	return m.HTTPServerFunc()
 }
 
-func (m *MockApp) Config() *basic.Config {
+func (m *App) Config() *basic.Config {
 	return m.ConfigFunc()
 }
 
-func (m *MockApp) ConfigStore() z.ConfigStore {
+func (m *App) ConfigStore() z.ConfigStore {
 	return m.ConfigStore()
 }
