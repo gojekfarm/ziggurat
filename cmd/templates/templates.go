@@ -296,7 +296,7 @@ func main() {
 	app := zig.NewApp()
 	router := stream.NewRouter()
 
-	router.HandlerFunc("plain-text-log", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	router.HandleFunc("plain-text-log", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 
