@@ -6,9 +6,10 @@ import (
 	"net/http"
 )
 
-type HttpServer interface {
+type Server interface {
 	Start(app App)
-	ConfigureHTTPRoutes(a App, configFunc func(a App, h http.Handler))
+	ConfigureRoutes(a App, configFunc func(a App, h http.Handler))
+	Handler() http.Handler
 	Stop(app App) error
 }
 
@@ -40,7 +41,7 @@ type App interface {
 	MessageRetry() MessageRetry
 	Handler() MessageHandler
 	MetricPublisher() MetricPublisher
-	HTTPServer() HttpServer
+	HTTPServer() Server
 	Config() *basic.Config
 	ConfigStore() ConfigStore
 }

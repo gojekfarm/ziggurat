@@ -46,7 +46,7 @@ func (r routerTestMockApp) MetricPublisher() z.MetricPublisher {
 	return nil
 }
 
-func (r routerTestMockApp) HTTPServer() z.HttpServer {
+func (r routerTestMockApp) HTTPServer() z.Server {
 	return nil
 }
 

@@ -21,7 +21,7 @@ type RunOptions struct {
 	HTTPConfigFunc  func(a App, h http.Handler)
 	StartCallback   func(a App)
 	StopCallback    func()
-	HTTPServer      func(c ConfigStore) HttpServer
+	HTTPServer      func(c ConfigStore) Server
 	Retry           func(c ConfigStore) MessageRetry
 	MetricPublisher func(c ConfigStore) MetricPublisher
 }

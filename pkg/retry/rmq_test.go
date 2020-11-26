@@ -47,7 +47,7 @@ func (r retryMockApp) MetricPublisher() z.MetricPublisher {
 	panic("implement me")
 }
 
-func (r retryMockApp) HTTPServer() z.HttpServer {
+func (r retryMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 

@@ -8,6 +8,12 @@ import (
 	"strconv"
 )
 
+type ReplayResponse struct {
+	Status bool   `json:"status"`
+	Count  int    `json:"count"`
+	Msg    string `json:"msg"`
+}
+
 func replayHandler(app z.App) httprouter.Handle {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
