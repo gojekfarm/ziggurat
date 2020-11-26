@@ -75,10 +75,10 @@ func TestDefaultRouter_HandlerFunc(t *testing.T) {
 	dr := NewRouter()
 	topicEntity := "test-entity"
 	topicEntityTwo := "test-entity2"
-	dr.HandlerFunc(topicEntity, func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc(topicEntity, func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
-	dr.HandlerFunc(topicEntityTwo, func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc(topicEntityTwo, func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 	if len(dr.handlerFunctionMap) < 2 {
@@ -99,7 +99,7 @@ func TestDefaultRouter_HandlerFuncMW(t *testing.T) {
 			}
 		}
 	}
-	dr.HandlerFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	}, mw.MessageLogger)
 
@@ -134,7 +134,7 @@ func TestDefaultRouter_validate(t *testing.T) {
 		logger.LogWarn = origLogWarn
 	}()
 	dr := NewRouter()
-	dr.HandlerFunc("baz", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc("baz", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 	kstream.StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, handlerFunc z.HandlerFunc, wg *sync.WaitGroup) []*kafka.Consumer {
@@ -158,7 +158,7 @@ func TestDefaultRouter_Start(t *testing.T) {
 		"enable.auto.offset.store": false,
 	}
 	dr := NewRouter()
-	dr.HandlerFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 
@@ -184,8 +184,8 @@ func TestDefaultRouter_GetTopicEntityNames(t *testing.T) {
 	hf := func(m basic.MessageEvent, a z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	}
-	dr.HandlerFunc("foo", hf)
-	dr.HandlerFunc("bar", hf)
+	dr.HandleFunc("foo", hf)
+	dr.HandleFunc("bar", hf)
 	if !reflect.DeepEqual(expectedEntities, dr.Routes()) {
 		t.Errorf("expected %v got %v", expectedEntities, dr.Routes())
 	}
@@ -194,7 +194,7 @@ func TestDefaultRouter_GetTopicEntityNames(t *testing.T) {
 func TestDefaultRouter_StartWithError(t *testing.T) {
 	dr := NewRouter()
 	a := &routerTestMockApp{}
-	dr.HandlerFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc("foo", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 	setConsumerConfig = func(consumerConfigMap *kafka.ConfigMap, kv string) error {
