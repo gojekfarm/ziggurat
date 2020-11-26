@@ -1,12 +1,10 @@
 package server
 
 import (
-	"encoding/json"
 	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
-	"strconv"
 )
 
 var defaultHTTPPort = "8080"
@@ -36,33 +34,14 @@ func NewDefaultHTTPServer(config z.ConfigStore) z.HttpServer {
 }
 
 func (s *DefaultHttpServer) Start(app z.App) {
-	s.router.POST("/v1/dead_set/:topic_entity/:count", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		count, _ := strconv.Atoi(params.ByName("count"))
-		if replayErr := app.MessageRetry().Replay(app, params.ByName("topic_entity"), count); replayErr != nil {
-			http.Error(writer, replayErr.Error(), http.StatusInternalServerError)
-			return
-		}
-		writer.WriteHeader(http.StatusOK)
-		jsonBytes, _ := json.Marshal(ReplayResponse{
-			Status: true,
-			Count:  count,
-			Msg:    "successfully replayed messages",
-		})
-		writer.Header().Add("Content-Type", "application/json")
-		writer.Write(jsonBytes)
-	})
-
-	s.router.GET("/v1/ping", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte("pong"))
-	})
+	s.router.POST("/v1/dead_set/:topic_entity/:count", replayHandler(app))
+	s.router.GET("/v1/ping", pingHandler)
 
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
 			logger.LogError(err, "ziggurat http-server:", nil)
 		}
 	}(s.server)
-
 }
 
 func (s *DefaultHttpServer) ConfigureHTTPRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {
