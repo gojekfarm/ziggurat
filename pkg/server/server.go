@@ -14,13 +14,7 @@ type DefaultHttpServer struct {
 	router *httprouter.Router
 }
 
-type ReplayResponse struct {
-	Status bool   `json:"status"`
-	Count  int    `json:"count"`
-	Msg    string `json:"msg"`
-}
-
-func NewDefaultHTTPServer(config z.ConfigStore) z.HttpServer {
+func NewDefaultHTTPServer(config z.ConfigStore) z.Server {
 	port := config.Config().HTTPServer.Port
 	if port == "" {
 		port = defaultHTTPPort
@@ -44,8 +38,12 @@ func (s *DefaultHttpServer) Start(app z.App) {
 	}(s.server)
 }
 
-func (s *DefaultHttpServer) ConfigureHTTPRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {
+func (s *DefaultHttpServer) ConfigureRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {
 	configFunc(a, s.router)
+}
+
+func (s *DefaultHttpServer) Handler() http.Handler {
+	return s.router
 }
 
 func (s *DefaultHttpServer) Stop(app z.App) error {

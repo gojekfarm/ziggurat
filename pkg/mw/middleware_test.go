@@ -32,7 +32,7 @@ func (m mwMockApp) MetricPublisher() z.MetricPublisher {
 	panic("implement me")
 }
 
-func (m mwMockApp) HTTPServer() z.HttpServer {
+func (m mwMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 

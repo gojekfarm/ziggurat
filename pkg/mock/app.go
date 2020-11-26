@@ -12,12 +12,12 @@ type App struct {
 	MessageRetryFunc    func() z.MessageRetry
 	MessageHandlerFunc  func() z.MessageHandler
 	MetricPublisherFunc func() z.MetricPublisher
-	HTTPServerFunc      func() z.HttpServer
+	HTTPServerFunc      func() z.Server
 	ConfigFunc          func() *basic.Config
 	ConfigStoreFunc     func() z.ConfigStore
 }
 
-func NewMockApp() *App {
+func NewApp() *App {
 	return &App{
 		ContextFunc: func() context.Context {
 			return context.Background()
@@ -30,7 +30,7 @@ func NewMockApp() *App {
 				return z.ProcessingSuccess
 			})
 		},
-		HTTPServerFunc: func() z.HttpServer {
+		HTTPServerFunc: func() z.Server {
 			return nil
 		},
 		ConfigFunc: func() *basic.Config {
@@ -38,6 +38,9 @@ func NewMockApp() *App {
 		},
 		ConfigStoreFunc: func() z.ConfigStore {
 			return nil
+		},
+		MessageRetryFunc: func() z.MessageRetry {
+			return NewRetry()
 		},
 	}
 }
@@ -62,7 +65,7 @@ func (m *App) MetricPublisher() z.MetricPublisher {
 	return m.MetricPublisher()
 }
 
-func (m *App) HTTPServer() z.HttpServer {
+func (m *App) HTTPServer() z.Server {
 	return m.HTTPServerFunc()
 }
 

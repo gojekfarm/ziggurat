@@ -22,7 +22,7 @@ import (
 )
 
 type Ziggurat struct {
-	httpServer      ztype.HttpServer
+	httpServer      ztype.Server
 	messageRetry    ztype.MessageRetry
 	configStore     ztype.ConfigStore
 	handler         ztype.MessageHandler
@@ -127,7 +127,7 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...zt
 	z.messageRetry = runOptions.Retry(z.configStore)
 	z.httpServer = runOptions.HTTPServer(z.configStore)
 	z.metricPublisher = runOptions.MetricPublisher(z.configStore)
-	z.httpServer.ConfigureHTTPRoutes(z, runOptions.HTTPConfigFunc)
+	z.httpServer.ConfigureRoutes(z, runOptions.HTTPConfigFunc)
 	z.stopFunc = runOptions.StopCallback
 	z.startFunc = runOptions.StartCallback
 
@@ -202,7 +202,7 @@ func (z *Ziggurat) MetricPublisher() ztype.MetricPublisher {
 	return z.metricPublisher
 }
 
-func (z *Ziggurat) HTTPServer() ztype.HttpServer {
+func (z *Ziggurat) HTTPServer() ztype.Server {
 	return z.httpServer
 }
 

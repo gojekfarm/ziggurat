@@ -9,10 +9,10 @@ type Retry struct {
 	StartFunc  func(app z.App) error
 	RetryFunc  func(app z.App, payload basic.MessageEvent) error
 	StopFunc   func() error
-	ReplayFunc func() error
+	ReplayFunc func(app z.App, topicEntity string, count int) error
 }
 
-func NewMockRetry() *Retry {
+func NewRetry() *Retry {
 	return &Retry{
 		StartFunc: func(app z.App) error {
 			return nil
@@ -23,7 +23,7 @@ func NewMockRetry() *Retry {
 		StopFunc: func() error {
 			return nil
 		},
-		ReplayFunc: func() error {
+		ReplayFunc: func(app z.App, topicEntity string, count int) error {
 			return nil
 		},
 	}
@@ -42,5 +42,5 @@ func (m *Retry) Stop() error {
 }
 
 func (m *Retry) Replay(app z.App, topicEntity string, count int) error {
-	return m.ReplayFunc()
+	return m.ReplayFunc(app, topicEntity, count)
 }

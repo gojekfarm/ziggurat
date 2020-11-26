@@ -11,7 +11,7 @@ type Metrics struct {
 	GaugeFunc    func(metricName string, value int64, arguments map[string]string) error
 }
 
-func NewMockMetrics() *Metrics {
+func NewMetrics() *Metrics {
 	return &Metrics{
 		StartFunc: func(a z.App) error {
 			return nil

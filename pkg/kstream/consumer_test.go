@@ -36,7 +36,7 @@ func (c consumerTestMockApp) MetricPublisher() z.MetricPublisher {
 	panic("implement me")
 }
 
-func (c consumerTestMockApp) HTTPServer() z.HttpServer {
+func (c consumerTestMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 
@@ -64,7 +64,8 @@ func TestConsumer_create(t *testing.T) {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {}
+	startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+	}
 	createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 		return &kafka.Consumer{}
 	}

@@ -32,7 +32,7 @@ func (k kstreamMockApp) MetricPublisher() z.MetricPublisher {
 	panic("implement me")
 }
 
-func (k kstreamMockApp) HTTPServer() z.HttpServer {
+func (k kstreamMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 
