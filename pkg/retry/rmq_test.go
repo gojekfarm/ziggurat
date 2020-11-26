@@ -16,62 +16,30 @@ import (
 )
 
 const entityName = "foo"
-
-type retryMockConfigReader struct{}
-type retryMockApp struct{}
-type retryMockRouter struct{}
+const retryCountValue = 3
 
 func TestMain(m *testing.M) {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 	os.Exit(m.Run())
 }
 
-func (r retryMockRouter) Routes() []string {
-	return []string{"foo"}
-}
-
-func (r retryMockRouter) RouteHandlerMap() map[string]z.HandlerFunc {
-	panic("implement me")
-}
-func (r retryMockRouter) Start(app z.App) (chan struct{}, error) {
-	panic("implement me")
-}
-
-func (r retryMockRouter) Use(middlewareFunc z.MiddlewareFunc) {
-	panic("implement me")
-}
-
-func (r retryMockRouter) HandlerFunc(topicEntityName string, handlerFn z.HandlerFunc, middlewareFunc ...z.MiddlewareFunc) {
-	panic("implement me")
-}
-
-func (r retryMockRouter) GetTopicEntities() []*z.TopicEntity {
-	return []*z.TopicEntity{{
-		HandlerFunc: func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
-			return z.ProcessingSuccess
-		},
-		Consumers:  nil,
-		EntityName: entityName,
-	}}
-}
+type retryMockConfigReader struct{}
+type retryMockApp struct{}
+type retryMockRouter struct{}
 
 func (r retryMockApp) Context() context.Context {
 	return context.Background()
 }
 
-func (r retryMockApp) Router() z.StreamRouter {
-	return &retryMockRouter{}
+func (r retryMockApp) Routes() []string {
+	return []string{entityName}
 }
 
 func (r retryMockApp) MessageRetry() z.MessageRetry {
 	panic("implement me")
 }
 
-func (r retryMockApp) Run(router z.StreamRouter, options z.RunOptions) chan struct{} {
-	panic("implement me")
-}
-
-func (r retryMockApp) Configure(configFunc func(o z.App) z.ComponentOpts) {
+func (r retryMockApp) Handler() z.MessageHandler {
 	panic("implement me")
 }
 
@@ -88,20 +56,12 @@ func (r retryMockApp) Config() *basic.Config {
 		ServiceName: "baz",
 		Retry: basic.RetryConfig{
 			Enabled: true,
-			Count:   3,
+			Count:   retryCountValue,
 		},
 	}
 }
 
-func (r retryMockApp) ConfigReader() z.ConfigStore {
-	panic("implement me")
-}
-
-func (r retryMockApp) Stop() {
-	panic("implement me")
-}
-
-func (r retryMockApp) IsRunning() bool {
+func (r retryMockApp) ConfigStore() z.ConfigStore {
 	panic("implement me")
 }
 
@@ -197,7 +157,7 @@ func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 
 func TestRabbitMQRetry_RetryDLQueue(t *testing.T) {
 	message := basic.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
-	message.SetMessageAttribute(retryCount, 3)
+	message.SetMessageAttribute(retryCount, retryCountValue)
 	createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
