@@ -103,6 +103,10 @@ func (z *Ziggurat) setDefaultOpts(ro *ztype.RunOptions) {
 }
 
 func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...ztype.Opts) chan struct{} {
+	if atomic.LoadInt32(&z.isRunning) == 1 {
+		logger.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
+		return nil
+	}
 	runOptions := NewOpts()
 	if len(routes) < 1 {
 		logger.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
@@ -115,10 +119,6 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...zt
 	z.handler = handler
 	z.routes = routes
 
-	if atomic.LoadInt32(&z.isRunning) == 1 {
-		logger.LogError(errors.New("attempted to call `Run` on an already running app"), "ziggurat app run", nil)
-		return nil
-	}
 	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
 	go interruptHandler(z.interruptChan, z.cancelFun)
 	logger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
