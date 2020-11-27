@@ -7,17 +7,22 @@ import (
 
 type VoidServer struct{}
 
-func NewVoidServer(c z.ConfigStore) z.Server {
+func NewServer(c z.ConfigStore) z.Server {
 	return &VoidServer{}
 }
 
-func (v VoidServer) Start(app z.App) {
+func (v VoidServer) Start(app z.App) error {
+	return nil
 }
 
 func (v VoidServer) ConfigureRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {
 
 }
 
-func (v VoidServer) Stop(app z.App) error {
+func (v VoidServer) Stop(app z.App) {
+
+}
+
+func (v VoidServer) Handler() http.Handler {
 	return nil
 }

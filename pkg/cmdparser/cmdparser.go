@@ -2,7 +2,7 @@ package cmdparser
 
 import (
 	"flag"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 )
 
 var (
@@ -17,7 +17,7 @@ type CommandLineOptions struct {
 	ConfigFilePath string
 }
 
-var ParseCommandLineArguments = func() basic.CommandLineOptions {
+var ParseCommandLineArguments = func() zbasic.CommandLineOptions {
 	flag.Parse()
-	return basic.CommandLineOptions{ConfigFilePath: config}
+	return zbasic.CommandLineOptions{ConfigFilePath: config}
 }

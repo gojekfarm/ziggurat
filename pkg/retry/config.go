@@ -1,8 +1,8 @@
 package retry
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"strings"
 )
 
@@ -15,7 +15,7 @@ type RabbitMQConfig struct {
 func parseRabbitMQConfig(config z.ConfigStore) *RabbitMQConfig {
 	rmqcfg := &RabbitMQConfig{}
 	if err := config.UnmarshalByKey("rabbitmq", rmqcfg); err != nil {
-		logger.LogError(err, "rmq config unmarshall error", nil)
+		zlogger.LogError(err, "rmq config unmarshall error", nil)
 		return &RabbitMQConfig{
 			Hosts:                "amqp://user:bitnami@localhost:5672/",
 			DelayQueueExpiration: "2000",

@@ -1,9 +1,9 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/julienschmidt/httprouter"
 	"net"
 	"net/http"
@@ -16,8 +16,8 @@ const serverAddr = "localhost:8080"
 func TestDefaultHttpServer_Start(t *testing.T) {
 	configStore := mock.NewConfigStore()
 	a := mock.NewApp()
-	a.ConfigFunc = func() *basic.Config {
-		return &basic.Config{HTTPServer: basic.HTTPServerConfig{Port: "400"}}
+	a.ConfigFunc = func() *zbasic.Config {
+		return &zbasic.Config{HTTPServer: zbasic.HTTPServerConfig{Port: "400"}}
 	}
 	ds := NewDefaultHTTPServer(configStore)
 	ds.Start(a)

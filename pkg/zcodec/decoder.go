@@ -1,4 +1,4 @@
-package decode
+package zcodec
 
 import (
 	"encoding/json"

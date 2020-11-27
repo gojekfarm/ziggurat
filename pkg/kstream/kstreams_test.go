@@ -3,9 +3,9 @@ package kstream
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/void"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"sync"
 	"testing"
 )
@@ -36,9 +36,9 @@ func (k kstreamMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 
-func (k kstreamMockApp) Config() *basic.Config {
-	return &basic.Config{
-		StreamRouter: map[string]basic.StreamRouterConfig{
+func (k kstreamMockApp) Config() *zbasic.Config {
+	return &zbasic.Config{
+		StreamRouter: map[string]zbasic.StreamRouterConfig{
 			"foo": {
 				InstanceCount:    0,
 				BootstrapServers: "",

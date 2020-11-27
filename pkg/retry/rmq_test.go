@@ -3,8 +3,8 @@ package retry
 import (
 	"context"
 	"errors"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/rs/zerolog"
@@ -51,10 +51,10 @@ func (r retryMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 
-func (r retryMockApp) Config() *basic.Config {
-	return &basic.Config{
+func (r retryMockApp) Config() *zbasic.Config {
+	return &zbasic.Config{
 		ServiceName: "baz",
-		Retry: basic.RetryConfig{
+		Retry: zbasic.RetryConfig{
 			Enabled: true,
 			Count:   retryCountValue,
 		},
@@ -65,11 +65,11 @@ func (r retryMockApp) ConfigStore() z.ConfigStore {
 	panic("implement me")
 }
 
-func (r retryMockConfigReader) Config() *basic.Config {
+func (r retryMockConfigReader) Config() *zbasic.Config {
 	panic("implement me")
 }
 
-func (r retryMockConfigReader) Parse(options basic.CommandLineOptions) {
+func (r retryMockConfigReader) Parse(options zbasic.CommandLineOptions) {
 	panic("implement me")
 }
 
@@ -77,7 +77,7 @@ func (r retryMockConfigReader) GetByKey(key string) interface{} {
 	panic("implement me")
 }
 
-func (r retryMockConfigReader) Validate(rules map[string]func(c *basic.Config) error) error {
+func (r retryMockConfigReader) Validate(rules map[string]func(c *zbasic.Config) error) error {
 	panic("implement me")
 }
 
@@ -137,12 +137,12 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 }
 
 func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
-	message := basic.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
+	message := zbasic.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
 	createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload basic.MessageEvent, expirationInMS string) error {
+	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbasic.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_delay_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)
@@ -156,13 +156,13 @@ func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 }
 
 func TestRabbitMQRetry_RetryDLQueue(t *testing.T) {
-	message := basic.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
+	message := zbasic.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
 	message.SetMessageAttribute(retryCount, retryCountValue)
 	createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload basic.MessageEvent, expirationInMS string) error {
+	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbasic.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_dead_letter_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)

@@ -1,29 +1,29 @@
 package mock
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 )
 
 type ConfigStore struct {
-	ConfigFunc         func() *basic.Config
-	ParseFunc          func(options basic.CommandLineOptions)
+	ConfigFunc         func() *zbasic.Config
+	ParseFunc          func(options zbasic.CommandLineOptions)
 	GetByKeyFunc       func(key string) interface{}
-	ValidateFunc       func(rules map[string]func(c *basic.Config) error) error
+	ValidateFunc       func(rules map[string]func(c *zbasic.Config) error) error
 	UnmarshalByKeyFunc func(key string, model interface{}) error
 }
 
 func NewConfigStore() *ConfigStore {
 	return &ConfigStore{
-		ConfigFunc: func() *basic.Config {
-			return &basic.Config{}
+		ConfigFunc: func() *zbasic.Config {
+			return &zbasic.Config{}
 		},
-		ParseFunc: func(options basic.CommandLineOptions) {
+		ParseFunc: func(options zbasic.CommandLineOptions) {
 
 		},
 		GetByKeyFunc: func(key string) interface{} {
 			return nil
 		},
-		ValidateFunc: func(rules map[string]func(c *basic.Config) error) error {
+		ValidateFunc: func(rules map[string]func(c *zbasic.Config) error) error {
 			return nil
 		},
 		UnmarshalByKeyFunc: func(key string, model interface{}) error {
@@ -32,11 +32,11 @@ func NewConfigStore() *ConfigStore {
 	}
 }
 
-func (c *ConfigStore) Config() *basic.Config {
+func (c *ConfigStore) Config() *zbasic.Config {
 	return c.ConfigFunc()
 }
 
-func (c *ConfigStore) Parse(options basic.CommandLineOptions) {
+func (c *ConfigStore) Parse(options zbasic.CommandLineOptions) {
 	c.ParseFunc(options)
 }
 
@@ -44,7 +44,7 @@ func (c *ConfigStore) GetByKey(key string) interface{} {
 	return c.GetByKeyFunc(key)
 }
 
-func (c *ConfigStore) Validate(rules map[string]func(c *basic.Config) error) error {
+func (c *ConfigStore) Validate(rules map[string]func(c *zbasic.Config) error) error {
 	return c.ValidateFunc(rules)
 }
 

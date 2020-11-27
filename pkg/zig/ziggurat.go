@@ -3,17 +3,16 @@ package zig
 import (
 	"context"
 	"errors"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/cmdparser"
 	"github.com/gojekfarm/ziggurat-go/pkg/kstream"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/metrics"
 	"github.com/gojekfarm/ziggurat-go/pkg/retry"
 	"github.com/gojekfarm/ziggurat-go/pkg/server"
-	"github.com/gojekfarm/ziggurat-go/pkg/vconf"
 	"github.com/gojekfarm/ziggurat-go/pkg/void"
 	ztype "github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zconf"
 	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"net/http"
 	"os"
 	"os/signal"
@@ -42,7 +41,7 @@ func NewApp() *Ziggurat {
 	ziggurat := &Ziggurat{
 		ctx:           ctx,
 		cancelFun:     cancelFn,
-		configStore:   vconf.NewViperConfig(),
+		configStore:   zconf.NewViperConfig(),
 		stopFunc:      func() {},
 		interruptChan: make(chan os.Signal),
 		doneChan:      make(chan struct{}),
@@ -69,23 +68,23 @@ func NewOpts() *ztype.RunOptions {
 func (z *Ziggurat) loadConfig() error {
 	commandLineOptions := cmdparser.ParseCommandLineArguments()
 	z.configStore.Parse(commandLineOptions)
-	logger.LogInfo("successfully parsed application config", nil)
-	if validationErr := z.configStore.Validate(vconf.ConfigRules); validationErr != nil {
+	zlogger.LogInfo("successfully parsed application config", nil)
+	if validationErr := z.configStore.Validate(zconf.ConfigRules); validationErr != nil {
 		return validationErr
 	}
-	logger.ConfigureLogger(z.configStore.Config().LogLevel)
+	zlogger.ConfigureLogger(z.configStore.Config().LogLevel)
 	return nil
 }
 
 func (z *Ziggurat) setDefaultOpts(ro *ztype.RunOptions) {
 	if ro.Retry == nil {
-		ro.Retry = void.NewVoidRetry
+		ro.Retry = void.NewRetry
 	}
 	if ro.MetricPublisher == nil {
-		ro.MetricPublisher = void.NewVoidMetrics
+		ro.MetricPublisher = void.NewMetrics
 	}
 	if ro.HTTPServer == nil {
-		ro.HTTPServer = void.NewVoidServer
+		ro.HTTPServer = void.NewServer
 	}
 
 	if ro.HTTPConfigFunc == nil {
@@ -104,12 +103,12 @@ func (z *Ziggurat) setDefaultOpts(ro *ztype.RunOptions) {
 
 func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...ztype.Opts) chan struct{} {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
-		logger.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
+		zlogger.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
 		return nil
 	}
 	runOptions := NewOpts()
 	if len(routes) < 1 {
-		logger.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
+		zlogger.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
 	}
 
 	for _, opt := range opts {
@@ -121,7 +120,7 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...zt
 
 	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
 	go interruptHandler(z.interruptChan, z.cancelFun)
-	logger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
+	zlogger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
 
 	z.setDefaultOpts(runOptions)
 	z.messageRetry = runOptions.Retry(z.configStore)
@@ -143,14 +142,21 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...zt
 
 func (z *Ziggurat) start(startCallback ztype.StartFunction) {
 
-	logger.LogError(z.metricPublisher.Start(z), "error starting metric publisher", nil)
-	z.httpServer.Start(z)
-	if z.configStore.Config().Retry.Enabled {
-		err := z.messageRetry.Start(z)
-		logger.LogFatal(err, "error starting retries", nil)
+	components := z.components()
+
+	for i, _ := range components {
+		c := components[i]
+		if _, ok := c.(ztype.MessageRetry); ok && z.ConfigStore().Config().Retry.Enabled {
+			zlogger.LogFatal(c.Start(z), "error starting retries", nil)
+		} else {
+			zlogger.LogError(c.Start(z), "", nil)
+		}
 	}
-	streamsStop, streamStartErr := kstream.NewKafkaStreams().Start(z)
-	logger.LogFatal(streamStartErr, "ziggurat: router start error", nil)
+
+	streamsStop, streamsStartErr := kstream.NewKafkaStreams().Start(z)
+	if streamsStartErr != nil {
+		zlogger.LogFatal(streamsStartErr, "error starting kafka streams", nil)
+	}
 
 	startCallback(z)
 
@@ -159,14 +165,14 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) {
 		if streamStop != nil {
 			<-streamStop
 		}
-		logger.LogInfo("stream poll complete", nil)
+		zlogger.LogInfo("stream poll complete", nil)
 	}
 	// Wait for router poll to complete
 	select {
 	case <-streamsStop:
 		halt(nil)
 	case <-z.interruptChan:
-		logger.LogInfo("ziggurat app: CTRL+C interrupt received", nil)
+		zlogger.LogInfo("ziggurat app: CTRL+C interrupt received", nil)
 		halt(streamsStop)
 	}
 }
@@ -176,9 +182,10 @@ func (z *Ziggurat) Stop() {
 }
 
 func (z *Ziggurat) stop(stopFunc ztype.StopFunction) {
-	logger.LogError(z.messageRetry.Stop(), "failed to stop retries", nil)
-	logger.LogError(z.httpServer.Stop(z), "failed to stop http server", nil)
-	logger.LogError(z.metricPublisher.Stop(), "failed to stop metric publisher", nil)
+	components := z.components()
+	for i, _ := range components {
+		components[i].Stop(z)
+	}
 	stopFunc()
 }
 
@@ -206,8 +213,12 @@ func (z *Ziggurat) HTTPServer() ztype.Server {
 	return z.httpServer
 }
 
-func (z *Ziggurat) Config() *basic.Config {
-	return z.configStore.Config()
+func (z *Ziggurat) ConfigStore() ztype.ConfigStore {
+	return z.configStore
+}
+
+func (z *Ziggurat) components() []ztype.StartStopper {
+	return []ztype.StartStopper{z.metricPublisher, z.messageRetry, z.httpServer}
 }
 
 func (z *Ziggurat) IsRunning() bool {
@@ -215,8 +226,4 @@ func (z *Ziggurat) IsRunning() bool {
 		return true
 	}
 	return false
-}
-
-func (z *Ziggurat) ConfigStore() ztype.ConfigStore {
-	return z.configStore
 }

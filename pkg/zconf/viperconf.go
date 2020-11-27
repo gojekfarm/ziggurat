@@ -1,15 +1,15 @@
-package vconf
+package zconf
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/spf13/viper"
 	"strings"
 )
 
 type ViperConfig struct {
 	v            *viper.Viper
-	ParsedConfig *basic.Config
+	ParsedConfig *zbasic.Config
 }
 
 func NewViperConfig() *ViperConfig {
@@ -18,7 +18,7 @@ func NewViperConfig() *ViperConfig {
 	}
 }
 
-func (vc *ViperConfig) Validate(rules map[string]func(c *basic.Config) error) error {
+func (vc *ViperConfig) Validate(rules map[string]func(c *zbasic.Config) error) error {
 	for _, validationFn := range rules {
 		if err := validationFn(vc.ParsedConfig); err != nil {
 			return err
@@ -35,17 +35,17 @@ func (vc *ViperConfig) UnmarshalByKey(key string, model interface{}) error {
 	return vc.v.UnmarshalKey(key, model)
 }
 
-func (vc *ViperConfig) Parse(options basic.CommandLineOptions) {
+func (vc *ViperConfig) Parse(options zbasic.CommandLineOptions) {
 	vc.v.SetConfigFile(options.ConfigFilePath)
 	vc.v.SetEnvPrefix("ziggurat")
 	vc.v.SetConfigType("yaml")
 	vc.v.AutomaticEnv()
-	logger.LogFatal(vc.v.ReadInConfig(), "failed to read from config file", nil)
+	zlogger.LogFatal(vc.v.ReadInConfig(), "failed to read from config file", nil)
 	replacer := strings.NewReplacer("-", "_", ".", "_")
 	vc.v.SetEnvKeyReplacer(replacer)
-	logger.LogFatal(vc.v.Unmarshal(&vc.ParsedConfig), "failed to parse app config", nil)
+	zlogger.LogFatal(vc.v.Unmarshal(&vc.ParsedConfig), "failed to parse app config", nil)
 }
 
-func (vc *ViperConfig) Config() *basic.Config {
+func (vc *ViperConfig) Config() *zbasic.Config {
 	return vc.ParsedConfig
 }

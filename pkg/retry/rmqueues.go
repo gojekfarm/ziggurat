@@ -2,7 +2,7 @@ package retry
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/streadway/amqp"
 )
 
@@ -23,7 +23,7 @@ func declareExchanges(c *amqp.Channel, topicEntities []string, serviceName strin
 	for _, te := range topicEntities {
 		for _, et := range exchangeTypes {
 			exchName := constructExchangeName(serviceName, te, et)
-			logger.LogInfo("rmq queues: creating exchange", map[string]interface{}{"exchange-name": exchName})
+			zlogger.LogInfo("rmq queues: creating exchange", map[string]interface{}{"exchange-name": exchName})
 			c.ExchangeDeclare(exchName, amqp.ExchangeFanout, true, false, false, false, nil)
 		}
 	}
@@ -34,7 +34,7 @@ func createAndBindQueue(c *amqp.Channel, queueName string, exchangeName string, 
 	if queueErr != nil {
 		return queueErr
 	}
-	logger.LogInfo("rmq queues: binding queue to exchange", map[string]interface{}{
+	zlogger.LogInfo("rmq queues: binding queue to exchange", map[string]interface{}{
 		"queue-name":    queueName,
 		"exchange-name": exchangeName,
 	})
@@ -47,7 +47,7 @@ func createInstantQueues(c *amqp.Channel, topicEntities []string, serviceName st
 		queueName := constructQueueName(serviceName, te, QueueTypeInstant)
 		exchangeName := constructExchangeName(serviceName, te, QueueTypeInstant)
 		bindErr := createAndBindQueue(c, queueName, exchangeName, nil)
-		logger.LogError(bindErr, "rmq queues: error binding queue", nil)
+		zlogger.LogError(bindErr, "rmq queues: error binding queue", nil)
 
 	}
 }
@@ -61,7 +61,7 @@ func createDelayQueues(c *amqp.Channel, topicEntities []string, serviceName stri
 			"x-dead-letter-exchange": deadLetterExchangeName,
 		}
 		bindErr := createAndBindQueue(c, queueName, exchangeName, args)
-		logger.LogError(bindErr, "rmq queues: error binding queue", nil)
+		zlogger.LogError(bindErr, "rmq queues: error binding queue", nil)
 	}
 }
 
@@ -70,7 +70,7 @@ func createDeadLetterQueues(c *amqp.Channel, topicEntities []string, serviceName
 		queueName := constructQueueName(serviceName, te, QueueTypeDL)
 		exchangeName := constructExchangeName(serviceName, te, QueueTypeDL)
 		bindErr := createAndBindQueue(c, queueName, exchangeName, nil)
-		logger.LogError(bindErr, "rmq queues: error binding queue", nil)
+		zlogger.LogError(bindErr, "rmq queues: error binding queue", nil)
 	}
 }
 

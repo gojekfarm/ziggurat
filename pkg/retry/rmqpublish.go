@@ -3,21 +3,21 @@ package retry
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )
 
 const retryCount = "retryCount"
 
-func getRetryCount(m *basic.MessageEvent) int {
+func getRetryCount(m *zbasic.MessageEvent) int {
 	if value := m.GetMessageAttribute(retryCount); value == nil {
 		return 0
 	}
 	return m.GetMessageAttribute(retryCount).(int)
 }
 
-func setRetryCount(m *basic.MessageEvent) {
+func setRetryCount(m *zbasic.MessageEvent) {
 	value := m.GetMessageAttribute(retryCount)
 
 	if value == nil {
@@ -27,7 +27,7 @@ func setRetryCount(m *basic.MessageEvent) {
 	m.SetMessageAttribute(retryCount, value.(int)+1)
 }
 
-var publishMessage = func(exchangeName string, p *publisher.Publisher, payload basic.MessageEvent, expirationInMS string) error {
+var publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbasic.MessageEvent, expirationInMS string) error {
 	buff := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buff)
 	if encodeErr := encoder.Encode(payload); encodeErr != nil {
@@ -47,7 +47,7 @@ var publishMessage = func(exchangeName string, p *publisher.Publisher, payload b
 	return err
 }
 
-func retry(p *publisher.Publisher, config *basic.Config, payload basic.MessageEvent, expiry string) error {
+func retry(p *publisher.Publisher, config *zbasic.Config, payload zbasic.MessageEvent, expiry string) error {
 	exchangeName := constructExchangeName(config.ServiceName, payload.StreamRoute, QueueTypeDelay)
 	deadLetterExchangeName := constructExchangeName(config.ServiceName, payload.StreamRoute, QueueTypeDL)
 	retryCount := getRetryCount(&payload)

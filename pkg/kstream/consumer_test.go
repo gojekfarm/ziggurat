@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/void"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/rs/zerolog"
 	"os"
 	"sync"
@@ -40,7 +40,7 @@ func (c consumerTestMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 
-func (c consumerTestMockApp) Config() *basic.Config {
+func (c consumerTestMockApp) Config() *zbasic.Config {
 	panic("implement me")
 }
 
@@ -97,7 +97,7 @@ func TestConsumer_start(t *testing.T) {
 		}, nil
 	}
 	app := &consumerTestMockApp{}
-	hf := z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	hf := z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
 		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
 		}

@@ -1,15 +1,15 @@
-package mw
+package zmw
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"time"
 )
 
 var DefaultTerminalMW = func(next z.MessageHandler) z.MessageHandler {
-	return z.HandlerFunc(func(event basic.MessageEvent, app z.App) z.ProcessStatus {
+	return z.HandlerFunc(func(event zbasic.MessageEvent, app z.App) z.ProcessStatus {
 		metricTags := map[string]string{
 			"topic_entity": event.StreamRoute,
 			"kafka_topic":  event.Topic,
@@ -30,7 +30,7 @@ var DefaultTerminalMW = func(next z.MessageHandler) z.MessageHandler {
 				panic(retryErr)
 			}
 		default:
-			logger.LogError(fmt.Errorf("invalid handler return code got %d", status), "", nil)
+			zlogger.LogError(fmt.Errorf("invalid handler return code got %d", status), "", nil)
 		}
 		return status
 	})

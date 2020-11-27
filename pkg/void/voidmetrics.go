@@ -7,7 +7,7 @@ import (
 
 type VoidMetrics struct{}
 
-func NewVoidMetrics(store z.ConfigStore) z.MetricPublisher {
+func NewMetrics(store z.ConfigStore) z.MetricPublisher {
 	return &VoidMetrics{}
 }
 
@@ -15,8 +15,8 @@ func (v VoidMetrics) Start(app z.App) error {
 	return fmt.Errorf("error starting metric plublisher, no implementation found")
 }
 
-func (v VoidMetrics) Stop() error {
-	return nil
+func (v VoidMetrics) Stop(a z.App) {
+
 }
 
 func (v VoidMetrics) IncCounter(metricName string, value int64, arguments map[string]string) error {

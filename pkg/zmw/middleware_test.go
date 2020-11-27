@@ -1,10 +1,10 @@
-package mw
+package zmw
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"reflect"
 	"testing"
 	"time"
@@ -36,7 +36,7 @@ func (m mwMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 
-func (m mwMockApp) Config() *basic.Config {
+func (m mwMockApp) Config() *zbasic.Config {
 	panic("implement me")
 }
 
@@ -45,7 +45,7 @@ func (m mwMockApp) ConfigStore() z.ConfigStore {
 }
 
 func TestMessageLogger_Success(t *testing.T) {
-	handler := z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	handler := z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 	ts := time.Time{}
@@ -55,17 +55,17 @@ func TestMessageLogger_Success(t *testing.T) {
 		"K-TS":  ts.String(),
 		"VALUE": "foo",
 	}
-	oldLogInfo := logger.LogInfo
-	logger.LogInfo = func(msg string, args map[string]interface{}) {
+	oldLogInfo := zlogger.LogInfo
+	zlogger.LogInfo = func(msg string, args map[string]interface{}) {
 		if !reflect.DeepEqual(args, expectedArgs) {
 			t.Errorf("expected %v got %v", expectedArgs, args)
 		}
 	}
 	defer func() {
-		logger.LogInfo = oldLogInfo
+		zlogger.LogInfo = oldLogInfo
 	}()
 	ml := MessageLogger(handler)
-	event := basic.MessageEvent{
+	event := zbasic.MessageEvent{
 		MessageValueBytes: []byte("foo"),
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "",

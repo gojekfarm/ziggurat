@@ -60,8 +60,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/stream"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zr"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zig"
 	"github.com/julienschmidt/httprouter"

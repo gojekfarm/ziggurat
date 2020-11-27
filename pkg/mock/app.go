@@ -2,8 +2,8 @@ package mock
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 )
 
 type App struct {
@@ -13,7 +13,7 @@ type App struct {
 	MessageHandlerFunc  func() z.MessageHandler
 	MetricPublisherFunc func() z.MetricPublisher
 	HTTPServerFunc      func() z.Server
-	ConfigFunc          func() *basic.Config
+	ConfigFunc          func() *zbasic.Config
 	ConfigStoreFunc     func() z.ConfigStore
 }
 
@@ -26,15 +26,15 @@ func NewApp() *App {
 			return []string{}
 		},
 		MessageHandlerFunc: func() z.MessageHandler {
-			return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+			return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
 				return z.ProcessingSuccess
 			})
 		},
 		HTTPServerFunc: func() z.Server {
 			return nil
 		},
-		ConfigFunc: func() *basic.Config {
-			return &basic.Config{}
+		ConfigFunc: func() *zbasic.Config {
+			return &zbasic.Config{}
 		},
 		ConfigStoreFunc: func() z.ConfigStore {
 			return nil
@@ -69,7 +69,7 @@ func (m *App) HTTPServer() z.Server {
 	return m.HTTPServerFunc()
 }
 
-func (m *App) Config() *basic.Config {
+func (m *App) Config() *zbasic.Config {
 	return m.ConfigFunc()
 }
 

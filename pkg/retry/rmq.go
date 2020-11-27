@@ -2,8 +2,8 @@ package retry
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
@@ -43,7 +43,7 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 	}
 
 	if err := withChannel(conn, func(c *amqp.Channel) error {
-		createAndBindQueues(c, app.Routes(), app.Config().ServiceName)
+		createAndBindQueues(c, app.Routes(), app.ConfigStore().Config().ServiceName)
 		return nil
 	}); err != nil {
 		return err
@@ -55,17 +55,17 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 	return nil
 }
 
-func (R *RabbitMQRetry) Retry(app z.App, payload basic.MessageEvent) error {
+func (R *RabbitMQRetry) Retry(app z.App, payload zbasic.MessageEvent) error {
 	ctx := app.Context()
 	p, err := createPublisher(ctx, R.pdialer)
 	if err != nil {
 		return fmt.Errorf("error creating publisher: %s", err.Error())
 	}
 	defer p.Close()
-	return retry(p, app.Config(), payload, R.cfg.DelayQueueExpiration)
+	return retry(p, app.ConfigStore().Config(), payload, R.cfg.DelayQueueExpiration)
 }
 
-func (R *RabbitMQRetry) Stop() error {
+func (R *RabbitMQRetry) Stop(a z.App) {
 	if R.pdialer != nil {
 		R.pdialer.Close()
 	}
@@ -73,16 +73,17 @@ func (R *RabbitMQRetry) Stop() error {
 	if R.cdialer != nil {
 		R.cdialer.Close()
 	}
-	return nil
+
 }
 
 func (R *RabbitMQRetry) Replay(app z.App, topicEntity string, count int) error {
+	config := app.ConfigStore().Config()
 	p, perror := R.pdialer.Publisher(publisher.WithContext(app.Context()))
 	if perror != nil {
 		return perror
 	}
-	queueName := constructQueueName(app.Config().ServiceName, topicEntity, QueueTypeDL)
-	exchangeOut := constructExchangeName(app.Config().ServiceName, topicEntity, QueueTypeInstant)
+	queueName := constructQueueName(config.ServiceName, topicEntity, QueueTypeDL)
+	exchangeOut := constructExchangeName(config.ServiceName, topicEntity, QueueTypeInstant)
 	conn, err := getConnectionFromDialer(app.Context(), R.pdialer, 30*time.Second)
 	if err != nil {
 		return err

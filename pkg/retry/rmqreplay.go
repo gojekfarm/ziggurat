@@ -1,7 +1,7 @@
 package retry
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )
@@ -10,7 +10,7 @@ func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, e
 	for i := 0; i < count; i++ {
 		delivery, ok, deliveryError := c.Get(queueName, false)
 		if deliveryError != nil || !ok {
-			logger.LogError(deliveryError, "rmq replay error", nil)
+			zlogger.LogError(deliveryError, "rmq replay error", nil)
 			return deliveryError
 		}
 		msg, decodeErr := decodeMessage(delivery.Body)
@@ -22,7 +22,7 @@ func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, e
 			return publishErr
 		}
 		if ackErr := delivery.Ack(false); ackErr != nil {
-			logger.LogError(ackErr, "rmq replay ack error", nil)
+			zlogger.LogError(ackErr, "rmq replay ack error", nil)
 		}
 	}
 	p.Close()

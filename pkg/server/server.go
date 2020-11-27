@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
@@ -27,15 +27,16 @@ func NewDefaultHTTPServer(config z.ConfigStore) z.Server {
 	}
 }
 
-func (s *DefaultHttpServer) Start(app z.App) {
+func (s *DefaultHttpServer) Start(app z.App) error {
 	s.router.POST("/v1/dead_set/:topic_entity/:count", replayHandler(app))
 	s.router.GET("/v1/ping", pingHandler)
 
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
-			logger.LogError(err, "ziggurat http-server:", nil)
+			zlogger.LogError(err, "ziggurat http-server:", nil)
 		}
 	}(s.server)
+	return nil
 }
 
 func (s *DefaultHttpServer) ConfigureRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {
@@ -46,6 +47,6 @@ func (s *DefaultHttpServer) Handler() http.Handler {
 	return s.router
 }
 
-func (s *DefaultHttpServer) Stop(app z.App) error {
-	return s.server.Shutdown(app.Context())
+func (s *DefaultHttpServer) Stop(app z.App) {
+	zlogger.LogError(s.server.Shutdown(app.Context()), "http server stop error", nil)
 }

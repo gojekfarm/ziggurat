@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
-	"github.com/gojekfarm/ziggurat-go/pkg/mw"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zmw"
 	"sync"
 	"time"
 )
@@ -16,7 +16,7 @@ const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
 var startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
-	logger.LogInfo("consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
+	zlogger.LogInfo("consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
 		for {
@@ -29,14 +29,14 @@ var startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, con
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					logger.LogError(err, "consumer: retrying broker...", nil)
+					zlogger.LogError(err, "consumer: retrying broker...", nil)
 					time.Sleep(brokerRetryTimeout)
 					continue
 				}
 				if msg != nil {
-					messageEvent := basic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, topicEntity, msg.TimestampType.String(), msg.Timestamp)
+					messageEvent := zbasic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, topicEntity, msg.TimestampType.String(), msg.Timestamp)
 					h.HandleMessage(messageEvent, app)
-					logger.LogError(storeOffsets(consumer, msg.TopicPartition), "ziggurat consumer", nil)
+					zlogger.LogError(storeOffsets(consumer, msg.TopicPartition), "ziggurat consumer", nil)
 				}
 			}
 		}
@@ -51,7 +51,7 @@ var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", topicEntity, groupID, i)
 		wg.Add(1)
-		startConsumer(routerCtx, app, mw.DefaultTerminalMW(h), consumer, topicEntity, instanceID, wg)
+		startConsumer(routerCtx, app, zmw.DefaultTerminalMW(h), consumer, topicEntity, instanceID, wg)
 	}
 	return consumers
 }

@@ -1,10 +1,10 @@
-package mw
+package zmw
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/logger"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"time"
 )
 
@@ -13,7 +13,7 @@ var getCurrentTime = func() time.Time {
 }
 
 func MessageLogger(next z.MessageHandler) z.MessageHandler {
-	return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
 		args := map[string]interface{}{
 			"ROUTE": messageEvent.StreamRoute,
 			"TOPIC": messageEvent.Topic,
@@ -23,18 +23,18 @@ func MessageLogger(next z.MessageHandler) z.MessageHandler {
 		status := next.HandleMessage(messageEvent, app)
 		switch status {
 		case z.ProcessingSuccess:
-			logger.LogInfo("[Msg logger]: successfully processed message", args)
+			zlogger.LogInfo("[Msg logger]: successfully processed message", args)
 		case z.RetryMessage:
-			logger.LogInfo("[Msg logger]: retrying message", args)
+			zlogger.LogInfo("[Msg logger]: retrying message", args)
 		case z.SkipMessage:
-			logger.LogInfo("[Msg logger]: skipping message", args)
+			zlogger.LogInfo("[Msg logger]: skipping message", args)
 		}
 		return status
 	})
 }
 
 func MessageMetricsPublisher(next z.MessageHandler) z.MessageHandler {
-	return z.HandlerFunc(func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
 		args := map[string]string{
 			"topic_entity": messageEvent.StreamRoute,
 			"kafka_topic":  messageEvent.Topic,

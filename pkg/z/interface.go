@@ -2,36 +2,38 @@ package z
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"net/http"
 )
 
+type StartStopper interface {
+	Start(a App) error
+	Stop(a App)
+}
+
 type Server interface {
-	Start(app App)
 	ConfigureRoutes(a App, configFunc func(a App, h http.Handler))
 	Handler() http.Handler
-	Stop(app App) error
+	StartStopper
 }
 
 type MetricPublisher interface {
-	Start(app App) error
-	Stop() error
+	StartStopper
 	IncCounter(metricName string, value int64, arguments map[string]string) error
 	Gauge(metricName string, value int64, arguments map[string]string) error
 }
 
 type MessageRetry interface {
-	Start(app App) error
-	Retry(app App, payload basic.MessageEvent) error
-	Stop() error
+	Retry(app App, payload zbasic.MessageEvent) error
 	Replay(app App, topicEntity string, count int) error
+	StartStopper
 }
 
 type ConfigStore interface {
-	Config() *basic.Config
-	Parse(options basic.CommandLineOptions)
+	Config() *zbasic.Config
+	Parse(options zbasic.CommandLineOptions)
 	GetByKey(key string) interface{}
-	Validate(rules map[string]func(c *basic.Config) error) error
+	Validate(rules map[string]func(c *zbasic.Config) error) error
 	UnmarshalByKey(key string, model interface{}) error
 }
 
@@ -42,10 +44,9 @@ type App interface {
 	Handler() MessageHandler
 	MetricPublisher() MetricPublisher
 	HTTPServer() Server
-	Config() *basic.Config
 	ConfigStore() ConfigStore
 }
 
 type MessageHandler interface {
-	HandleMessage(event basic.MessageEvent, app App) ProcessStatus
+	HandleMessage(event zbasic.MessageEvent, app App) ProcessStatus
 }
