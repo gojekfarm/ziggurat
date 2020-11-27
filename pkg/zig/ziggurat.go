@@ -69,9 +69,6 @@ func (z *Ziggurat) loadConfig() error {
 	commandLineOptions := cmdparser.ParseCommandLineArguments()
 	z.configStore.Parse(commandLineOptions)
 	zlogger.LogInfo("successfully parsed application config", nil)
-	if validationErr := z.configStore.Validate(zconf.ConfigRules); validationErr != nil {
-		return validationErr
-	}
 	zlogger.ConfigureLogger(z.configStore.Config().LogLevel)
 	return nil
 }

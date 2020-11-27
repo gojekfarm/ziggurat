@@ -33,7 +33,6 @@ type ConfigStore interface {
 	Config() *zbasic.Config
 	Parse(options zbasic.CommandLineOptions)
 	GetByKey(key string) interface{}
-	Validate(rules map[string]func(c *zbasic.Config) error) error
 	UnmarshalByKey(key string, model interface{}) error
 }
 
