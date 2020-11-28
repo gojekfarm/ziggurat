@@ -1,7 +1,6 @@
 package zr
 
 import (
-	"errors"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
@@ -16,7 +15,7 @@ type Adapter func(next z.MessageHandler) z.MessageHandler
 func (dr *defaultRouter) HandleMessage(event zbasic.MessageEvent, app z.App) z.ProcessStatus {
 	route := event.StreamRoute
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
-		zlogger.LogFatal(errors.New("handler not found"), "handler not found", map[string]interface{}{"ROUTE": route})
+		zlogger.LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
 		return z.SkipMessage
 	} else {
 		return handler.HandleMessage(event, app)
