@@ -1,6 +1,7 @@
 package zr
 
 import (
+	"errors"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
@@ -29,6 +30,9 @@ func NewRouter() *defaultRouter {
 }
 
 func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event zbasic.MessageEvent, app z.App) z.ProcessStatus) {
+	if handlerFunc == nil {
+		zlogger.LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
+	}
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
