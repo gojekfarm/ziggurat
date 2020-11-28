@@ -5,7 +5,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 )
 
-var PipeHandlers = func(funcs ...z.MiddlewareFunc) func(origHandler z.MessageHandler) z.MessageHandler {
+var PipeHandlers = func(funcs ...Adapter) func(origHandler z.MessageHandler) z.MessageHandler {
 	return func(next z.MessageHandler) z.MessageHandler {
 		return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
 			var handlerResult z.MessageHandler

@@ -2,7 +2,6 @@ package z
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
-	"net/http"
 )
 
 type HandlerFunc func(messageEvent zbasic.MessageEvent, app App) ProcessStatus
@@ -13,18 +12,6 @@ func (h HandlerFunc) HandleMessage(event zbasic.MessageEvent, app App) ProcessSt
 
 type StartFunction func(a App)
 type StopFunction func()
-type MiddlewareFunc func(next MessageHandler) MessageHandler
-
-type Opts = func(ro *RunOptions)
-
-type RunOptions struct {
-	HTTPConfigFunc  func(a App, h http.Handler)
-	StartCallback   func(a App)
-	StopCallback    func()
-	HTTPServer      func(c ConfigStore) Server
-	Retry           func(c ConfigStore) MessageRetry
-	MetricPublisher func(c ConfigStore) MetricPublisher
-}
 
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1

@@ -31,7 +31,7 @@ type MessageRetry interface {
 
 type ConfigStore interface {
 	Config() *zbasic.Config
-	Parse(options zbasic.CommandLineOptions)
+	Parse(options zbasic.CommandLineOptions) error
 	GetByKey(key string) interface{}
 	UnmarshalByKey(key string, model interface{}) error
 }
@@ -48,4 +48,8 @@ type App interface {
 
 type MessageHandler interface {
 	HandleMessage(event zbasic.MessageEvent, app App) ProcessStatus
+}
+
+type ConfigValidator interface {
+	Validate(config *zbasic.Config) error
 }

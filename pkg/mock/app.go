@@ -69,10 +69,6 @@ func (m *App) HTTPServer() z.Server {
 	return m.HTTPServerFunc()
 }
 
-func (m *App) Config() *zbasic.Config {
-	return m.ConfigFunc()
-}
-
 func (m *App) ConfigStore() z.ConfigStore {
 	return m.ConfigStore()
 }

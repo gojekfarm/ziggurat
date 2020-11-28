@@ -11,6 +11,8 @@ type defaultRouter struct {
 	handlerFunctionMap map[string]z.HandlerFunc
 }
 
+type Adapter func(next z.MessageHandler) z.MessageHandler
+
 func (dr *defaultRouter) HandleMessage(event zbasic.MessageEvent, app z.App) z.ProcessStatus {
 	route := event.StreamRoute
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
@@ -31,7 +33,7 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event zbasic.
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
-func (dr *defaultRouter) Compose(mw ...z.MiddlewareFunc) z.MessageHandler {
+func (dr *defaultRouter) Compose(mw ...Adapter) z.MessageHandler {
 	return PipeHandlers(mw...)(dr)
 }
 

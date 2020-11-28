@@ -1,11 +1,11 @@
-package zconf
+package rules
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
 )
 
-var ConfigRules = map[string]func(c *zbasic.Config) error{
+var DefaultRules = map[string]func(c *zbasic.Config) error{
 	"streamRouteValidation": func(c *zbasic.Config) error {
 		if len(c.StreamRouter) == 0 {
 			return zerror.ErrStreamRouteValidation

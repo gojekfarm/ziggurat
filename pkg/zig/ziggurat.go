@@ -7,8 +7,8 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/kstream"
 	"github.com/gojekfarm/ziggurat-go/pkg/metrics"
 	"github.com/gojekfarm/ziggurat-go/pkg/retry"
+	"github.com/gojekfarm/ziggurat-go/pkg/rules"
 	"github.com/gojekfarm/ziggurat-go/pkg/server"
-	"github.com/gojekfarm/ziggurat-go/pkg/void"
 	ztype "github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zconf"
 	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
@@ -24,6 +24,7 @@ type Ziggurat struct {
 	httpServer      ztype.Server
 	messageRetry    ztype.MessageRetry
 	configStore     ztype.ConfigStore
+	configValidator ztype.ConfigValidator
 	handler         ztype.MessageHandler
 	metricPublisher ztype.MetricPublisher
 	interruptChan   chan os.Signal
@@ -39,12 +40,12 @@ type Ziggurat struct {
 func NewApp() *Ziggurat {
 	ctx, cancelFn := context.WithCancel(context.Background())
 	ziggurat := &Ziggurat{
-		ctx:           ctx,
-		cancelFun:     cancelFn,
-		configStore:   zconf.NewViperConfig(),
-		stopFunc:      func() {},
-		interruptChan: make(chan os.Signal),
-		doneChan:      make(chan struct{}),
+		ctx:             ctx,
+		cancelFun:       cancelFn,
+		configStore:     zconf.NewViperConfig(),
+		configValidator: zconf.NewDefaultValidator(rules.DefaultRules),
+		interruptChan:   make(chan os.Signal),
+		doneChan:        make(chan struct{}),
 	}
 	return ziggurat
 }
@@ -54,8 +55,8 @@ func interruptHandler(c chan os.Signal, cancelFunc context.CancelFunc) {
 	cancelFunc()
 }
 
-func NewOpts() *ztype.RunOptions {
-	return &ztype.RunOptions{
+func NewOpts() *RunOptions {
+	return &RunOptions{
 		HTTPConfigFunc:  func(a ztype.App, h http.Handler) {},
 		StartCallback:   func(a ztype.App) {},
 		StopCallback:    func() {},
@@ -67,38 +68,18 @@ func NewOpts() *ztype.RunOptions {
 
 func (z *Ziggurat) loadConfig() error {
 	commandLineOptions := cmdparser.ParseCommandLineArguments()
-	z.configStore.Parse(commandLineOptions)
+	if parseErr := z.configStore.Parse(commandLineOptions); parseErr != nil {
+		return parseErr
+	}
+	if validatorErr := z.configValidator.Validate(z.ConfigStore().Config()); validatorErr != nil {
+		return validatorErr
+	}
 	zlogger.LogInfo("successfully parsed application config", nil)
 	zlogger.ConfigureLogger(z.configStore.Config().LogLevel)
 	return nil
 }
 
-func (z *Ziggurat) setDefaultOpts(ro *ztype.RunOptions) {
-	if ro.Retry == nil {
-		ro.Retry = void.NewRetry
-	}
-	if ro.MetricPublisher == nil {
-		ro.MetricPublisher = void.NewMetrics
-	}
-	if ro.HTTPServer == nil {
-		ro.HTTPServer = void.NewServer
-	}
-
-	if ro.HTTPConfigFunc == nil {
-		ro.HTTPConfigFunc = func(a ztype.App, h http.Handler) {}
-	}
-
-	if ro.StopCallback == nil {
-		ro.StopCallback = func() {}
-	}
-
-	if ro.StartCallback == nil {
-		ro.StartCallback = func(a ztype.App) {}
-	}
-
-}
-
-func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...ztype.Opts) chan struct{} {
+func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Opts) chan struct{} {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		zlogger.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
 		return nil
@@ -119,7 +100,7 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...zt
 	go interruptHandler(z.interruptChan, z.cancelFun)
 	zlogger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
 
-	z.setDefaultOpts(runOptions)
+	runOptions.setDefaults()
 	z.messageRetry = runOptions.Retry(z.configStore)
 	z.httpServer = runOptions.HTTPServer(z.configStore)
 	z.metricPublisher = runOptions.MetricPublisher(z.configStore)
