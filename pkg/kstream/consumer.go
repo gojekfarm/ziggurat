@@ -15,14 +15,18 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	zlogger.LogInfo("consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
+
 	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
 		doneCh := routerCtx.Done()
+		worker := NewWorker(10)
+		worker.run(app.Context())
 		for {
 			select {
 			case <-doneCh:
 				wg.Done()
+				worker.close()
 				return
 			default:
 				msg, err := readMessage(c, defaultPollTimeout)
@@ -34,9 +38,12 @@ var startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, con
 					continue
 				}
 				if msg != nil {
-					messageEvent := zbasic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, topicEntity, msg.TimestampType.String(), msg.Timestamp)
-					h.HandleMessage(messageEvent, app)
-					zlogger.LogError(storeOffsets(consumer, msg.TopicPartition), "ziggurat consumer", nil)
+					event := zbasic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, route, msg.TimestampType.String(), msg.Timestamp)
+					f := func() {
+						h.HandleMessage(event, app)
+						zlogger.LogError(storeOffsets(consumer, msg.TopicPartition), "consumer error", nil)
+					}
+					worker.enqueue(app.Context(), f)
 				}
 			}
 		}

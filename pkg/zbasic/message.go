@@ -17,14 +17,14 @@ type MessageEvent struct {
 	//exposes Attributes for gob encoding, use Get and Set for thread safety
 }
 
-func NewMessageEvent(key []byte, value []byte, topic string, entity string, timestampType string, ktimestamp time.Time) MessageEvent {
+func NewMessageEvent(key []byte, value []byte, topic string, route string, timestampType string, ktimestamp time.Time) MessageEvent {
 	return MessageEvent{
 		Attributes:        map[string]interface{}{},
 		attrMutex:         &sync.Mutex{},
 		MessageValueBytes: value,
 		MessageKeyBytes:   key,
 		Topic:             topic,
-		StreamRoute:       entity,
+		StreamRoute:       route,
 		TimestampType:     timestampType,
 		KafkaTimestamp:    ktimestamp,
 	}

@@ -213,7 +213,7 @@ var TelegrafConf = `[[inputs.statsd]]
   ## If unset, both are enabled.
   # collectors_exclude = ["gocollector", "process"]
 
-  ## Send string metrics as Prometheus labels.
+  ## Enqueue string metrics as Prometheus labels.
   ## Unless set to false all string metrics will be sent as labels.
   # string_as_label = true
 
@@ -1055,7 +1055,7 @@ basic_auth_password =
 #exampleLabel1 = exampleValue1
 #exampleLabel2 = exampleValue2
 
-# Send internal Grafana metrics to graphite
+# Enqueue internal Grafana metrics to graphite
 [metrics.graphite]
 # Enable by setting the address setting (ex localhost:2003)
 address =
