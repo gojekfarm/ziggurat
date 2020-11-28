@@ -8,20 +8,17 @@ import (
 var PipeHandlers = func(funcs ...Adapter) func(origHandler z.MessageHandler) z.MessageHandler {
 	return func(next z.MessageHandler) z.MessageHandler {
 		return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
-			var handlerResult z.MessageHandler
-			last := len(funcs) - 1
-			for i := last; i >= 0; i-- {
-				f := funcs[i]
-				if i == last {
+			var handlerResult = next
+			lastIdx := len(funcs) - 1
+			for i := range funcs {
+				f := funcs[lastIdx-i]
+				if i == lastIdx-i {
 					handlerResult = f(next)
 				} else {
 					handlerResult = f(handlerResult)
 				}
 			}
-			if handlerResult != nil {
-				return handlerResult.HandleMessage(messageEvent, app)
-			}
-			return next.HandleMessage(messageEvent, app)
+			return handlerResult.HandleMessage(messageEvent, app)
 		})
 	}
 }
