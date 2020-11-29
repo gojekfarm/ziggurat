@@ -1,61 +1,49 @@
 package kstream
 
 import (
-	"context"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"sync"
-	"time"
 )
 
 type Worker struct {
 	concurrency int
-	workChan    chan func()
+	sendCh      chan *kafka.Message
+	doneCh      chan struct{}
+	handler     z.MessageHandler
 }
 
 func NewWorker(concurrency int) *Worker {
-	return &Worker{concurrency: concurrency, workChan: make(chan func())}
-}
-
-func (w *Worker) enqueue(ctx context.Context, f func()) {
-	done := ctx.Done()
-	for {
-		select {
-		case <-done:
-			return
-		case w.workChan <- f:
-			return
-		default:
-			time.Sleep(100 * time.Millisecond)
-		}
+	return &Worker{
+		concurrency: concurrency,
+		sendCh:      make(chan *kafka.Message),
+		doneCh:      make(chan struct{}),
 	}
 }
 
-func (w *Worker) run(ctx context.Context) chan struct{} {
-	finishedChan := make(chan struct{})
-	doneChan := ctx.Done()
+func (w *Worker) run(app z.App, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < w.concurrency; i++ {
 		wg.Add(1)
 		go func() {
+			done := app.Context().Done()
+			defer wg.Done()
 			for {
 				select {
-				case <-doneChan:
-					wg.Done()
+				case <-done:
 					return
-				case f, ok := <-w.workChan:
-					if ok {
-						f()
+				case msg, ok := <-w.sendCh:
+					if !ok {
+						return
 					}
+					f(msg)
 				}
 			}
 		}()
 	}
 	go func() {
 		wg.Wait()
-		close(finishedChan)
+		close(w.doneCh)
 	}()
-	return finishedChan
-}
-
-func (w *Worker) close() {
-	close(w.workChan)
+	return w.sendCh, w.doneCh
 }

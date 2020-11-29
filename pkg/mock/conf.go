@@ -6,7 +6,7 @@ import (
 
 type ConfigStore struct {
 	ConfigFunc         func() *zbasic.Config
-	ParseFunc          func(options zbasic.CommandLineOptions)
+	ParseFunc          func(options zbasic.CommandLineOptions) error
 	GetByKeyFunc       func(key string) interface{}
 	ValidateFunc       func(rules map[string]func(c *zbasic.Config) error) error
 	UnmarshalByKeyFunc func(key string, model interface{}) error
@@ -17,8 +17,8 @@ func NewConfigStore() *ConfigStore {
 		ConfigFunc: func() *zbasic.Config {
 			return &zbasic.Config{}
 		},
-		ParseFunc: func(options zbasic.CommandLineOptions) {
-
+		ParseFunc: func(options zbasic.CommandLineOptions) error {
+			return nil
 		},
 		GetByKeyFunc: func(key string) interface{} {
 			return nil
@@ -36,8 +36,8 @@ func (c *ConfigStore) Config() *zbasic.Config {
 	return c.ConfigFunc()
 }
 
-func (c *ConfigStore) Parse(options zbasic.CommandLineOptions) {
-	c.ParseFunc(options)
+func (c *ConfigStore) Parse(options zbasic.CommandLineOptions) error {
+	return c.ParseFunc(options)
 }
 
 func (c *ConfigStore) GetByKey(key string) interface{} {

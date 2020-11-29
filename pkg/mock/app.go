@@ -13,7 +13,6 @@ type App struct {
 	MessageHandlerFunc  func() z.MessageHandler
 	MetricPublisherFunc func() z.MetricPublisher
 	HTTPServerFunc      func() z.Server
-	ConfigFunc          func() *zbasic.Config
 	ConfigStoreFunc     func() z.ConfigStore
 }
 
@@ -32,9 +31,6 @@ func NewApp() *App {
 		},
 		HTTPServerFunc: func() z.Server {
 			return nil
-		},
-		ConfigFunc: func() *zbasic.Config {
-			return &zbasic.Config{}
 		},
 		ConfigStoreFunc: func() z.ConfigStore {
 			return nil
@@ -70,5 +66,5 @@ func (m *App) HTTPServer() z.Server {
 }
 
 func (m *App) ConfigStore() z.ConfigStore {
-	return m.ConfigStore()
+	return m.ConfigStoreFunc()
 }

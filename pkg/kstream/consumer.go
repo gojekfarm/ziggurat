@@ -1,11 +1,9 @@
 package kstream
 
 import (
-	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/gojekfarm/ziggurat-go/pkg/zmw"
 	"sync"
@@ -15,42 +13,37 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(ctx context.Context, app z.App, h z.MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
-	zlogger.LogInfo("consumer: starting consumer", map[string]interface{}{"consumer-instance-id": instanceID})
-
-	go func(routerCtx context.Context, c *kafka.Consumer, instanceID string, waitGroup *sync.WaitGroup) {
-		doneCh := routerCtx.Done()
+var startConsumer = func(app z.App, h z.MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+	go func(instanceID string) {
+		doneCh := app.Context().Done()
 		worker := NewWorker(10)
-		worker.run(app.Context())
+		sendCh, _ := worker.run(app, func(message *kafka.Message) {
+			processor(message, route, consumer, h, app)
+		})
 		for {
 			select {
 			case <-doneCh:
+				close(sendCh)
 				wg.Done()
-				worker.close()
 				return
 			default:
-				msg, err := readMessage(c, defaultPollTimeout)
+				msg, err := readMessage(consumer, defaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					zlogger.LogError(err, "consumer: retrying broker...", nil)
+					zlogger.LogError(err, "retrying broker...", nil)
 					time.Sleep(brokerRetryTimeout)
 					continue
 				}
 				if msg != nil {
-					event := zbasic.NewMessageEvent(msg.Key, msg.Value, *msg.TopicPartition.Topic, route, msg.TimestampType.String(), msg.Timestamp)
-					f := func() {
-						h.HandleMessage(event, app)
-						zlogger.LogError(storeOffsets(consumer, msg.TopicPartition), "consumer error", nil)
-					}
-					worker.enqueue(app.Context(), f)
+					sendCh <- msg
 				}
 			}
 		}
-	}(ctx, consumer, instanceID, wg)
+	}(instanceID)
 }
 
-var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h z.MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h z.MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
@@ -58,7 +51,7 @@ var StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", topicEntity, groupID, i)
 		wg.Add(1)
-		startConsumer(routerCtx, app, zmw.DefaultTerminalMW(h), consumer, topicEntity, instanceID, wg)
+		startConsumer(app, zmw.DefaultTerminalMW(h), consumer, topicEntity, instanceID, wg)
 	}
 	return consumers
 }

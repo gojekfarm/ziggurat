@@ -1,72 +1,47 @@
 package kstream
 
 import (
-	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat-go/pkg/void"
+	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
 	"sync"
 	"testing"
 )
 
-type kstreamMockApp struct{}
-
-func (k kstreamMockApp) Context() context.Context {
-	return context.Background()
-}
-
-func (k kstreamMockApp) Routes() []string {
-	return []string{"foo", "bar"}
-}
-
-func (k kstreamMockApp) MessageRetry() z.MessageRetry {
-	panic("implement me")
-}
-
-func (k kstreamMockApp) Handler() z.MessageHandler {
-	return void.VoidMessageHandler{}
-}
-
-func (k kstreamMockApp) MetricPublisher() z.MetricPublisher {
-	panic("implement me")
-}
-
-func (k kstreamMockApp) HTTPServer() z.Server {
-	panic("implement me")
-}
-
-func (k kstreamMockApp) Config() *zbasic.Config {
-	return &zbasic.Config{
-		StreamRouter: map[string]zbasic.StreamRouterConfig{
-			"foo": {
-				InstanceCount:    0,
-				BootstrapServers: "",
-				OriginTopics:     "",
-				GroupID:          "",
-			},
-			"bar": {
-				InstanceCount:    0,
-				BootstrapServers: "",
-				OriginTopics:     "",
-				GroupID:          "",
-			},
-		},
-	}
-}
-
-func (k kstreamMockApp) ConfigStore() z.ConfigStore {
-	panic("implement me")
-}
-
 func TestKafkaStreams_Start(t *testing.T) {
-	a := &kstreamMockApp{}
+	a := mock.NewApp()
+	a.ConfigStoreFunc = func() z.ConfigStore {
+		c := mock.NewConfigStore()
+		c.ConfigFunc = func() *zbasic.Config {
+			return &zbasic.Config{
+				StreamRouter: map[string]zbasic.StreamRouterConfig{
+					"foo": {
+						InstanceCount:    0,
+						BootstrapServers: "",
+						OriginTopics:     "",
+						GroupID:          "",
+					},
+					"bar": {
+						InstanceCount:    0,
+						BootstrapServers: "",
+						OriginTopics:     "",
+						GroupID:          "",
+					},
+				},
+			}
+		}
+		return c
+	}
+	a.RoutesFunc = func() []string {
+		return []string{"foo", "bar"}
+	}
 	oldStartConsumers := StartConsumers
 	defer func() {
 		StartConsumers = oldStartConsumers
 	}()
 
-	StartConsumers = func(routerCtx context.Context, app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h z.MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+	StartConsumers = func(app z.App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h z.MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
 		wg.Add(1)
 		wg.Done()
 		return []*kafka.Consumer{}
