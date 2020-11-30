@@ -48,5 +48,5 @@ func (s *DefaultHttpServer) Handler() http.Handler {
 }
 
 func (s *DefaultHttpServer) Stop(app z.App) {
-	zlogger.LogError(s.server.Shutdown(app.Context()), "http server stop error", nil)
+	zlogger.LogError(s.server.Shutdown(app.Context()), "default http server: stopping http server", nil)
 }
