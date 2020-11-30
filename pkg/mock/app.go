@@ -33,7 +33,7 @@ func NewApp() *App {
 			return nil
 		},
 		ConfigStoreFunc: func() z.ConfigStore {
-			return nil
+			return NewConfigStore()
 		},
 		MessageRetryFunc: func() z.MessageRetry {
 			return NewRetry()

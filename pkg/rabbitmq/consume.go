@@ -1,4 +1,4 @@
-package retry
+package rabbitmq
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func decodeMessage(body []byte) (zbasic.MessageEvent, error) {
+var decodeMessage = func(body []byte) (zbasic.MessageEvent, error) {
 	buff := bytes.Buffer{}
 	buff.Write(body)
 	decoder := gob.NewDecoder(&buff)

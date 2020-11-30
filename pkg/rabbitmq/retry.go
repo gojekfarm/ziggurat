@@ -1,4 +1,4 @@
-package retry
+package rabbitmq
 
 import (
 	"fmt"
@@ -76,21 +76,21 @@ func (R *RabbitMQRetry) Stop(a z.App) {
 
 }
 
-func (R *RabbitMQRetry) Replay(app z.App, topicEntity string, count int) error {
+func (R *RabbitMQRetry) Replay(app z.App, route string, count int) error {
 	config := app.ConfigStore().Config()
 	p, perror := R.pdialer.Publisher(publisher.WithContext(app.Context()))
 	if perror != nil {
 		return perror
 	}
-	queueName := constructQueueName(config.ServiceName, topicEntity, QueueTypeDL)
-	exchangeOut := constructExchangeName(config.ServiceName, topicEntity, QueueTypeInstant)
+	queueName := constructQueueName(config.ServiceName, route, QueueTypeDL)
+	exchangeOut := constructExchangeName(config.ServiceName, route, QueueTypeInstant)
 	conn, err := getConnectionFromDialer(app.Context(), R.pdialer, 30*time.Second)
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 	channelErr := withChannel(conn, func(c *amqp.Channel) error {
 		return replayMessages(c, p, queueName, exchangeOut, count, R.cfg.DelayQueueExpiration)
 	})
-	conn.Close()
 	return channelErr
 }

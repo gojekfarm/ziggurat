@@ -6,7 +6,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/cmdparser"
 	"github.com/gojekfarm/ziggurat-go/pkg/kstream"
 	"github.com/gojekfarm/ziggurat-go/pkg/metrics"
-	"github.com/gojekfarm/ziggurat-go/pkg/retry"
+	"github.com/gojekfarm/ziggurat-go/pkg/rabbitmq"
 	"github.com/gojekfarm/ziggurat-go/pkg/rules"
 	"github.com/gojekfarm/ziggurat-go/pkg/server"
 	ztype "github.com/gojekfarm/ziggurat-go/pkg/z"
@@ -61,7 +61,7 @@ func NewOpts() *RunOptions {
 		StartCallback:   func(a ztype.App) {},
 		StopCallback:    func() {},
 		HTTPServer:      server.NewDefaultHTTPServer,
-		Retry:           retry.NewRabbitMQRetry,
+		Retry:           rabbitmq.NewRabbitMQRetry,
 		MetricPublisher: metrics.NewStatsD,
 	}
 }

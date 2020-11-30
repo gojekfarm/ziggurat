@@ -41,6 +41,10 @@ kafka.produce:
 pkg.release:
 	./scripts/release.sh ${VERSION}
 
-app.test-coverage:
+app.test-coverage-html:
 	go test -count 1 -v `go list ./pkg/* | grep -v basic | grep -v "pkg/z" | grep -v "zerror"` -coverprofile cp.out
 	go tool cover -html=cp.out
+
+app.test-coverage:
+	go test -count 1 -v `go list ./pkg/* | grep -v basic | grep -v "pkg/z" | grep -v "zerror"` -coverprofile cp.out
+	go tool cover -func=cp.out

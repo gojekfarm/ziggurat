@@ -1,4 +1,4 @@
-package retry
+package rabbitmq
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
@@ -6,9 +6,17 @@ import (
 	"github.com/streadway/amqp"
 )
 
+var channelGet = func(c *amqp.Channel, queueName string) (amqp.Delivery, bool, error) {
+	return c.Get(queueName, false)
+}
+
+var ackDelivery = func(d amqp.Delivery) error {
+	return d.Ack(false)
+}
+
 func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, exchangeOutName string, count int, expiry string) error {
 	for i := 0; i < count; i++ {
-		delivery, ok, deliveryError := c.Get(queueName, false)
+		delivery, ok, deliveryError := channelGet(c, queueName)
 		if deliveryError != nil || !ok {
 			zlogger.LogError(deliveryError, "rmq replay error", nil)
 			return deliveryError
@@ -21,7 +29,7 @@ func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, e
 		if publishErr != nil {
 			return publishErr
 		}
-		if ackErr := delivery.Ack(false); ackErr != nil {
+		if ackErr := ackDelivery(delivery); ackErr != nil {
 			zlogger.LogError(ackErr, "rmq replay ack error", nil)
 		}
 	}

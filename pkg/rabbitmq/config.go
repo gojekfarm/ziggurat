@@ -1,4 +1,4 @@
-package retry
+package rabbitmq
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/z"

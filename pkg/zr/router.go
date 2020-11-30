@@ -48,6 +48,7 @@ func (dr *defaultRouter) Routes() []string {
 	return routes
 }
 
-func (dr *defaultRouter) Lookup(route string) z.MessageHandler {
-	return dr.handlerFunctionMap[route]
+func (dr *defaultRouter) Lookup(route string) (z.MessageHandler, bool) {
+	h, ok := dr.handlerFunctionMap[route]
+	return h, ok
 }

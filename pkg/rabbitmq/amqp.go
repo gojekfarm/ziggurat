@@ -1,4 +1,4 @@
-package retry
+package rabbitmq
 
 import (
 	"context"
@@ -7,16 +7,11 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/consumer"
-	amqpl "github.com/makasim/amqpextra/logger"
+	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"time"
 )
-
-func createContextWithDeadline(parentCtx context.Context, afterTimeInS int) (context.Context, context.CancelFunc) {
-	deadlineTime := time.Now().Add(time.Duration(afterTimeInS) * time.Second)
-	return context.WithDeadline(parentCtx, deadlineTime)
-}
 
 var withChannel = func(connection *amqp.Connection, cb func(c *amqp.Channel) error) error {
 	c, err := connection.Channel()
@@ -31,7 +26,7 @@ var withChannel = func(connection *amqp.Connection, cb func(c *amqp.Channel) err
 var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 	d, cfgErr := amqpextra.NewDialer(
 		amqpextra.WithURL(hosts...),
-		amqpextra.WithLogger(amqpl.Func(func(format string, v ...interface{}) {
+		amqpextra.WithLogger(logger.Func(func(format string, v ...interface{}) {
 			msg := fmt.Sprintf(format, v...)
 			zlogger.LogDebug(msg, nil)
 		})),
@@ -43,7 +38,7 @@ var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer,
 }
 
 var getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
-	connCtx, cancelFunc := context.WithDeadline(ctx, time.Now().Add(timeout*time.Second))
+	connCtx, cancelFunc := context.WithTimeout(ctx, timeout)
 	conn, err := d.Connection(connCtx)
 	if err != nil {
 		cancelFunc()

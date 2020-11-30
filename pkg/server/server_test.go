@@ -14,12 +14,17 @@ import (
 const serverAddr = "localhost:8080"
 
 func TestDefaultHttpServer_Start(t *testing.T) {
-	configStore := mock.NewConfigStore()
+	cs := mock.NewConfigStore()
 	a := mock.NewApp()
-	a.ConfigFunc = func() *zbasic.Config {
-		return &zbasic.Config{HTTPServer: zbasic.HTTPServerConfig{Port: "400"}}
+	a.ConfigStoreFunc = func() z.ConfigStore {
+		return cs
 	}
-	ds := NewDefaultHTTPServer(configStore)
+	cs.ConfigFunc = func() *zbasic.Config {
+		return &zbasic.Config{
+			HTTPServer: zbasic.HTTPServerConfig{Port: "8080"},
+		}
+	}
+	ds := NewDefaultHTTPServer(cs)
 	ds.Start(a)
 	time.Sleep(5 * time.Second)
 	_, err := net.Dial("tcp", serverAddr)
