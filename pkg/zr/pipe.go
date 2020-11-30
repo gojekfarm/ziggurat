@@ -2,12 +2,12 @@ package zr
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 )
 
 var PipeHandlers = func(funcs ...Adapter) func(origHandler z.MessageHandler) z.MessageHandler {
 	return func(next z.MessageHandler) z.MessageHandler {
-		return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
+		return z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
 			var handlerResult = next
 			lastIdx := len(funcs) - 1
 			for i := range funcs {

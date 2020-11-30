@@ -4,7 +4,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"sync"
 	"testing"
 )
@@ -13,9 +13,9 @@ func TestKafkaStreams_Start(t *testing.T) {
 	a := mock.NewApp()
 	a.ConfigStoreFunc = func() z.ConfigStore {
 		c := mock.NewConfigStore()
-		c.ConfigFunc = func() *zbasic.Config {
-			return &zbasic.Config{
-				StreamRouter: map[string]zbasic.StreamRouterConfig{
+		c.ConfigFunc = func() *zb.Config {
+			return &zb.Config{
+				StreamRouter: map[string]zb.StreamRouterConfig{
 					"foo": {
 						InstanceCount:    0,
 						BootstrapServers: "",

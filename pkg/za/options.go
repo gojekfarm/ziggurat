@@ -1,4 +1,4 @@
-package zig
+package za
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/void"

@@ -1,12 +1,12 @@
 package z
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 )
 
-type HandlerFunc func(messageEvent zbasic.MessageEvent, app App) ProcessStatus
+type HandlerFunc func(messageEvent zb.MessageEvent, app App) ProcessStatus
 
-func (h HandlerFunc) HandleMessage(event zbasic.MessageEvent, app App) ProcessStatus {
+func (h HandlerFunc) HandleMessage(event zb.MessageEvent, app App) ProcessStatus {
 	return h(event, app)
 }
 

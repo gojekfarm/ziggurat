@@ -3,7 +3,7 @@ package zr
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"reflect"
 	"testing"
@@ -20,10 +20,10 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 		zlogger.LogFatal = oldLogFatal
 	}()
 	dr := NewRouter()
-	dr.HandleFunc("foo", func(event zbasic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
-	event := zbasic.MessageEvent{
+	event := zb.MessageEvent{
 		StreamRoute: "bar",
 	}
 	a := mock.NewApp()
@@ -36,7 +36,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := NewRouter()
-	expectedEvent := zbasic.MessageEvent{
+	expectedEvent := zb.MessageEvent{
 		MessageValueBytes: []byte("foo"),
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "baz",
@@ -45,7 +45,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		TimestampType:     "",
 		Attributes:        nil,
 	}
-	dr.HandleFunc("foo", func(event zbasic.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}

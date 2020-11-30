@@ -3,7 +3,7 @@ package zmw
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"time"
 )
@@ -13,11 +13,9 @@ var getCurrentTime = func() time.Time {
 }
 
 func MessageLogger(next z.MessageHandler) z.MessageHandler {
-	return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
+	return z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
 		args := map[string]interface{}{
 			"ROUTE": messageEvent.StreamRoute,
-			"TOPIC": messageEvent.Topic,
-			"K-TS":  messageEvent.KafkaTimestamp.String(),
 			"VALUE": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
 		}
 		status := next.HandleMessage(messageEvent, app)
@@ -34,7 +32,7 @@ func MessageLogger(next z.MessageHandler) z.MessageHandler {
 }
 
 func MessageMetricsPublisher(next z.MessageHandler) z.MessageHandler {
-	return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
+	return z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
 		args := map[string]string{
 			"topic_entity": messageEvent.StreamRoute,
 			"kafka_topic":  messageEvent.Topic,

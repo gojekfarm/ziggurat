@@ -1,4 +1,4 @@
-package zbasic
+package zb
 
 type CommandLineOptions struct {
 	ConfigFilePath string

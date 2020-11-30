@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/rs/zerolog"
@@ -48,10 +48,10 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 	expectedEntities := []string{entityName}
 	app := mock.NewApp()
 	rmq := NewRabbitMQRetry(cs)
-	cs.ConfigFunc = func() *zbasic.Config {
-		return &zbasic.Config{
+	cs.ConfigFunc = func() *zb.Config {
+		return &zb.Config{
 			ServiceName: "baz",
-			Retry: zbasic.RetryConfig{
+			Retry: zb.RetryConfig{
 				Enabled: true,
 				Count:   retryCountValue,
 			},
@@ -92,22 +92,22 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 
 func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 	cs := mock.NewConfigStore()
-	cs.ConfigFunc = func() *zbasic.Config {
-		return &zbasic.Config{
+	cs.ConfigFunc = func() *zb.Config {
+		return &zb.Config{
 			ServiceName: "baz",
-			Retry: zbasic.RetryConfig{
+			Retry: zb.RetryConfig{
 				Enabled: true,
 				Count:   3,
 			},
 		}
 	}
 
-	message := zbasic.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
+	message := zb.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
 	createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbasic.MessageEvent, expirationInMS string) error {
+	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zb.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_delay_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)
@@ -125,22 +125,22 @@ func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 
 func TestRabbitMQRetry_RetryDLQueue(t *testing.T) {
 	cs := mock.NewConfigStore()
-	cs.ConfigFunc = func() *zbasic.Config {
-		return &zbasic.Config{
+	cs.ConfigFunc = func() *zb.Config {
+		return &zb.Config{
 			ServiceName: "baz",
-			Retry: zbasic.RetryConfig{
+			Retry: zb.RetryConfig{
 				Enabled: true,
 				Count:   3,
 			},
 		}
 	}
-	message := zbasic.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
+	message := zb.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
 	message.SetMessageAttribute(retryCount, retryCountValue)
 	createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbasic.MessageEvent, expirationInMS string) error {
+	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zb.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_dead_letter_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)

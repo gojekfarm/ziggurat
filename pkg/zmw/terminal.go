@@ -3,13 +3,13 @@ package zmw
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"time"
 )
 
 var DefaultTerminalMW = func(next z.MessageHandler) z.MessageHandler {
-	return z.HandlerFunc(func(event zbasic.MessageEvent, app z.App) z.ProcessStatus {
+	return z.HandlerFunc(func(event zb.MessageEvent, app z.App) z.ProcessStatus {
 		metricTags := map[string]string{
 			"topic_entity": event.StreamRoute,
 			"kafka_topic":  event.Topic,

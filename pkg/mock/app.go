@@ -3,7 +3,7 @@ package mock
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 )
 
 type App struct {
@@ -25,7 +25,7 @@ func NewApp() *App {
 			return []string{}
 		},
 		MessageHandlerFunc: func() z.MessageHandler {
-			return z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
+			return z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
 				return z.ProcessingSuccess
 			})
 		},

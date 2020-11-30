@@ -5,18 +5,18 @@ import (
 	"encoding/gob"
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/gojekfarm/ziggurat-go/pkg/zmw"
 	"github.com/makasim/amqpextra"
 	"time"
 )
 
-var decodeMessage = func(body []byte) (zbasic.MessageEvent, error) {
+var decodeMessage = func(body []byte) (zb.MessageEvent, error) {
 	buff := bytes.Buffer{}
 	buff.Write(body)
 	decoder := gob.NewDecoder(&buff)
-	messageEvent := zbasic.NewMessageEvent(nil, nil, "", "", "", time.Time{})
+	messageEvent := zb.NewMessageEvent(nil, nil, "", "", "", time.Time{})
 	if decodeErr := decoder.Decode(&messageEvent); decodeErr != nil {
 		return messageEvent, decodeErr
 	}

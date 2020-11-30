@@ -3,7 +3,7 @@ package void
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 )
 
 type VoidRetry struct{}
@@ -16,7 +16,7 @@ func (v VoidRetry) Start(app z.App) error {
 	return fmt.Errorf("error, no retry implementation found")
 }
 
-func (v VoidRetry) Retry(app z.App, payload zbasic.MessageEvent) error {
+func (v VoidRetry) Retry(app z.App, payload zb.MessageEvent) error {
 	return nil
 }
 

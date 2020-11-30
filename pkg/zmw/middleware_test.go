@@ -3,7 +3,7 @@ package zmw
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"reflect"
 	"testing"
@@ -36,7 +36,7 @@ func (m mwMockApp) HTTPServer() z.Server {
 	panic("implement me")
 }
 
-func (m mwMockApp) Config() *zbasic.Config {
+func (m mwMockApp) Config() *zb.Config {
 	panic("implement me")
 }
 
@@ -45,7 +45,7 @@ func (m mwMockApp) ConfigStore() z.ConfigStore {
 }
 
 func TestMessageLogger_Success(t *testing.T) {
-	handler := z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
+	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 	ts := time.Time{}
@@ -65,7 +65,7 @@ func TestMessageLogger_Success(t *testing.T) {
 		zlogger.LogInfo = oldLogInfo
 	}()
 	ml := MessageLogger(handler)
-	event := zbasic.MessageEvent{
+	event := zb.MessageEvent{
 		MessageValueBytes: []byte("foo"),
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "",

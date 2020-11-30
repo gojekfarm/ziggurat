@@ -2,7 +2,7 @@ package z
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"net/http"
 )
 
@@ -24,14 +24,14 @@ type MetricPublisher interface {
 }
 
 type MessageRetry interface {
-	Retry(app App, payload zbasic.MessageEvent) error
+	Retry(app App, payload zb.MessageEvent) error
 	Replay(app App, topicEntity string, count int) error
 	StartStopper
 }
 
 type ConfigStore interface {
-	Config() *zbasic.Config
-	Parse(options zbasic.CommandLineOptions) error
+	Config() *zb.Config
+	Parse(options zb.CommandLineOptions) error
 	GetByKey(key string) interface{}
 	UnmarshalByKey(key string, model interface{}) error
 }
@@ -47,9 +47,9 @@ type App interface {
 }
 
 type MessageHandler interface {
-	HandleMessage(event zbasic.MessageEvent, app App) ProcessStatus
+	HandleMessage(event zb.MessageEvent, app App) ProcessStatus
 }
 
 type ConfigValidator interface {
-	Validate(config *zbasic.Config) error
+	Validate(config *zb.Config) error
 }

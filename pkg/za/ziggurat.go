@@ -1,4 +1,4 @@
-package zig
+package za
 
 import (
 	"context"

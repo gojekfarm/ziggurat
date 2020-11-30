@@ -3,7 +3,7 @@ package rabbitmq
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
@@ -54,7 +54,7 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 	return nil
 }
 
-func (R *RabbitMQRetry) Retry(app z.App, payload zbasic.MessageEvent) error {
+func (R *RabbitMQRetry) Retry(app z.App, payload zb.MessageEvent) error {
 	ctx := app.Context()
 	p, err := createPublisher(ctx, R.pdialer)
 	if err != nil {

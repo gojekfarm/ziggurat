@@ -7,7 +7,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/void"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zbasic"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"github.com/rs/zerolog"
 	"os"
 	"sync"
@@ -63,7 +63,7 @@ func TestConsumer_start(t *testing.T) {
 		}, nil
 	}
 	app := mock.NewApp()
-	hf := z.HandlerFunc(func(messageEvent zbasic.MessageEvent, app z.App) z.ProcessStatus {
+	hf := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
 		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
 		}
