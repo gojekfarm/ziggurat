@@ -15,7 +15,6 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
 	"github.com/sethvargo/go-signalcontext"
 	"net/http"
-	"os"
 	"sync/atomic"
 )
 
@@ -26,7 +25,6 @@ type Ziggurat struct {
 	configValidator ztype.ConfigValidator
 	handler         ztype.MessageHandler
 	metricPublisher ztype.MetricPublisher
-	interruptChan   chan os.Signal
 	doneChan        chan struct{}
 	startFunc       ztype.StartFunction
 	stopFunc        ztype.StopFunction
@@ -43,7 +41,6 @@ func NewApp() *Ziggurat {
 		cancelFun:       cancelFn,
 		configStore:     zconf.NewViperConfig(),
 		configValidator: zconf.NewDefaultValidator(rules.DefaultRules),
-		interruptChan:   make(chan os.Signal),
 		doneChan:        make(chan struct{}),
 	}
 	return ziggurat
@@ -102,7 +99,8 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Op
 
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
-		z.start(runOptions.StartCallback)
+		<-z.start(runOptions.StartCallback)
+		z.cancelFun()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)
 		close(z.doneChan)
@@ -110,7 +108,7 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Op
 	return z.doneChan
 }
 
-func (z *Ziggurat) start(startCallback ztype.StartFunction) {
+func (z *Ziggurat) start(startCallback ztype.StartFunction) chan struct{} {
 
 	components := z.components()
 
@@ -133,21 +131,8 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) {
 
 	startCallback(z)
 
-	halt := func(streamStop chan struct{}) {
-		z.cancelFun()
-		if streamStop != nil {
-			<-streamStop
-		}
-		zlogger.LogInfo("stream poll complete", nil)
-	}
-	// Wait for router poll to complete
-	select {
-	case <-streamsStop:
-		halt(nil)
-	case <-z.interruptChan:
-		zlogger.LogInfo("ziggurat app: CTRL+C interrupt received", nil)
-		halt(streamsStop)
-	}
+	return streamsStop
+
 }
 
 func (z *Ziggurat) Stop() {
@@ -157,7 +142,8 @@ func (z *Ziggurat) Stop() {
 func (z *Ziggurat) stop(stopFunc ztype.StopFunction) {
 	components := z.components()
 	for i, _ := range components {
-		components[i].Stop(z)
+		c := components[i]
+		c.Stop(z)
 	}
 	stopFunc()
 }
