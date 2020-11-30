@@ -10,7 +10,6 @@ type Worker struct {
 	concurrency int
 	sendCh      chan *kafka.Message
 	doneCh      chan struct{}
-	handler     z.MessageHandler
 }
 
 func NewWorker(concurrency int) *Worker {
