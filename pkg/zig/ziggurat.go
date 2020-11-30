@@ -116,10 +116,13 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) {
 
 	for i, _ := range components {
 		c := components[i]
-		if _, ok := c.(ztype.MessageRetry); ok && z.ConfigStore().Config().Retry.Enabled {
-			zlogger.LogFatal(c.Start(z), "error starting retries", nil)
-		} else {
-			zlogger.LogError(c.Start(z), "", nil)
+		switch t := c.(type) {
+		case ztype.MessageRetry:
+			if z.ConfigStore().Config().Retry.Enabled {
+				zlogger.LogFatal(c.Start(z), "error starting retries", nil)
+			}
+		default:
+			zlogger.LogError(c.Start(z), "error starting component ", map[string]interface{}{"COMPONENT": t})
 		}
 	}
 
