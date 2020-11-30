@@ -36,8 +36,7 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 		return err
 	}
 	R.cdialer = consumerDialer
-
-	conn, err := getConnectionFromDialer(app.Context(), publishDialer, time.Duration(R.cfg.DialTimeoutInS))
+	conn, err := getConnectionFromDialer(app.Context(), publishDialer, time.Duration(R.cfg.DialTimeoutInS)*time.Second)
 	if err != nil {
 		return err
 	}

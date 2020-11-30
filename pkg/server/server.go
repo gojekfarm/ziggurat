@@ -33,7 +33,7 @@ func (s *DefaultHttpServer) Start(app z.App) error {
 
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
-			zlogger.LogError(err, "ziggurat http-server:", nil)
+			zlogger.LogError(err, "default http server error", nil)
 		}
 	}(s.server)
 	return nil
