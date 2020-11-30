@@ -13,11 +13,10 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/zconf"
 	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
 	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/sethvargo/go-signalcontext"
 	"net/http"
 	"os"
-	"os/signal"
 	"sync/atomic"
-	"syscall"
 )
 
 type Ziggurat struct {
@@ -38,7 +37,7 @@ type Ziggurat struct {
 }
 
 func NewApp() *Ziggurat {
-	ctx, cancelFn := context.WithCancel(context.Background())
+	ctx, cancelFn := signalcontext.OnInterrupt()
 	ziggurat := &Ziggurat{
 		ctx:             ctx,
 		cancelFun:       cancelFn,
@@ -48,11 +47,6 @@ func NewApp() *Ziggurat {
 		doneChan:        make(chan struct{}),
 	}
 	return ziggurat
-}
-
-func interruptHandler(c chan os.Signal, cancelFunc context.CancelFunc) {
-	<-c
-	cancelFunc()
 }
 
 func NewOpts() *RunOptions {
@@ -96,8 +90,6 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Op
 	z.handler = handler
 	z.routes = routes
 
-	signal.Notify(z.interruptChan, os.Interrupt, syscall.SIGTERM, syscall.SIGKILL, syscall.SIGINT, syscall.SIGQUIT)
-	go interruptHandler(z.interruptChan, z.cancelFun)
 	zlogger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
 
 	runOptions.setDefaults()
