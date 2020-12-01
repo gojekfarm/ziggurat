@@ -59,41 +59,24 @@ If you wish to read config from a location other than the default location run t
 package main
 
 import (
-	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zr"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/za"
-	"github.com/julienschmidt/httprouter"
-	"net/http"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat-go/pkg/zmw"
+	"github.com/gojekfarm/ziggurat-go/pkg/zr"
 )
 
 func main() {
-	app := zig.NewApp()
-	router := stream.NewRouter()
+	app := za.NewApp()
+	router := zr.NewRouter()
 
-	router.HandlerFunc("plain-text-log", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	router.HandleFunc("plain-text-log", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 
-	startFunc := func(a z.App) {
-		fmt.Println("starting app")
-	}
+	routerWithMW := router.Compose(zmw.MessageLogger, zmw.MessageMetricsPublisher)
 
-	stopFunc := func() {
-		fmt.Println("stopping app")
-	}
-
-	<-app.Run(router, z.RunOptions{
-		StartCallback: startFunc,
-		StopCallback:  stopFunc,
-		HTTPConfigFunc: func(a z.App, h http.Handler) {
-			r, _ := h.(*httprouter.Router)
-			r.GET("/if_you_dont_eat_your_meat", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-				writer.Write([]byte("you can't have any pudding"))
-			})
-		},
-	})
+	<-app.Run(routerWithMW, router.Routes())
 }
 ```
 
@@ -139,4 +122,3 @@ However this is not caused by ziggurat-go but by a library called `amqp-safe`. [
 - [x] Log formatting
 - [x] StatsD support
 - [ ] Producer API
-- [ ] Unit tests

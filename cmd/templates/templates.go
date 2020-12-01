@@ -282,45 +282,24 @@ datasources:
 var Main = `package main
 
 import (
-	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/basic"
-	"github.com/gojekfarm/ziggurat-go/pkg/mw"
-	"github.com/gojekfarm/ziggurat-go/pkg/stream"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zig"
-	"github.com/julienschmidt/httprouter"
-	"net/http"
+	"github.com/gojekfarm/ziggurat-go/pkg/za"
+	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat-go/pkg/zmw"
+	"github.com/gojekfarm/ziggurat-go/pkg/zr"
 )
 
 func main() {
-	app := zig.NewApp()
-	router := stream.NewRouter()
+	app := za.NewApp()
+	router := zr.NewRouter()
 
-	router.HandleFunc("plain-text-log", func(messageEvent basic.MessageEvent, app z.App) z.ProcessStatus {
+	router.HandleFunc("plain-text-log", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
 
-	router.Use(mw.MessageLogger, nil)
-	router.Use(mw.MessageMetricsPublisher, nil)
+	routerWithMW := router.Compose(zmw.MessageLogger, zmw.MessageMetricsPublisher)
 
-	startFunc := func(a z.App) {
-		fmt.Println("starting app")
-	}
-
-	stopFunc := func() {
-		fmt.Println("stopping app")
-	}
-
-	<-app.Run(router, z.RunOptions{
-		StartCallback: startFunc,
-		StopCallback:  stopFunc,
-		HTTPConfigFunc: func(a z.App, h http.Handler) {
-			r, _ := h.(*httprouter.Router)
-			r.GET("/if_you_dont_eat_your_meat", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
-				writer.Write([]byte("you can't have any pudding"))
-			})
-		},
-	})
+	<-app.Run(routerWithMW, router.Routes())
 }`
 
 var Makefile = `.PHONY: all
