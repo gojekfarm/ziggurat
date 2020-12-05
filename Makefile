@@ -2,7 +2,7 @@
 
 TOPIC_JSON="json-log"
 TOPIC_PLAIN_TEXT="plain-text-log"
-
+TEST_PACKAGES=$(shell go list ./pkg/* | grep -v "zb" | grep -v "zerror")
 
 docker.start-kafka:
 	docker-compose down
@@ -23,7 +23,7 @@ app.start:
 	./ziggurat-go --config=./config/config.sample.yaml
 
 app.test:
-	go test -count 1 -v `go list ./pkg/* | grep -v basic | grep -v "pkg/z" | grep -v "zerror"`
+	go test -count 1 -v $(TEST_PACKAGES)
 
 app.start-race:
 	go build -race
@@ -42,9 +42,9 @@ pkg.release:
 	./scripts/release.sh ${VERSION}
 
 app.test-coverage-html:
-	go test -count 1 -v `go list ./pkg/* | grep -v basic | grep -v "pkg/z" | grep -v "zerror"` -coverprofile cp.out
+	go test -count 1 -v $(TEST_PACKAGES) -coverprofile cp.out
 	go tool cover -html=cp.out
 
 app.test-coverage:
-	go test -count 1 -v `go list ./pkg/* | grep -v basic | grep -v "pkg/z" | grep -v "zerror"` -coverprofile cp.out
+	go test -count 1 -v $(TEST_PACKAGES) -coverprofile cp.out
 	go tool cover -func=cp.out
