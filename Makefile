@@ -22,8 +22,8 @@ app.start:
 	go build
 	./ziggurat-go --config=./config/config.sample.yaml
 
-app.test:
-	go test -count 1 -v $(TEST_PACKAGES)
+lib.test:
+	go test -parallel 4 -count 1 -v $(TEST_PACKAGES)
 
 app.start-race:
 	go build -race
@@ -35,16 +35,16 @@ docker.cleanup:
 	docker-compose -f docker-compose-metrics.yml down
 	docker-compose -f docker-compose-metrics.yml rm
 
-kafka.produce:
+docker.kafka-produce:
 	./scripts/produce_messages
 
 pkg.release:
 	./scripts/release.sh ${VERSION}
 
-app.test-coverage-html:
+lib.test-coverage-html:
 	go test -count 1 -v $(TEST_PACKAGES) -coverprofile cp.out
 	go tool cover -html=cp.out
 
-app.test-coverage:
+lib.test-coverage:
 	go test -count 1 -v $(TEST_PACKAGES) -coverprofile cp.out
 	go tool cover -func=cp.out
