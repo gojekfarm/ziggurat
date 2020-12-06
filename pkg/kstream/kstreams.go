@@ -37,14 +37,14 @@ func (k *KafkaStreams) Start(app z.App) (chan struct{}, error) {
 
 	go func() {
 		wg.Wait()
-		k.Stop()
+		k.Stop(app)
 		close(stopChan)
 	}()
 
 	return stopChan, nil
 }
 
-func (k *KafkaStreams) Stop() {
+func (k *KafkaStreams) Stop(a z.App) {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
 			zlogger.LogError(consumers[i].Close(), "consumer close error", nil)

@@ -11,6 +11,11 @@ type StartStopper interface {
 	Stop(a App)
 }
 
+type AsyncStartStopper interface {
+	Start(a App) (chan struct{}, error)
+	Stop(a App)
+}
+
 type Server interface {
 	ConfigureRoutes(a App, configFunc func(a App, h http.Handler))
 	Handler() http.Handler
