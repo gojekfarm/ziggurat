@@ -75,3 +75,15 @@ var createConsumer = func(app z.App, d *amqpextra.Dialer, ctag string, queueName
 		}))}
 	return d.Consumer(options...)
 }
+
+var declareExchange = func(c *amqp.Channel, exchangeName string) {
+	c.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil)
+}
+
+var queueBind = func(c *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
+	return c.QueueBind(queueName, "", exchangeName, false, args)
+}
+
+var queueDeclare = func(c *amqp.Channel, queueName string, args amqp.Table) (amqp.Queue, error) {
+	return c.QueueDeclare(queueName, true, false, false, false, args)
+}

@@ -1,7 +1,6 @@
 package zconf
 
 import (
-	"errors"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
 	"os"
 	"reflect"
@@ -50,33 +49,6 @@ func TestViperConfig_EnvOverride(t *testing.T) {
 	actualValue := config.StreamRouter["plain-text-log"].BootstrapServers
 	if !(actualValue == overriddenValue) {
 		t.Errorf("expected value of bootstrap servers to be %s but got %s", overriddenValue, actualValue)
-	}
-}
-
-func TestViperConfig_Validate(t *testing.T) {
-	vc := NewViperConfig()
-	vc.ParsedConfig = &zb.Config{
-		StreamRouter: nil,
-		LogLevel:     "",
-		ServiceName:  "foo",
-		Retry:        zb.RetryConfig{},
-		HTTPServer:   zb.HTTPServerConfig{},
-	}
-
-	validationError := errors.New("service cannot be foo")
-
-	rules := map[string]func(c *zb.Config) error{
-		"serviceNameValidation": func(c *zb.Config) error {
-			if c.ServiceName == "foo" {
-				return validationError
-			}
-			return nil
-		},
-	}
-
-	err := vc.Validate(rules)
-	if err == nil {
-		t.Errorf("expected error to be %v, got %v", validationError, err)
 	}
 }
 

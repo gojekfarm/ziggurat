@@ -12,6 +12,11 @@ func (h HandlerFunc) HandleMessage(event zb.MessageEvent, app App) ProcessStatus
 
 type StartFunction func(a App)
 type StopFunction func()
+type ValidatorFunc func(config *zb.Config) error
+
+func (v ValidatorFunc) Validate(config *zb.Config) error {
+	return v(config)
+}
 
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1

@@ -16,7 +16,7 @@ func NewWorker(concurrency int) *Worker {
 	return &Worker{
 		concurrency: concurrency,
 		sendCh:      make(chan *kafka.Message),
-		doneCh:      make(chan struct{}),
+		doneCh:      make(chan struct{}, concurrency),
 	}
 }
 

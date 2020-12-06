@@ -32,6 +32,7 @@ type Ziggurat struct {
 	cancelFun       context.CancelFunc
 	isRunning       int32
 	routes          []string
+	streams         ztype.Streams
 }
 
 func NewApp() *Ziggurat {
@@ -42,6 +43,7 @@ func NewApp() *Ziggurat {
 		configStore:     zconf.NewViperConfig(),
 		configValidator: zconf.NewDefaultValidator(rules.DefaultRules),
 		doneChan:        make(chan struct{}),
+		streams:         kstream.NewKafkaStreams(),
 	}
 	return ziggurat
 }
@@ -124,7 +126,7 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) chan struct{} {
 		}
 	}
 
-	streamsStop, streamsStartErr := kstream.NewKafkaStreams().Start(z)
+	streamsStop, streamsStartErr := z.streams.Start(z)
 	if streamsStartErr != nil {
 		zlogger.LogFatal(streamsStartErr, "error starting kafka streams", nil)
 	}
@@ -136,6 +138,7 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) chan struct{} {
 }
 
 func (z *Ziggurat) Stop() {
+	z.stop(z.stopFunc)
 	z.cancelFun()
 }
 

@@ -53,3 +53,8 @@ type MessageHandler interface {
 type ConfigValidator interface {
 	Validate(config *zb.Config) error
 }
+
+type Streams interface {
+	Start(a App) (chan struct{}, error)
+	Stop()
+}

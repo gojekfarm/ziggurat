@@ -34,7 +34,7 @@ func (m *Retry) Start(app z.App) error {
 }
 
 func (m *Retry) Retry(app z.App, payload zb.MessageEvent) error {
-	return m.Retry(app, payload)
+	return m.RetryFunc(app, payload)
 }
 
 func (m *Retry) Stop(app z.App) {

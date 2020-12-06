@@ -6,9 +6,12 @@ import (
 
 type Metrics struct {
 	StartFunc    func(a z.App) error
-	StopFunc     func() error
+	StopFunc     func()
 	IncCountFunc func(metricName string, value int64, arguments map[string]string) error
 	GaugeFunc    func(metricName string, value int64, arguments map[string]string) error
+}
+
+func (m *Metrics) Stop(a z.App) {
 }
 
 func NewMetrics() *Metrics {
@@ -16,8 +19,8 @@ func NewMetrics() *Metrics {
 		StartFunc: func(a z.App) error {
 			return nil
 		},
-		StopFunc: func() error {
-			return nil
+		StopFunc: func() {
+
 		},
 		IncCountFunc: func(metricName string, value int64, arguments map[string]string) error {
 			return nil
@@ -30,10 +33,6 @@ func NewMetrics() *Metrics {
 
 func (m *Metrics) Start(app z.App) error {
 	return m.StartFunc(app)
-}
-
-func (m *Metrics) Stop() error {
-	return m.StopFunc()
 }
 
 func (m *Metrics) IncCounter(metricName string, value int64, arguments map[string]string) error {

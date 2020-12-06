@@ -13,7 +13,7 @@ import (
 func TestDefaultRouter_HandleMessageError(t *testing.T) {
 	oldLogFatal := zlogger.LogFatal
 	called := false
-	zlogger.LogFatal = func(err error, msg string, args map[string]interface{}) {
+	zlogger.LogWarn = func(msg string, args map[string]interface{}) {
 		called = true
 	}
 	defer func() {
@@ -30,7 +30,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 	dr.HandleMessage(event, a)
 
 	if !called {
-		t.Errorf("expected fatal logger to be called")
+		t.Errorf("expected warn logger to be called")
 	}
 }
 
