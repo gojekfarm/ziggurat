@@ -1,7 +1,7 @@
 package rabbitmq
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )
@@ -18,7 +18,7 @@ func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, e
 	for i := 0; i < count; i++ {
 		delivery, ok, deliveryError := channelGet(c, queueName)
 		if deliveryError != nil || !ok {
-			zlogger.LogError(deliveryError, "rmq replay error", nil)
+			zlog.LogError(deliveryError, "rmq replay error", nil)
 			return deliveryError
 		}
 		msg, decodeErr := decodeMessage(delivery.Body)
@@ -30,7 +30,7 @@ func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, e
 			return publishErr
 		}
 		if ackErr := ackDelivery(delivery); ackErr != nil {
-			zlogger.LogError(ackErr, "rmq replay ack error", nil)
+			zlog.LogError(ackErr, "rmq replay ack error", nil)
 		}
 	}
 	p.Close()

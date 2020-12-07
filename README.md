@@ -1,37 +1,32 @@
 ### Ziggurat Golang
+
 Stream Processing made easy
 
-### Installation
+### Install the zig CLI
 
-- Run go get
 ```shell script
-go get -v -u github.com/gojekfarm/ziggurat-go                                                                                                                                                       
+go get -v -u github.com/gojekfarm/ziggurat-go/cmd/...
+go install github.com/gojekfarm/ziggurat-go/cmd/...                                                                                                                                                       
 ```
 
 #### How to use
-- create a `config/config.yaml` in your project root
-- sample `config.yaml`
+
+- create a new app using the `new` command
+
+```shell
+zig new <app_name>
+```
+
+#### sample config file
+
 ```yaml
 service-name: "test-app"
 stream-router:
-  message-log:
-    bootstrap-servers: "localhost:9094"
-    instance-count: 4
-    # how many consumers to spawn.
-    # adjust this number to the number of partitions
-    # to maximize parallelization
-    origin-topics: "^.*-message-log"
-    group-id: "message_log_go"
-  test-entity:
-    bootstrap-servers: "localhost:9092"
-    instance-count: 2
-    origin-topics: "test-topic2"
-    group-id: "test-group2"
-  json-entity:
-    bootstrap-servers: "localhost:9092"
-    instance-count: 1
-    origin-topics: "json-test"
-    group-id: "json-group"
+  plain-text-log:
+  bootstrap-servers: "localhost:9092"
+  instance-count: 2
+  origin-topics: "plain-text-log"
+  group-id: "plain_text_consumer"
 log-level: "debug"
 retry:
   enabled: true
@@ -44,16 +39,21 @@ statsd:
 http-server:
   port: 8080
 ```
+
 #### Overriding the config using ENV variables
+
 - To override the boostrap-servers under test-entity2
+
 ```shell script
 export ZIGGURAT_STREAM_ROUTER_TEST_ENTITY2_BOOTSTRAP_SERVERS="localhost:9094"
 ```
 
-
 - sample `main.go`
+
 ### Pass an optional config file path
-If you wish to read config from a location other than the default location run the app with `--ziggurat-config="your_path/config_file.yaml"` option
+
+If you wish to read config from a location other than the default location run the app
+with `--ziggurat-config="your_path/config_file.yaml"` option
 
 ```go
 package main
@@ -80,37 +80,8 @@ func main() {
 }
 ```
 
-### Using middlewares
-Ziggurat allows you to use middlewares to add pluggable functionality to your stream handler logic,
-
-How do I write my own middleware? 
-
-Middlewares are just normal functions of type `zig.MiddlewareFunc` 
-
-Example middleware
-
-```go
-package mypkg
-
-import (
-	"fmt"
-)
-
-func Logger(handlerFunc HandlerFunc) HandlerFunc {
-	return func(messageEvent MessageEvent, app *App) ProcessStatus {
-		fmt.Println("[HELLO FROM LOGGER]: Hello from logger")
-		return handlerFunc(messageEvent, app)
-	}
-}
-```
-Ziggurat provides  middlewares for logging and de-serializing kafka messages
-
-## Known issues
-- <Data race occurs when rabbitmq is trying to re-connect, this doesn't lead to any adverse effects or message loss.
-However this is not caused by ziggurat-go but by a library called `amqp-safe`. [Fixed]
-
-
 #### TODO
+
 - [x] Balanced Consumer groups
 - [x] RabbitMQ retries
 - [x] At least once delivery semantics

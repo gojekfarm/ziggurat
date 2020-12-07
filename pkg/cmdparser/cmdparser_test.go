@@ -3,13 +3,13 @@ package cmdparser_test
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/cmdparser"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"os"
 	"testing"
 )
 
 func TestMain(m *testing.M) {
-	zlogger.ConfigureLogger("disabled")
+	zlog.ConfigureLogger("disabled")
 	os.Exit(m.Run())
 }
 

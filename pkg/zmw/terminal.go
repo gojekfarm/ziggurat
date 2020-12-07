@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"time"
 )
 
@@ -30,7 +30,7 @@ var DefaultTerminalMW = func(next z.MessageHandler) z.MessageHandler {
 				panic(retryErr)
 			}
 		default:
-			zlogger.LogError(fmt.Errorf("invalid handler return code got %d", status), "", nil)
+			zlog.LogError(fmt.Errorf("invalid handler return code got %d", status), "", nil)
 		}
 		return status
 	})

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"github.com/gojekfarm/ziggurat-go/pkg/zmw"
 	"sync"
 	"time"
@@ -31,7 +31,7 @@ var startConsumer = func(app z.App, h z.MessageHandler, consumer *kafka.Consumer
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					zlogger.LogError(err, "retrying broker...", nil)
+					zlog.LogError(err, "retrying broker...", nil)
 					time.Sleep(brokerRetryTimeout)
 					continue
 				}

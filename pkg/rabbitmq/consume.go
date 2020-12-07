@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"github.com/gojekfarm/ziggurat-go/pkg/zmw"
 	"github.com/makasim/amqpextra"
 	"time"
@@ -40,7 +40,7 @@ var setupConsumers = func(app z.App, dialer *amqpextra.Dialer) error {
 		}
 		go func() {
 			<-c.NotifyClosed()
-			zlogger.LogError(fmt.Errorf("consumer closed"), "rmq consumer: closed", nil)
+			zlog.LogError(fmt.Errorf("consumer closed"), "rmq consumer: closed", nil)
 		}()
 	}
 	return nil

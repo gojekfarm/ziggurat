@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"time"
 )
 
@@ -21,11 +21,11 @@ func MessageLogger(next z.MessageHandler) z.MessageHandler {
 		status := next.HandleMessage(messageEvent, app)
 		switch status {
 		case z.ProcessingSuccess:
-			zlogger.LogInfo("[Msg logger]: successfully processed message", args)
+			zlog.LogInfo("[Msg logger]: successfully processed message", args)
 		case z.RetryMessage:
-			zlogger.LogInfo("[Msg logger]: retrying message", args)
+			zlog.LogInfo("[Msg logger]: retrying message", args)
 		case z.SkipMessage:
-			zlogger.LogInfo("[Msg logger]: skipping message", args)
+			zlog.LogInfo("[Msg logger]: skipping message", args)
 		}
 		return status
 	})

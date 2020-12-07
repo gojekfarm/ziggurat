@@ -1,4 +1,4 @@
-package zlogger
+package zlog
 
 import (
 	"fmt"

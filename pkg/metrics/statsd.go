@@ -3,7 +3,7 @@ package metrics
 import (
 	"github.com/cactus/go-statsd-client/statsd"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"runtime"
 	"strings"
 	"time"
@@ -51,13 +51,13 @@ func (s *StatsD) Start(app z.App) error {
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
-		zlogger.LogError(clientErr, "ziggurat statsD", nil)
+		zlog.LogError(clientErr, "ziggurat statsD", nil)
 		return clientErr
 	}
 	s.client = client
 	s.appName = app.ConfigStore().Config().ServiceName
 	go func() {
-		zlogger.LogInfo("statsd: starting go-routine publisher", nil)
+		zlog.LogInfo("statsd: starting go-routine publisher", nil)
 		done := app.Context().Done()
 		t := time.NewTicker(10 * time.Second)
 		tickerChan := t.C
@@ -65,7 +65,7 @@ func (s *StatsD) Start(app z.App) error {
 			select {
 			case <-done:
 				t.Stop()
-				zlogger.LogInfo("statsd: halting go-routine publisher", nil)
+				zlog.LogInfo("statsd: halting go-routine publisher", nil)
 				return
 			case <-tickerChan:
 				s.client.Gauge("go_routine_count", int64(runtime.NumGoroutine()), 1.0)
@@ -77,7 +77,7 @@ func (s *StatsD) Start(app z.App) error {
 
 func (s *StatsD) Stop(a z.App) {
 	if s.client != nil {
-		zlogger.LogError(s.client.Close(), "error stopping statsd client", nil)
+		zlog.LogError(s.client.Close(), "error stopping statsd client", nil)
 	}
 }
 

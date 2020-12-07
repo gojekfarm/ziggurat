@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
@@ -33,7 +33,7 @@ func (s *DefaultHttpServer) Start(app z.App) error {
 
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
-			zlogger.LogError(err, "default http server error", nil)
+			zlog.LogError(err, "default http server error", nil)
 		}
 	}(s.server)
 	return nil
@@ -48,5 +48,5 @@ func (s *DefaultHttpServer) Handler() http.Handler {
 }
 
 func (s *DefaultHttpServer) Stop(app z.App) {
-	zlogger.LogError(s.server.Shutdown(app.Context()), "default http server: stopping http server", nil)
+	zlog.LogError(s.server.Shutdown(app.Context()), "default http server: stopping http server", nil)
 }

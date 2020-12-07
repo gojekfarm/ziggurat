@@ -4,20 +4,20 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"reflect"
 	"testing"
 	"time"
 )
 
 func TestDefaultRouter_HandleMessageError(t *testing.T) {
-	oldLogFatal := zlogger.LogFatal
+	oldLogFatal := zlog.LogFatal
 	called := false
-	zlogger.LogWarn = func(msg string, args map[string]interface{}) {
+	zlog.LogWarn = func(msg string, args map[string]interface{}) {
 		called = true
 	}
 	defer func() {
-		zlogger.LogFatal = oldLogFatal
+		zlog.LogFatal = oldLogFatal
 	}()
 	dr := NewRouter()
 	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {

@@ -12,7 +12,7 @@ import (
 	ztype "github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zconf"
 	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"github.com/sethvargo/go-signalcontext"
 	"net/http"
 	"sync/atomic"
@@ -67,19 +67,19 @@ func (z *Ziggurat) loadConfig() error {
 	if validatorErr := z.configValidator.Validate(z.ConfigStore().Config()); validatorErr != nil {
 		return validatorErr
 	}
-	zlogger.LogInfo("successfully parsed application config", nil)
-	zlogger.ConfigureLogger(z.configStore.Config().LogLevel)
+	zlog.LogInfo("successfully parsed application config", nil)
+	zlog.ConfigureLogger(z.configStore.Config().LogLevel)
 	return nil
 }
 
 func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Opts) chan struct{} {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
-		zlogger.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
+		zlog.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
 		return nil
 	}
 	runOptions := NewOpts()
 	if len(routes) < 1 {
-		zlogger.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
+		zlog.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
 	}
 
 	for _, opt := range opts {
@@ -89,7 +89,7 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Op
 	z.handler = handler
 	z.routes = routes
 
-	zlogger.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
+	zlog.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
 
 	runOptions.setDefaults()
 	z.messageRetry = runOptions.Retry(z.configStore)
@@ -119,16 +119,16 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) chan struct{} {
 		switch t := c.(type) {
 		case ztype.MessageRetry:
 			if z.ConfigStore().Config().Retry.Enabled {
-				zlogger.LogFatal(c.Start(z), "error starting retries", nil)
+				zlog.LogFatal(c.Start(z), "error starting retries", nil)
 			}
 		default:
-			zlogger.LogError(c.Start(z), "error starting component ", map[string]interface{}{"COMPONENT": t})
+			zlog.LogError(c.Start(z), "error starting component ", map[string]interface{}{"COMPONENT": t})
 		}
 	}
 
 	streamsStop, streamsStartErr := z.streams.Start(z)
 	if streamsStartErr != nil {
-		zlogger.LogFatal(streamsStartErr, "error starting kafka streams", nil)
+		zlog.LogFatal(streamsStartErr, "error starting kafka streams", nil)
 	}
 
 	startCallback(z)

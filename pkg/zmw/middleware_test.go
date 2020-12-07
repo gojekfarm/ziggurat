@@ -4,7 +4,7 @@ import (
 	"github.com/gojekfarm/ziggurat-go/pkg/mock"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"reflect"
 	"testing"
 	"time"
@@ -19,14 +19,14 @@ func TestMessageLogger_Success(t *testing.T) {
 		"ROUTE": "",
 		"VALUE": "foo",
 	}
-	oldLogInfo := zlogger.LogInfo
-	zlogger.LogInfo = func(msg string, args map[string]interface{}) {
+	oldLogInfo := zlog.LogInfo
+	zlog.LogInfo = func(msg string, args map[string]interface{}) {
 		if !reflect.DeepEqual(args, expectedArgs) {
 			t.Errorf("expected %v got %v", expectedArgs, args)
 		}
 	}
 	defer func() {
-		zlogger.LogInfo = oldLogInfo
+		zlog.LogInfo = oldLogInfo
 	}()
 	ml := MessageLogger(handler)
 	event := zb.MessageEvent{

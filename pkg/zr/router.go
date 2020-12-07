@@ -4,7 +4,7 @@ import (
 	"errors"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
 	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 )
 
 type defaultRouter struct {
@@ -16,7 +16,7 @@ type Adapter func(next z.MessageHandler) z.MessageHandler
 func (dr *defaultRouter) HandleMessage(event zb.MessageEvent, app z.App) z.ProcessStatus {
 	route := event.StreamRoute
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
-		zlogger.LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
+		zlog.LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
 		return z.SkipMessage
 	} else {
 		return handler.HandleMessage(event, app)
@@ -31,7 +31,7 @@ func NewRouter() *defaultRouter {
 
 func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event zb.MessageEvent, app z.App) z.ProcessStatus) {
 	if handlerFunc == nil {
-		zlogger.LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
+		zlog.LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
 	}
 	dr.handlerFunctionMap[route] = handlerFunc
 }

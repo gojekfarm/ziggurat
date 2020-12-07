@@ -3,7 +3,7 @@ package kstream
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"time"
 )
 
@@ -11,9 +11,9 @@ var consumerLogContext = map[string]interface{}{"component": "consumer"}
 
 var createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
-	zlogger.LogError(err, "ziggurat consumer", consumerLogContext)
+	zlog.LogError(err, "ziggurat consumer", consumerLogContext)
 	subscribeErr := consumer.SubscribeTopics(topics, nil)
-	zlogger.LogError(subscribeErr, "ziggurat consumer", consumerLogContext)
+	zlog.LogError(subscribeErr, "ziggurat consumer", consumerLogContext)
 	return consumer
 }
 

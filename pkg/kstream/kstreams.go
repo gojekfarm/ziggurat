@@ -3,7 +3,7 @@ package kstream
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlogger"
+	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
 	"strings"
 	"sync"
 )
@@ -37,17 +37,17 @@ func (k *KafkaStreams) Start(app z.App) (chan struct{}, error) {
 
 	go func() {
 		wg.Wait()
-		k.Stop(app)
+		k.Stop()
 		close(stopChan)
 	}()
 
 	return stopChan, nil
 }
 
-func (k *KafkaStreams) Stop(a z.App) {
+func (k *KafkaStreams) Stop() {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
-			zlogger.LogError(consumers[i].Close(), "consumer close error", nil)
+			zlog.LogError(consumers[i].Close(), "consumer close error", nil)
 		}
 	}
 }
