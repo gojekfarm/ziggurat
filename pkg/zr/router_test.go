@@ -11,14 +11,10 @@ import (
 )
 
 func TestDefaultRouter_HandleMessageError(t *testing.T) {
-	oldLogFatal := zlog.LogFatal
 	called := false
 	zlog.LogWarn = func(msg string, args map[string]interface{}) {
 		called = true
 	}
-	defer func() {
-		zlog.LogFatal = oldLogFatal
-	}()
 	dr := NewRouter()
 	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
@@ -52,4 +48,19 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		return z.ProcessingSuccess
 	})
 	dr.HandleMessage(expectedEvent, mock.NewApp())
+}
+
+func TestDefaultRouter_Routes(t *testing.T) {
+	dr := NewRouter()
+	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
+		return z.ProcessingSuccess
+	})
+	dr.HandleFunc("bar", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
+		return z.ProcessingSuccess
+	})
+	expectedRoutes := []string{"foo", "bar"}
+	routes := dr.Routes()
+	if !reflect.DeepEqual(expectedRoutes, routes) {
+		t.Errorf("expected %v got %v", expectedRoutes, routes)
+	}
 }
