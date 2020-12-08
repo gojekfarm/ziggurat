@@ -2,17 +2,17 @@ package za
 
 import (
 	"github.com/gojekfarm/ziggurat-go/pkg/void"
-	ztype "github.com/gojekfarm/ziggurat-go/pkg/z"
+	z "github.com/gojekfarm/ziggurat-go/pkg/z"
 	"net/http"
 )
 
 type RunOptions struct {
-	HTTPConfigFunc  func(a ztype.App, h http.Handler)
-	StartCallback   func(a ztype.App)
+	HTTPConfigFunc  func(a z.App, h http.Handler)
+	StartCallback   func(a z.App)
 	StopCallback    func()
-	HTTPServer      func(c ztype.ConfigStore) ztype.Server
-	Retry           func(c ztype.ConfigStore) ztype.MessageRetry
-	MetricPublisher func(c ztype.ConfigStore) ztype.MetricPublisher
+	HTTPServer      func(c z.ConfigStore) z.Server
+	Retry           func(c z.ConfigStore) z.MessageRetry
+	MetricPublisher func(c z.ConfigStore) z.MetricPublisher
 }
 
 type Opts = func(opts *RunOptions)
@@ -29,7 +29,7 @@ func (ro *RunOptions) setDefaults() {
 	}
 
 	if ro.HTTPConfigFunc == nil {
-		ro.HTTPConfigFunc = func(a ztype.App, h http.Handler) {}
+		ro.HTTPConfigFunc = func(a z.App, h http.Handler) {}
 	}
 
 	if ro.StopCallback == nil {
@@ -37,7 +37,7 @@ func (ro *RunOptions) setDefaults() {
 	}
 
 	if ro.StartCallback == nil {
-		ro.StartCallback = func(a ztype.App) {}
+		ro.StartCallback = func(a z.App) {}
 	}
 
 }

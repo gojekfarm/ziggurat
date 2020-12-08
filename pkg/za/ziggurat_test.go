@@ -11,8 +11,21 @@ import (
 
 func TestZiggurat_Stop(t *testing.T) {
 	app := NewApp()
+	callCount := 0
 	kstreams := mock.NewKafkaStreams()
 	app.configStore = mock.NewConfigStore()
+	retry := mock.NewRetry()
+	metrics := mock.NewMetrics()
+	server := mock.NewServer()
+	retry.StopFunc = func(app z.App) {
+		callCount++
+	}
+	metrics.StopFunc = func(app z.App) {
+		callCount++
+	}
+	server.StopFunc = func(a z.App) {
+		callCount++
+	}
 	app.configValidator = z.ValidatorFunc(func(config *zb.Config) error {
 		return nil
 	})
@@ -28,17 +41,24 @@ func TestZiggurat_Stop(t *testing.T) {
 	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
 		return z.ProcessingSuccess
 	})
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		app.Stop()
+	}()
 	<-app.Run(handler, []string{"foo"}, func(opts *RunOptions) {
 		opts.Retry = func(c z.ConfigStore) z.MessageRetry {
-			return mock.NewRetry()
+			return retry
 		}
 		opts.MetricPublisher = func(c z.ConfigStore) z.MetricPublisher {
-			return mock.NewMetrics()
+			return metrics
 		}
 		opts.HTTPServer = func(c z.ConfigStore) z.Server {
-			return mock.NewServer()
+			return server
 		}
 	})
+	if callCount < len(app.components()) {
+		t.Errorf("expected call count to be %d got %d", callCount, app.components())
+	}
 }
 
 func TestZiggurat_Run(t *testing.T) {
@@ -144,5 +164,27 @@ func TestZiggurat_start(t *testing.T) {
 	if callCount < len(app.components()) {
 		t.Errorf("expected call count to be %d got %d", len(app.components()), callCount)
 	}
+}
 
+func TestZiggurat_RunWithOptions(t *testing.T) {
+	app := NewApp()
+	cs := mock.NewConfigStore()
+	app.configValidator = z.ValidatorFunc(func(config *zb.Config) error {
+		return nil
+	})
+	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
+		return z.ProcessingSuccess
+	})
+	app.configStore = cs
+	app.Run(handler, []string{"foo"}, func(opts *RunOptions) {
+		opts.HTTPServer = nil
+		opts.MetricPublisher = nil
+		opts.Retry = nil
+		opts.StartCallback = func(a z.App) {
+			if a.HTTPServer() == nil || a.MetricPublisher() == nil || a.MessageRetry() == nil {
+				t.Errorf("expected components to be not nil but are nil")
+			}
+		}
+		opts.StopCallback = nil
+	})
 }

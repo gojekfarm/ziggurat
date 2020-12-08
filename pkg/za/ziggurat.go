@@ -138,8 +138,11 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) chan struct{} {
 }
 
 func (z *Ziggurat) Stop() {
-	z.stop(z.stopFunc)
+	zlog.LogInfo("stopping app: cancelling context", nil)
 	z.cancelFun()
+	zlog.LogInfo("stopping app: stopping streams", nil)
+	z.streams.Stop()
+	z.stop(z.stopFunc)
 }
 
 func (z *Ziggurat) stop(stopFunc ztype.StopFunction) {
