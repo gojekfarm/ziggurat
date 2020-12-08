@@ -23,10 +23,10 @@ zig new <app_name>
 service-name: "test-app"
 stream-router:
   plain-text-log:
-  bootstrap-servers: "localhost:9092"
-  instance-count: 2
-  origin-topics: "plain-text-log"
-  group-id: "plain_text_consumer"
+    bootstrap-servers: "localhost:9092"
+    instance-count: 2
+    origin-topics: "plain-text-log"
+    group-id: "plain_text_consumer"
 log-level: "debug"
 retry:
   enabled: true
@@ -42,10 +42,10 @@ http-server:
 
 #### Overriding the config using ENV variables
 
-- To override the boostrap-servers under test-entity2
+- To override the boostrap-servers under plain-text-log
 
 ```shell script
-export ZIGGURAT_STREAM_ROUTER_TEST_ENTITY2_BOOTSTRAP_SERVERS="localhost:9094"
+export ZIGGURAT_STREAM_ROUTER_PLAIN_TEXT_LOG_BOOTSTRAP_SERVERS="localhost:9094"
 ```
 
 - sample `main.go`
