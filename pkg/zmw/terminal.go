@@ -12,7 +12,6 @@ var DefaultTerminalMW = func(next z.MessageHandler) z.MessageHandler {
 	return z.HandlerFunc(func(event zb.MessageEvent, app z.App) z.ProcessStatus {
 		metricTags := map[string]string{
 			"topic_entity": event.StreamRoute,
-			"kafka_topic":  event.Topic,
 		}
 		funcExecStartTime := time.Now()
 		status := next.HandleMessage(event, app)
