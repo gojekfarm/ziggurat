@@ -79,17 +79,3 @@ func main() {
 	<-app.Run(routerWithMW, router.Routes())
 }
 ```
-
-#### TODO
-
-- [x] Balanced Consumer groups
-- [x] RabbitMQ retries
-- [x] At least once delivery semantics
-- [x] Retry interface
-- [x] Default middleware to deserialize messages
-- [x] Env vars Config override
-- [x] HTTP server
-- [x] Replay RabbitMQ deadset messages
-- [x] Log formatting
-- [x] StatsD support
-- [ ] Producer API
