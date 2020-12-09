@@ -3,7 +3,7 @@ package kstream
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat-go/pkg/mock"
+	"github.com/gojekfarm/ziggurat/pkg/mock"
 	"strings"
 	"sync/atomic"
 	"testing"

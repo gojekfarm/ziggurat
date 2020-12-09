@@ -2,8 +2,8 @@ package server
 
 import (
 	"errors"
-	"github.com/gojekfarm/ziggurat-go/pkg/mock"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/mock"
+	"github.com/gojekfarm/ziggurat/pkg/z"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"net/http/httptest"

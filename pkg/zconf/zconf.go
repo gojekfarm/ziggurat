@@ -1,7 +1,7 @@
 package zconf
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 	"github.com/spf13/viper"
 	"strings"
 )

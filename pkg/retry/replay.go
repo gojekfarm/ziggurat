@@ -1,7 +1,7 @@
 package retry
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )

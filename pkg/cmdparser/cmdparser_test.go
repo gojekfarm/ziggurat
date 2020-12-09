@@ -1,9 +1,9 @@
 package cmdparser_test
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/cmdparser"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/cmdparser"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"os"
 	"testing"
 )

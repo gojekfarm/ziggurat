@@ -1,10 +1,10 @@
 package zr
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/mock"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/mock"
+	"github.com/gojekfarm/ziggurat/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"reflect"
 	"testing"
 	"time"

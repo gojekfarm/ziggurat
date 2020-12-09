@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/z"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"

@@ -3,7 +3,7 @@ package retry
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )

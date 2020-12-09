@@ -1,8 +1,8 @@
 package rules
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
-	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zerror"
 )
 
 var DefaultRules = map[string]func(c *zb.Config) error{

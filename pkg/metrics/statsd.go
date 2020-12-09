@@ -2,8 +2,8 @@ package metrics
 
 import (
 	"github.com/cactus/go-statsd-client/statsd"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"runtime"
 	"strings"
 	"time"

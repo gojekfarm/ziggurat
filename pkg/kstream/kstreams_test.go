@@ -2,9 +2,9 @@ package kstream
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat-go/pkg/mock"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/mock"
+	"github.com/gojekfarm/ziggurat/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 	"sync"
 	"testing"
 )

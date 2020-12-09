@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"

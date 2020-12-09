@@ -3,9 +3,9 @@ package retry
 import (
 	"context"
 	"errors"
-	"github.com/gojekfarm/ziggurat-go/pkg/mock"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/mock"
+	"github.com/gojekfarm/ziggurat/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/rs/zerolog"

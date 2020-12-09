@@ -2,7 +2,7 @@ package cmdparser
 
 import (
 	"flag"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 )
 
 var (

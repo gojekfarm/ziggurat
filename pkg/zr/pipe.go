@@ -1,8 +1,8 @@
 package zr
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 )
 
 var PipeHandlers = func(funcs ...Adapter) func(origHandler z.MessageHandler) z.MessageHandler {

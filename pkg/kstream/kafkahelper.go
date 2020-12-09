@@ -2,8 +2,8 @@ package kstream
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat-go/pkg/zerror"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/zerror"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"time"
 )
 

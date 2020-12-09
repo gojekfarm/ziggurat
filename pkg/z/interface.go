@@ -2,7 +2,7 @@ package z
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 	"net/http"
 )
 

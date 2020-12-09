@@ -1,8 +1,8 @@
 package za
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/void"
-	z "github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/void"
+	z "github.com/gojekfarm/ziggurat/pkg/z"
 	"net/http"
 )
 

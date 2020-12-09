@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 )
 
 type ConfigStore struct {

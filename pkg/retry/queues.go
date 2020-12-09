@@ -2,7 +2,7 @@ package retry
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"github.com/streadway/amqp"
 )
 

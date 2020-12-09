@@ -1,7 +1,7 @@
 package z
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 )
 
 type HandlerFunc func(messageEvent zb.MessageEvent, app App) ProcessStatus

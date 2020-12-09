@@ -3,8 +3,8 @@ package retry
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zlog"
+	"github.com/gojekfarm/ziggurat/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/zlog"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/consumer"
 	"github.com/makasim/amqpextra/logger"
@@ -39,9 +39,10 @@ var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer,
 
 var getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
 	connCtx, cancelFunc := context.WithTimeout(ctx, timeout)
+	defer cancelFunc()
 	conn, err := d.Connection(connCtx)
 	if err != nil {
-		cancelFunc()
+		return nil, err
 	}
 	return conn, err
 }

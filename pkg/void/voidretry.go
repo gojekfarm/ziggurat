@@ -2,8 +2,8 @@ package void
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
-	"github.com/gojekfarm/ziggurat-go/pkg/zb"
+	"github.com/gojekfarm/ziggurat/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/zb"
 )
 
 type VoidRetry struct{}

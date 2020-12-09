@@ -1,7 +1,7 @@
 package mock
 
 import (
-	"github.com/gojekfarm/ziggurat-go/pkg/z"
+	"github.com/gojekfarm/ziggurat/pkg/z"
 )
 
 type Metrics struct {
