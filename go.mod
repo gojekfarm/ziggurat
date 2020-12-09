@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/cactus/go-statsd-client/statsd v0.0.0-20200623234511-94959e3146b2 // indirect v3.2.1
 	github.com/confluentinc/confluent-kafka-go v1.5.2
+	github.com/gojekfarm/ziggurat-go v0.9.0
 	github.com/golang/protobuf v1.4.2
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/makasim/amqpextra v0.16.1

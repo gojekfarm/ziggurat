@@ -2,7 +2,7 @@
 
 TOPIC_JSON="json-log"
 TOPIC_PLAIN_TEXT="plain-text-log"
-TEST_PACKAGES=$(shell go list ./pkg/* | grep -v "zb" | grep -v "zerror")
+TEST_PACKAGES=$(shell go list ./... | grep -v "zb" | grep -v "zerror")
 
 docker.start-kafka:
 	docker-compose down
