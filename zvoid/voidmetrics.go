@@ -7,7 +7,7 @@ import (
 
 type VoidMetrics struct{}
 
-func NewMetrics(store ztype.ConfigStore) ztype.MetricPublisher {
+func NewMetrics() ztype.MetricPublisher {
 	return &VoidMetrics{}
 }
 

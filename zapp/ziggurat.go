@@ -3,105 +3,63 @@ package zapp
 import (
 	"context"
 	"errors"
-	"github.com/gojekfarm/ziggurat/cmdparser"
 	"github.com/gojekfarm/ziggurat/kstream"
-	"github.com/gojekfarm/ziggurat/metrics"
-	"github.com/gojekfarm/ziggurat/retry"
-	"github.com/gojekfarm/ziggurat/rules"
-	"github.com/gojekfarm/ziggurat/server"
-	"github.com/gojekfarm/ziggurat/zconf"
-	"github.com/gojekfarm/ziggurat/zerror"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/zlog"
 	ztype "github.com/gojekfarm/ziggurat/ztype"
+	"github.com/gojekfarm/ziggurat/zvoid"
 	"github.com/sethvargo/go-signalcontext"
-	"net/http"
 	"sync/atomic"
 )
 
 type Ziggurat struct {
 	httpServer      ztype.Server
 	messageRetry    ztype.MessageRetry
-	configStore     ztype.ConfigStore
 	configValidator ztype.ConfigValidator
 	handler         ztype.MessageHandler
 	metricPublisher ztype.MetricPublisher
 	doneChan        chan struct{}
+	logLevel        string
 	startFunc       ztype.StartFunction
 	stopFunc        ztype.StopFunction
 	ctx             context.Context
 	cancelFun       context.CancelFunc
 	isRunning       int32
-	routes          []string
+	routes          []zbase.StreamConfig
 	streams         ztype.Streams
 }
 
-func New() *Ziggurat {
+func New(opts ...ZigOptions) *Ziggurat {
 	ctx, cancelFn := signalcontext.OnInterrupt()
 	ziggurat := &Ziggurat{
-		ctx:             ctx,
-		cancelFun:       cancelFn,
-		configStore:     zconf.NewViperConfig(),
-		configValidator: zconf.NewDefaultValidator(rules.DefaultRules),
-		doneChan:        make(chan struct{}),
-		streams:         kstream.New(),
+		ctx:       ctx,
+		cancelFun: cancelFn,
+		doneChan:  make(chan struct{}),
+		streams:   kstream.New(),
+	}
+	for _, opts := range opts {
+		opts(ziggurat)
+	}
+	if ziggurat.logLevel == "" {
+		ziggurat.logLevel = "info"
 	}
 	return ziggurat
 }
 
-func NewOpts() *AppOptions {
-	return &AppOptions{
-		HTTPConfigFunc:  func(a ztype.App, h http.Handler) {},
-		StartCallback:   func(a ztype.App) {},
-		StopCallback:    func() {},
-		HTTPServer:      server.New,
-		Retry:           retry.NewRabbitMQRetry,
-		MetricPublisher: metrics.New,
-	}
-}
-
-func (z *Ziggurat) loadConfig() error {
-	commandLineOptions := cmdparser.ParseCommandLineArguments()
-	if parseErr := z.configStore.Parse(commandLineOptions); parseErr != nil {
-		return parseErr
-	}
-	if validatorErr := z.configValidator.Validate(z.ConfigStore().Config()); validatorErr != nil {
-		return validatorErr
-	}
-	zlog.LogInfo("successfully parsed application config", nil)
-	zlog.ConfigureLogger(z.configStore.Config().LogLevel)
-	return nil
-}
-
-func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Opts) chan struct{} {
+func (z *Ziggurat) Run(handler ztype.MessageHandler, routes ...zbase.StreamConfig) chan struct{} {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		zlog.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
 		return nil
 	}
-	runOptions := NewOpts()
-	if len(routes) < 1 {
-		zlog.LogFatal(zerror.ErrNoRoutesFound, "app run error", nil)
-	}
 
-	for _, opt := range opts {
-		opt(runOptions)
-	}
+	zlog.ConfigureLogger(z.logLevel)
 
 	z.handler = handler
 	z.routes = routes
 
-	zlog.LogFatal(z.loadConfig(), "ziggurat app load config", nil)
-
-	runOptions.setDefaults()
-	z.messageRetry = runOptions.Retry(z.configStore)
-	z.httpServer = runOptions.HTTPServer(z.configStore)
-	z.metricPublisher = runOptions.MetricPublisher(z.configStore)
-	z.httpServer.ConfigureRoutes(z, runOptions.HTTPConfigFunc)
-	z.stopFunc = runOptions.StopCallback
-	z.startFunc = runOptions.StartCallback
-
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
-		<-z.start(runOptions.StartCallback)
+		<-z.start(z.startFunc)
 		z.cancelFun()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)
@@ -111,18 +69,16 @@ func (z *Ziggurat) Run(handler ztype.MessageHandler, routes []string, opts ...Op
 }
 
 func (z *Ziggurat) start(startCallback ztype.StartFunction) chan struct{} {
-
 	components := z.components()
-
 	for i, _ := range components {
 		c := components[i]
-		switch t := c.(type) {
-		case ztype.MessageRetry:
-			if z.ConfigStore().Config().Retry.Enabled {
-				zlog.LogFatal(c.Start(z), "error starting retries", nil)
+		if c != nil {
+			switch t := c.(type) {
+			case ztype.MessageRetry:
+				zlog.LogFatal(c.Start(z), "error starting component", map[string]interface{}{"COMPONENT": "RETRIES"})
+			default:
+				zlog.LogError(c.Start(z), "error starting component", map[string]interface{}{"COMPONENT": t})
 			}
-		default:
-			zlog.LogError(c.Start(z), "error starting component ", map[string]interface{}{"COMPONENT": t})
 		}
 	}
 
@@ -131,7 +87,9 @@ func (z *Ziggurat) start(startCallback ztype.StartFunction) chan struct{} {
 		zlog.LogFatal(streamsStartErr, "error starting kafka streams", nil)
 	}
 
-	startCallback(z)
+	if startCallback != nil {
+		startCallback(z)
+	}
 
 	return streamsStop
 
@@ -149,16 +107,20 @@ func (z *Ziggurat) stop(stopFunc ztype.StopFunction) {
 	components := z.components()
 	for i, _ := range components {
 		c := components[i]
-		c.Stop(z)
+		if c != nil {
+			c.Stop(z)
+		}
 	}
-	stopFunc()
+	if stopFunc != nil {
+		stopFunc()
+	}
 }
 
 func (z *Ziggurat) Context() context.Context {
 	return z.ctx
 }
 
-func (z *Ziggurat) Routes() []string {
+func (z *Ziggurat) Routes() []zbase.StreamConfig {
 	return z.routes
 }
 
@@ -167,19 +129,24 @@ func (z *Ziggurat) Handler() ztype.MessageHandler {
 }
 
 func (z *Ziggurat) MessageRetry() ztype.MessageRetry {
+	if z.messageRetry == nil {
+		return zvoid.NewRetry()
+	}
 	return z.messageRetry
 }
 
 func (z *Ziggurat) MetricPublisher() ztype.MetricPublisher {
+	if z.metricPublisher == nil {
+		return zvoid.NewMetrics()
+	}
 	return z.metricPublisher
 }
 
 func (z *Ziggurat) HTTPServer() ztype.Server {
+	if z.httpServer == nil {
+		return zvoid.NewServer()
+	}
 	return z.httpServer
-}
-
-func (z *Ziggurat) ConfigStore() ztype.ConfigStore {
-	return z.configStore
 }
 
 func (z *Ziggurat) components() []ztype.StartStopper {
@@ -191,4 +158,12 @@ func (z *Ziggurat) IsRunning() bool {
 		return true
 	}
 	return false
+}
+
+func (z *Ziggurat) OnStart(function ztype.StartFunction) {
+	z.startFunc = function
+}
+
+func (z *Ziggurat) OnStop(function ztype.StopFunction) {
+	z.stopFunc = function
 }

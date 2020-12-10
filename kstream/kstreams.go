@@ -20,19 +20,13 @@ func New() *KafkaStreams {
 
 func (k *KafkaStreams) Start(app ztype.App) (chan struct{}, error) {
 	var wg sync.WaitGroup
-	config := app.ConfigStore().Config()
 	stopChan := make(chan struct{})
-	srConfig := config.StreamRouter
 	handler := app.Handler()
 
-	for _, route := range app.Routes() {
-		streamRouterCfg, ok := srConfig[route]
-		if !ok {
-			continue
-		}
-		consumerConfig := NewConsumerConfig(streamRouterCfg.BootstrapServers, streamRouterCfg.GroupID)
-		topics := strings.Split(streamRouterCfg.OriginTopics, ",")
-		k.routeConsumerMap[route] = StartConsumers(app, consumerConfig, route, topics, streamRouterCfg.InstanceCount, handler, &wg)
+	for _, stream := range app.Routes() {
+		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.GroupID)
+		topics := strings.Split(stream.OriginTopics, ",")
+		k.routeConsumerMap[stream.RouteName] = StartConsumers(app, consumerConfig, stream.RouteName, topics, stream.InstanceCount, handler, &wg)
 	}
 
 	go func() {

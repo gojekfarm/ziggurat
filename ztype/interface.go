@@ -38,12 +38,11 @@ type ConfigStore interface {
 
 type App interface {
 	Context() context.Context
-	Routes() []string
+	Routes() []zbase.StreamConfig
 	MessageRetry() MessageRetry
 	Handler() MessageHandler
 	MetricPublisher() MetricPublisher
 	HTTPServer() Server
-	ConfigStore() ConfigStore
 }
 
 type MessageHandler interface {

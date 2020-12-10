@@ -27,3 +27,11 @@ type Config struct {
 	Retry        RetryConfig                   `mapstructure:"retry"`
 	HTTPServer   HTTPServerConfig              `mapstructure:"http-server"`
 }
+
+type StreamConfig struct {
+	InstanceCount    int
+	BootstrapServers string
+	OriginTopics     string
+	GroupID          string
+	RouteName        string
+}

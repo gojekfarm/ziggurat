@@ -45,7 +45,7 @@ func TestZiggurat_Stop(t *testing.T) {
 		time.Sleep(100 * time.Millisecond)
 		app.Stop()
 	}()
-	<-app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
+	<-app.Run(handler, []string{"foo"}, func(opts *ZigOptions) {
 		opts.Retry = func(c ztype.ConfigStore) ztype.MessageRetry {
 			return retry
 		}
@@ -81,7 +81,7 @@ func TestZiggurat_Run(t *testing.T) {
 	handler := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
 		return ztype.ProcessingSuccess
 	})
-	<-app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
+	<-app.Run(handler, []string{"foo"}, func(opts *ZigOptions) {
 		opts.MetricPublisher = func(c ztype.ConfigStore) ztype.MetricPublisher {
 			return mock.NewMetrics()
 		}
@@ -149,7 +149,7 @@ func TestZiggurat_start(t *testing.T) {
 		return done, nil
 	}
 	app.streams = kstreams
-	<-app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
+	<-app.Run(handler, []string{"foo"}, func(opts *ZigOptions) {
 		opts.Retry = func(c ztype.ConfigStore) ztype.MessageRetry {
 			return retry
 		}
@@ -176,7 +176,7 @@ func TestZiggurat_RunWithOptions(t *testing.T) {
 		return ztype.ProcessingSuccess
 	})
 	app.configStore = cs
-	app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
+	app.Run(handler, []string{"foo"}, func(opts *ZigOptions) {
 		opts.HTTPServer = nil
 		opts.MetricPublisher = nil
 		opts.Retry = nil

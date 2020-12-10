@@ -2,41 +2,30 @@ package zapp
 
 import (
 	"github.com/gojekfarm/ziggurat/ztype"
-	"github.com/gojekfarm/ziggurat/zvoid"
-	"net/http"
 )
 
-type AppOptions struct {
-	HTTPConfigFunc  func(a ztype.App, h http.Handler)
-	StartCallback   func(a ztype.App)
-	StopCallback    func()
-	HTTPServer      func(c ztype.ConfigStore) ztype.Server
-	Retry           func(c ztype.ConfigStore) ztype.MessageRetry
-	MetricPublisher func(c ztype.ConfigStore) ztype.MetricPublisher
+type ZigOptions func(z *Ziggurat)
+
+func WithRetry(retryComponent ztype.MessageRetry) ZigOptions {
+	return func(z *Ziggurat) {
+		z.messageRetry = retryComponent
+	}
 }
 
-type Opts = func(opts *AppOptions)
+func WithHTTPServer(server ztype.Server) ZigOptions {
+	return func(z *Ziggurat) {
+		z.httpServer = server
+	}
+}
 
-func (ro *AppOptions) setDefaults() {
-	if ro.Retry == nil {
-		ro.Retry = zvoid.NewRetry
+func WithMetrics(metricsComponent ztype.MetricPublisher) ZigOptions {
+	return func(z *Ziggurat) {
+		z.metricPublisher = metricsComponent
 	}
-	if ro.MetricPublisher == nil {
-		ro.MetricPublisher = zvoid.NewMetrics
-	}
-	if ro.HTTPServer == nil {
-		ro.HTTPServer = zvoid.NewServer
-	}
+}
 
-	if ro.HTTPConfigFunc == nil {
-		ro.HTTPConfigFunc = func(a ztype.App, h http.Handler) {}
-	}
-
-	if ro.StopCallback == nil {
-		ro.StopCallback = func() {}
-	}
-
-	if ro.StartCallback == nil {
-		ro.StartCallback = func(a ztype.App) {}
+func WithLogLevel(level string) ZigOptions {
+	return func(z *Ziggurat) {
+		z.logLevel = level
 	}
 }

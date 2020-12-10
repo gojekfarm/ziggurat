@@ -7,7 +7,7 @@ import (
 
 type VoidServer struct{}
 
-func NewServer(c ztype.ConfigStore) ztype.Server {
+func NewServer() ztype.Server {
 	return &VoidServer{}
 }
 

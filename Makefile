@@ -20,7 +20,7 @@ docker.start-metrics:
 
 app.start:
 	go build
-	./ziggurat-go --config=./config/config.sample.yaml
+	./ziggurat --config=./config/config.sample.yaml
 
 lib.test:
 	go test -parallel 4 -count 1 -v $(TEST_PACKAGES)

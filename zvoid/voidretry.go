@@ -8,7 +8,7 @@ import (
 
 type VoidRetry struct{}
 
-func NewRetry(c ztype.ConfigStore) ztype.MessageRetry {
+func NewRetry() ztype.MessageRetry {
 	return &VoidRetry{}
 }
 
