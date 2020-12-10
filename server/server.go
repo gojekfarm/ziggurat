@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat/z"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
@@ -14,7 +14,7 @@ type DefaultHttpServer struct {
 	router *httprouter.Router
 }
 
-func NewDefaultHTTPServer(config z.ConfigStore) z.Server {
+func New(config ztype.ConfigStore) ztype.Server {
 	port := config.Config().HTTPServer.Port
 	if port == "" {
 		port = defaultHTTPPort
@@ -27,7 +27,7 @@ func NewDefaultHTTPServer(config z.ConfigStore) z.Server {
 	}
 }
 
-func (s *DefaultHttpServer) Start(app z.App) error {
+func (s *DefaultHttpServer) Start(app ztype.App) error {
 	s.router.POST("/v1/dead_set/:topic_entity/:count", replayHandler(app))
 	s.router.GET("/v1/ping", pingHandler)
 
@@ -39,7 +39,7 @@ func (s *DefaultHttpServer) Start(app z.App) error {
 	return nil
 }
 
-func (s *DefaultHttpServer) ConfigureRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {
+func (s *DefaultHttpServer) ConfigureRoutes(a ztype.App, configFunc func(a ztype.App, h http.Handler)) {
 	configFunc(a, s.router)
 }
 
@@ -47,6 +47,6 @@ func (s *DefaultHttpServer) Handler() http.Handler {
 	return s.router
 }
 
-func (s *DefaultHttpServer) Stop(app z.App) {
+func (s *DefaultHttpServer) Stop(app ztype.App) {
 	zlog.LogError(s.server.Shutdown(app.Context()), "default http server: stopping http server", nil)
 }

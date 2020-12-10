@@ -1,7 +1,7 @@
 package retry
 
 import (
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"testing"
@@ -19,10 +19,10 @@ func TestReplay(t *testing.T) {
 			Body: []byte{},
 		}, true, nil
 	}
-	decodeMessage = func(body []byte) (zb.MessageEvent, error) {
-		return zb.NewMessageEvent([]byte{}, []byte{}, "", "", "", time.Time{}), nil
+	decodeMessage = func(body []byte) (zbase.MessageEvent, error) {
+		return zbase.NewMessageEvent([]byte{}, []byte{}, "", "", "", time.Time{}), nil
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zb.MessageEvent, expirationInMS string) error {
+	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
 		publishCallCount++
 		return nil
 	}

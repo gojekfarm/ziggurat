@@ -1,8 +1,8 @@
-package z
+package ztype
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"net/http"
 )
 
@@ -24,14 +24,14 @@ type MetricPublisher interface {
 }
 
 type MessageRetry interface {
-	Retry(app App, payload zb.MessageEvent) error
+	Retry(app App, payload zbase.MessageEvent) error
 	Replay(app App, topicEntity string, count int) error
 	StartStopper
 }
 
 type ConfigStore interface {
-	Config() *zb.Config
-	Parse(options zb.CommandLineOptions) error
+	Config() *zbase.Config
+	Parse(options zbase.CommandLineOptions) error
 	GetByKey(key string) interface{}
 	UnmarshalByKey(key string, model interface{}) error
 }
@@ -47,11 +47,11 @@ type App interface {
 }
 
 type MessageHandler interface {
-	HandleMessage(event zb.MessageEvent, app App) ProcessStatus
+	HandleMessage(event zbase.MessageEvent, app App) ProcessStatus
 }
 
 type ConfigValidator interface {
-	Validate(config *zb.Config) error
+	Validate(config *zbase.Config) error
 }
 
 type Streams interface {

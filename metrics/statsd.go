@@ -2,8 +2,8 @@ package metrics
 
 import (
 	"github.com/cactus/go-statsd-client/statsd"
-	"github.com/gojekfarm/ziggurat/z"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"runtime"
 	"strings"
 	"time"
@@ -19,7 +19,7 @@ type StatsD struct {
 	appName      string
 }
 
-func NewStatsD(config z.ConfigStore) z.MetricPublisher {
+func New(config ztype.ConfigStore) ztype.MetricPublisher {
 	metricConfig := parseStatsDConfig(config)
 	return &StatsD{
 		client:       nil,
@@ -28,7 +28,7 @@ func NewStatsD(config z.ConfigStore) z.MetricPublisher {
 	}
 }
 
-func parseStatsDConfig(config z.ConfigStore) *StatsDConf {
+func parseStatsDConfig(config ztype.ConfigStore) *StatsDConf {
 	statsDConf := &StatsDConf{}
 	if err := config.UnmarshalByKey("statsd", &statsDConf); err != nil {
 		return &StatsDConf{Host: "localhost:8125"}
@@ -44,7 +44,7 @@ func constructTags(tags map[string]string) string {
 	return strings.Join(tagSlice, ",")
 }
 
-func (s *StatsD) Start(app z.App) error {
+func (s *StatsD) Start(app ztype.App) error {
 	config := &statsd.ClientConfig{
 		Prefix:  app.ConfigStore().Config().ServiceName,
 		Address: s.metricConfig.Host,
@@ -75,7 +75,7 @@ func (s *StatsD) Start(app z.App) error {
 	return nil
 }
 
-func (s *StatsD) Stop(a z.App) {
+func (s *StatsD) Stop(a ztype.App) {
 	if s.client != nil {
 		zlog.LogError(s.client.Close(), "error stopping statsd client", nil)
 	}

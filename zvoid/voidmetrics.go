@@ -1,21 +1,21 @@
-package void
+package zvoid
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat/z"
+	"github.com/gojekfarm/ziggurat/ztype"
 )
 
 type VoidMetrics struct{}
 
-func NewMetrics(store z.ConfigStore) z.MetricPublisher {
+func NewMetrics(store ztype.ConfigStore) ztype.MetricPublisher {
 	return &VoidMetrics{}
 }
 
-func (v VoidMetrics) Start(app z.App) error {
+func (v VoidMetrics) Start(app ztype.App) error {
 	return fmt.Errorf("error starting metric plublisher, no implementation found")
 }
 
-func (v VoidMetrics) Stop(a z.App) {
+func (v VoidMetrics) Stop(a ztype.App) {
 
 }
 

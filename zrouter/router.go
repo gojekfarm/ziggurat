@@ -1,42 +1,42 @@
-package zr
+package zrouter
 
 import (
 	"errors"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 )
 
 type defaultRouter struct {
-	handlerFunctionMap map[string]z.HandlerFunc
+	handlerFunctionMap map[string]ztype.HandlerFunc
 }
 
-type Adapter func(next z.MessageHandler) z.MessageHandler
+type Adapter func(next ztype.MessageHandler) ztype.MessageHandler
 
-func (dr *defaultRouter) HandleMessage(event zb.MessageEvent, app z.App) z.ProcessStatus {
+func (dr *defaultRouter) HandleMessage(event zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
 	route := event.StreamRoute
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		zlog.LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
-		return z.SkipMessage
+		return ztype.SkipMessage
 	} else {
 		return handler.HandleMessage(event, app)
 	}
 }
 
-func NewRouter() *defaultRouter {
+func New() *defaultRouter {
 	return &defaultRouter{
-		handlerFunctionMap: map[string]z.HandlerFunc{},
+		handlerFunctionMap: map[string]ztype.HandlerFunc{},
 	}
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event zb.MessageEvent, app z.App) z.ProcessStatus) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event zbase.MessageEvent, app ztype.App) ztype.ProcessStatus) {
 	if handlerFunc == nil {
 		zlog.LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
 	}
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
-func (dr *defaultRouter) Compose(mw ...Adapter) z.MessageHandler {
+func (dr *defaultRouter) Compose(mw ...Adapter) ztype.MessageHandler {
 	return PipeHandlers(mw...)(dr)
 }
 
@@ -48,7 +48,7 @@ func (dr *defaultRouter) Routes() []string {
 	return routes
 }
 
-func (dr *defaultRouter) Lookup(route string) (z.MessageHandler, bool) {
+func (dr *defaultRouter) Lookup(route string) (ztype.MessageHandler, bool) {
 	h, ok := dr.handlerFunctionMap[route]
 	return h, ok
 }

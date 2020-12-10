@@ -1,10 +1,10 @@
-package zr
+package zrouter
 
 import (
 	"github.com/gojekfarm/ziggurat/mock"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"reflect"
 	"testing"
 	"time"
@@ -15,11 +15,11 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 	zlog.LogWarn = func(msg string, args map[string]interface{}) {
 		called = true
 	}
-	dr := NewRouter()
-	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	dr := New()
+	dr.HandleFunc("foo", func(event zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
-	event := zb.MessageEvent{
+	event := zbase.MessageEvent{
 		StreamRoute: "bar",
 	}
 	a := mock.NewApp()
@@ -31,8 +31,8 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 }
 
 func TestDefaultRouter_HandleMessage(t *testing.T) {
-	dr := NewRouter()
-	expectedEvent := zb.MessageEvent{
+	dr := New()
+	expectedEvent := zbase.MessageEvent{
 		MessageValueBytes: []byte("foo"),
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "baz",
@@ -41,22 +41,22 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		TimestampType:     "",
 		Attributes:        nil,
 	}
-	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
+	dr.HandleFunc("foo", func(event zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
-		return z.ProcessingSuccess
+		return ztype.ProcessingSuccess
 	})
 	dr.HandleMessage(expectedEvent, mock.NewApp())
 }
 
 func TestDefaultRouter_Routes(t *testing.T) {
-	dr := NewRouter()
-	dr.HandleFunc("foo", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	dr := New()
+	dr.HandleFunc("foo", func(event zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
-	dr.HandleFunc("bar", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	dr.HandleFunc("bar", func(event zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
 	expectedRoutes := []string{"foo", "bar"}
 	routes := dr.Routes()

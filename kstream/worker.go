@@ -2,7 +2,7 @@ package kstream
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat/z"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"sync"
 )
 
@@ -20,7 +20,7 @@ func NewWorker(concurrency int) *Worker {
 	}
 }
 
-func (w *Worker) run(app z.App, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
+func (w *Worker) run(app ztype.App, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < w.concurrency; i++ {
 		wg.Add(1)

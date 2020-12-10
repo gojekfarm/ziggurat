@@ -1,4 +1,4 @@
-package zb
+package zbase
 
 import (
 	"sync"

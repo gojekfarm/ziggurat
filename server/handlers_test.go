@@ -3,7 +3,7 @@ package server
 import (
 	"errors"
 	"github.com/gojekfarm/ziggurat/mock"
-	"github.com/gojekfarm/ziggurat/z"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"net/http/httptest"
@@ -13,10 +13,10 @@ import (
 func TestReplayHandler(t *testing.T) {
 	app := mock.NewApp()
 	retry := mock.NewRetry()
-	app.MessageRetryFunc = func() z.MessageRetry {
+	app.MessageRetryFunc = func() ztype.MessageRetry {
 		return retry
 	}
-	retry.ReplayFunc = func(app z.App, topicEntity string, count int) error {
+	retry.ReplayFunc = func(app ztype.App, topicEntity string, count int) error {
 		if topicEntity != "test" && count != 5 {
 			t.Errorf("expected [test,5] got [%s,%d]", topicEntity, count)
 		}
@@ -36,10 +36,10 @@ func TestReplayHandler(t *testing.T) {
 func TestReplayHandlerError(t *testing.T) {
 	app := mock.NewApp()
 	retry := mock.NewRetry()
-	app.MessageRetryFunc = func() z.MessageRetry {
+	app.MessageRetryFunc = func() ztype.MessageRetry {
 		return retry
 	}
-	retry.ReplayFunc = func(app z.App, topicEntity string, count int) error {
+	retry.ReplayFunc = func(app ztype.App, topicEntity string, count int) error {
 		return errors.New("replay error")
 	}
 	req := httptest.NewRequest(http.MethodPost, "/v1/dead_set/test/5", nil)

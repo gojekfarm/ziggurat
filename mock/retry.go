@@ -1,46 +1,46 @@
 package mock
 
 import (
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
+	"github.com/gojekfarm/ziggurat/ztype"
 )
 
 type Retry struct {
-	StartFunc  func(app z.App) error
-	RetryFunc  func(app z.App, payload zb.MessageEvent) error
-	StopFunc   func(app z.App)
-	ReplayFunc func(app z.App, topicEntity string, count int) error
+	StartFunc  func(app ztype.App) error
+	RetryFunc  func(app ztype.App, payload zbase.MessageEvent) error
+	StopFunc   func(app ztype.App)
+	ReplayFunc func(app ztype.App, topicEntity string, count int) error
 }
 
 func NewRetry() *Retry {
 	return &Retry{
-		StartFunc: func(app z.App) error {
+		StartFunc: func(app ztype.App) error {
 			return nil
 		},
-		RetryFunc: func(app z.App, payload zb.MessageEvent) error {
+		RetryFunc: func(app ztype.App, payload zbase.MessageEvent) error {
 			return nil
 		},
-		StopFunc: func(a z.App) {
+		StopFunc: func(a ztype.App) {
 
 		},
-		ReplayFunc: func(app z.App, topicEntity string, count int) error {
+		ReplayFunc: func(app ztype.App, topicEntity string, count int) error {
 			return nil
 		},
 	}
 }
 
-func (m *Retry) Start(app z.App) error {
+func (m *Retry) Start(app ztype.App) error {
 	return m.StartFunc(app)
 }
 
-func (m *Retry) Retry(app z.App, payload zb.MessageEvent) error {
+func (m *Retry) Retry(app ztype.App, payload zbase.MessageEvent) error {
 	return m.RetryFunc(app, payload)
 }
 
-func (m *Retry) Stop(app z.App) {
+func (m *Retry) Stop(app ztype.App) {
 	m.StopFunc(app)
 }
 
-func (m *Retry) Replay(app z.App, topicEntity string, count int) error {
+func (m *Retry) Replay(app ztype.App, topicEntity string, count int) error {
 	return m.ReplayFunc(app, topicEntity, count)
 }

@@ -2,17 +2,17 @@ package zmw
 
 import (
 	"github.com/gojekfarm/ziggurat/mock"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"reflect"
 	"testing"
 	"time"
 )
 
 func TestMessageLogger_Success(t *testing.T) {
-	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	handler := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
 	ts := time.Time{}
 	expectedArgs := map[string]interface{}{
@@ -29,7 +29,7 @@ func TestMessageLogger_Success(t *testing.T) {
 		zlog.LogInfo = oldLogInfo
 	}()
 	ml := MessageLogger(handler)
-	event := zb.MessageEvent{
+	event := zbase.MessageEvent{
 		MessageValueBytes: []byte("foo"),
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "",

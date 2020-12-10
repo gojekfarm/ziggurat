@@ -2,7 +2,7 @@ package server
 
 import (
 	"encoding/json"
-	"github.com/gojekfarm/ziggurat/z"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 	"strconv"
@@ -14,7 +14,7 @@ type ReplayResponse struct {
 	Msg    string `json:"msg"`
 }
 
-func replayHandler(app z.App) httprouter.Handle {
+func replayHandler(app ztype.App) httprouter.Handle {
 	return func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		count, _ := strconv.Atoi(params.ByName("count"))
 		if replayErr := app.MessageRetry().Replay(app, params.ByName("topic_entity"), count); replayErr != nil {

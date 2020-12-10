@@ -3,8 +3,8 @@ package retry
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/ziggurat/z"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/consumer"
 	"github.com/makasim/amqpextra/logger"
@@ -52,7 +52,7 @@ var createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher
 	return d.Publisher(options...)
 }
 
-var createConsumer = func(app z.App, d *amqpextra.Dialer, ctag string, queueName string, msgHandler z.MessageHandler) (*consumer.Consumer, error) {
+var createConsumer = func(app ztype.App, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ztype.MessageHandler) (*consumer.Consumer, error) {
 	options := []consumer.Option{
 		consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 			channel, err := conn.(*amqp.Connection).Channel()

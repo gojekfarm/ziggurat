@@ -5,9 +5,9 @@ import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat/mock"
-	"github.com/gojekfarm/ziggurat/void"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
+	"github.com/gojekfarm/ziggurat/ztype"
+	"github.com/gojekfarm/ziggurat/zvoid"
 	"github.com/rs/zerolog"
 	"os"
 	"sync"
@@ -23,14 +23,14 @@ func TestMain(m *testing.M) {
 func TestConsumer_create(t *testing.T) {
 	app := mock.NewApp()
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := void.VoidMessageHandler{}
+	handler := zvoid.VoidMessageHandler{}
 	oldStartConsumer := startConsumer
 	oldCreateConsumer := createConsumer
 	defer func() {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(app z.App, h z.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+	startConsumer = func(app ztype.App, h ztype.MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	}
 	createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 		return &kafka.Consumer{}
@@ -63,11 +63,11 @@ func TestConsumer_start(t *testing.T) {
 		}, nil
 	}
 	app := mock.NewApp()
-	hf := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
+	hf := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
 		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
 		}
-		return z.ProcessingSuccess
+		return ztype.ProcessingSuccess
 	})
 	c := &kafka.Consumer{}
 
@@ -105,7 +105,7 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	app.ContextFunc = func() context.Context {
 		return ctx
 	}
-	h := void.VoidMessageHandler{}
+	h := zvoid.VoidMessageHandler{}
 	wg.Add(1)
 	startConsumer(app, h, c, "", "", wg)
 	wg.Wait()

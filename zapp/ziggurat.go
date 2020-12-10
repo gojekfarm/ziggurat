@@ -1,4 +1,4 @@
-package za
+package zapp
 
 import (
 	"context"
@@ -9,10 +9,10 @@ import (
 	"github.com/gojekfarm/ziggurat/retry"
 	"github.com/gojekfarm/ziggurat/rules"
 	"github.com/gojekfarm/ziggurat/server"
-	ztype "github.com/gojekfarm/ziggurat/z"
 	"github.com/gojekfarm/ziggurat/zconf"
 	"github.com/gojekfarm/ziggurat/zerror"
 	"github.com/gojekfarm/ziggurat/zlog"
+	ztype "github.com/gojekfarm/ziggurat/ztype"
 	"github.com/sethvargo/go-signalcontext"
 	"net/http"
 	"sync/atomic"
@@ -35,7 +35,7 @@ type Ziggurat struct {
 	streams         ztype.Streams
 }
 
-func NewApp() *Ziggurat {
+func New() *Ziggurat {
 	ctx, cancelFn := signalcontext.OnInterrupt()
 	ziggurat := &Ziggurat{
 		ctx:             ctx,
@@ -43,19 +43,19 @@ func NewApp() *Ziggurat {
 		configStore:     zconf.NewViperConfig(),
 		configValidator: zconf.NewDefaultValidator(rules.DefaultRules),
 		doneChan:        make(chan struct{}),
-		streams:         kstream.NewKafkaStreams(),
+		streams:         kstream.New(),
 	}
 	return ziggurat
 }
 
-func NewOpts() *RunOptions {
-	return &RunOptions{
+func NewOpts() *AppOptions {
+	return &AppOptions{
 		HTTPConfigFunc:  func(a ztype.App, h http.Handler) {},
 		StartCallback:   func(a ztype.App) {},
 		StopCallback:    func() {},
-		HTTPServer:      server.NewDefaultHTTPServer,
+		HTTPServer:      server.New,
 		Retry:           retry.NewRabbitMQRetry,
-		MetricPublisher: metrics.NewStatsD,
+		MetricPublisher: metrics.New,
 	}
 }
 

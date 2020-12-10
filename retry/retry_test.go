@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"github.com/gojekfarm/ziggurat/mock"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/rs/zerolog"
@@ -48,16 +48,16 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 	expectedEntities := []string{entityName}
 	app := mock.NewApp()
 	rmq := NewRabbitMQRetry(cs)
-	cs.ConfigFunc = func() *zb.Config {
-		return &zb.Config{
+	cs.ConfigFunc = func() *zbase.Config {
+		return &zbase.Config{
 			ServiceName: "baz",
-			Retry: zb.RetryConfig{
+			Retry: zbase.RetryConfig{
 				Enabled: true,
 				Count:   retryCountValue,
 			},
 		}
 	}
-	app.ConfigStoreFunc = func() z.ConfigStore {
+	app.ConfigStoreFunc = func() ztype.ConfigStore {
 		return cs
 	}
 	app.RoutesFunc = func() []string {
@@ -66,7 +66,7 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 	createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 		return &amqpextra.Dialer{}, nil
 	}
-	setupConsumers = func(app z.App, dialer *amqpextra.Dialer) error {
+	setupConsumers = func(app ztype.App, dialer *amqpextra.Dialer) error {
 		return nil
 	}
 	getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
@@ -92,22 +92,22 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 
 func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 	cs := mock.NewConfigStore()
-	cs.ConfigFunc = func() *zb.Config {
-		return &zb.Config{
+	cs.ConfigFunc = func() *zbase.Config {
+		return &zbase.Config{
 			ServiceName: "baz",
-			Retry: zb.RetryConfig{
+			Retry: zbase.RetryConfig{
 				Enabled: true,
 				Count:   3,
 			},
 		}
 	}
 
-	message := zb.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
+	message := zbase.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
 	createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zb.MessageEvent, expirationInMS string) error {
+	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_delay_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)
@@ -115,7 +115,7 @@ func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 		return nil
 	}
 	app := mock.NewApp()
-	app.ConfigStoreFunc = func() z.ConfigStore {
+	app.ConfigStoreFunc = func() ztype.ConfigStore {
 		return cs
 	}
 	rmq := NewRabbitMQRetry(cs)
@@ -125,22 +125,22 @@ func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 
 func TestRabbitMQRetry_RetryDLQueue(t *testing.T) {
 	cs := mock.NewConfigStore()
-	cs.ConfigFunc = func() *zb.Config {
-		return &zb.Config{
+	cs.ConfigFunc = func() *zbase.Config {
+		return &zbase.Config{
 			ServiceName: "baz",
-			Retry: zb.RetryConfig{
+			Retry: zbase.RetryConfig{
 				Enabled: true,
 				Count:   3,
 			},
 		}
 	}
-	message := zb.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
+	message := zbase.NewMessageEvent(nil, nil, "", "foo", "", time.Time{})
 	message.SetMessageAttribute(retryCount, retryCountValue)
 	createPublisher = func(ctx context.Context, d *amqpextra.Dialer) (*publisher.Publisher, error) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zb.MessageEvent, expirationInMS string) error {
+	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_dead_letter_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)
@@ -148,7 +148,7 @@ func TestRabbitMQRetry_RetryDLQueue(t *testing.T) {
 		return nil
 	}
 	app := mock.NewApp()
-	app.ConfigStoreFunc = func() z.ConfigStore {
+	app.ConfigStoreFunc = func() ztype.ConfigStore {
 		return cs
 	}
 	rmq := NewRabbitMQRetry(cs)

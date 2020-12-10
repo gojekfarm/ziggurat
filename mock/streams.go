@@ -1,20 +1,20 @@
 package mock
 
 import (
-	"github.com/gojekfarm/ziggurat/z"
+	"github.com/gojekfarm/ziggurat/ztype"
 )
 
 type KafkaStreams struct {
-	StartFunc func(a z.App) (chan struct{}, error)
+	StartFunc func(a ztype.App) (chan struct{}, error)
 }
 
 func NewKafkaStreams() *KafkaStreams {
-	return &KafkaStreams{StartFunc: func(a z.App) (chan struct{}, error) {
+	return &KafkaStreams{StartFunc: func(a ztype.App) (chan struct{}, error) {
 		return make(chan struct{}), nil
 	}}
 }
 
-func (k KafkaStreams) Start(a z.App) (chan struct{}, error) {
+func (k KafkaStreams) Start(a ztype.App) (chan struct{}, error) {
 	return k.StartFunc(a)
 }
 

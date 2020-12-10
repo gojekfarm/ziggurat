@@ -1,22 +1,22 @@
 package mock
 
 import (
-	"github.com/gojekfarm/ziggurat/z"
+	"github.com/gojekfarm/ziggurat/ztype"
 )
 
 type Metrics struct {
-	StartFunc    func(a z.App) error
-	StopFunc     func(a z.App)
+	StartFunc    func(a ztype.App) error
+	StopFunc     func(a ztype.App)
 	IncCountFunc func(metricName string, value int64, arguments map[string]string) error
 	GaugeFunc    func(metricName string, value int64, arguments map[string]string) error
 }
 
 func NewMetrics() *Metrics {
 	return &Metrics{
-		StartFunc: func(a z.App) error {
+		StartFunc: func(a ztype.App) error {
 			return nil
 		},
-		StopFunc: func(a z.App) {
+		StopFunc: func(a ztype.App) {
 
 		},
 		IncCountFunc: func(metricName string, value int64, arguments map[string]string) error {
@@ -28,11 +28,11 @@ func NewMetrics() *Metrics {
 	}
 }
 
-func (m *Metrics) Stop(a z.App) {
+func (m *Metrics) Stop(a ztype.App) {
 	m.StopFunc(a)
 
 }
-func (m *Metrics) Start(app z.App) error {
+func (m *Metrics) Start(app ztype.App) error {
 	return m.StartFunc(app)
 }
 

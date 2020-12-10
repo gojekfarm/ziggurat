@@ -1,8 +1,8 @@
 package retry
 
 import (
-	"github.com/gojekfarm/ziggurat/z"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"strings"
 )
 
@@ -12,7 +12,7 @@ type RabbitMQConfig struct {
 	DialTimeoutInS       int    `mapstructure:"dial-timeout-seconds"`
 }
 
-func parseRabbitMQConfig(config z.ConfigStore) *RabbitMQConfig {
+func parseRabbitMQConfig(config ztype.ConfigStore) *RabbitMQConfig {
 	rmqcfg := &RabbitMQConfig{}
 	if err := config.UnmarshalByKey("rabbitmq", rmqcfg); err != nil {
 		zlog.LogError(err, "rmq config unmarshall error", nil)

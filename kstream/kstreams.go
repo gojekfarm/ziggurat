@@ -2,8 +2,8 @@ package kstream
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat/z"
 	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"strings"
 	"sync"
 )
@@ -12,13 +12,13 @@ type KafkaStreams struct {
 	routeConsumerMap map[string][]*kafka.Consumer
 }
 
-func NewKafkaStreams() *KafkaStreams {
+func New() *KafkaStreams {
 	return &KafkaStreams{
 		routeConsumerMap: map[string][]*kafka.Consumer{},
 	}
 }
 
-func (k *KafkaStreams) Start(app z.App) (chan struct{}, error) {
+func (k *KafkaStreams) Start(app ztype.App) (chan struct{}, error) {
 	var wg sync.WaitGroup
 	config := app.ConfigStore().Config()
 	stopChan := make(chan struct{})

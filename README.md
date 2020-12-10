@@ -59,11 +59,11 @@ with `--ziggurat-config="your_path/config_file.yaml"` option
 package main
 
 import (
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/za"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/ztype"
+	"github.com/gojekfarm/ziggurat/zapp"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/zmw"
-	"github.com/gojekfarm/ziggurat/zr"
+	"github.com/gojekfarm/ziggurat/zrouter"
 )
 
 func main() {

@@ -1,35 +1,35 @@
-package za
+package zapp
 
 import (
 	"github.com/gojekfarm/ziggurat/mock"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"sync/atomic"
 	"testing"
 	"time"
 )
 
 func TestZiggurat_Stop(t *testing.T) {
-	app := NewApp()
+	app := New()
 	callCount := 0
 	kstreams := mock.NewKafkaStreams()
 	app.configStore = mock.NewConfigStore()
 	retry := mock.NewRetry()
 	metrics := mock.NewMetrics()
 	server := mock.NewServer()
-	retry.StopFunc = func(app z.App) {
+	retry.StopFunc = func(app ztype.App) {
 		callCount++
 	}
-	metrics.StopFunc = func(app z.App) {
+	metrics.StopFunc = func(app ztype.App) {
 		callCount++
 	}
-	server.StopFunc = func(a z.App) {
+	server.StopFunc = func(a ztype.App) {
 		callCount++
 	}
-	app.configValidator = z.ValidatorFunc(func(config *zb.Config) error {
+	app.configValidator = ztype.ValidatorFunc(func(config *zbase.Config) error {
 		return nil
 	})
-	kstreams.StartFunc = func(a z.App) (chan struct{}, error) {
+	kstreams.StartFunc = func(a ztype.App) (chan struct{}, error) {
 		done := make(chan struct{})
 		go func() {
 			time.Sleep(1 * time.Second)
@@ -38,21 +38,21 @@ func TestZiggurat_Stop(t *testing.T) {
 		return done, nil
 	}
 	app.streams = kstreams
-	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	handler := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
 	go func() {
 		time.Sleep(100 * time.Millisecond)
 		app.Stop()
 	}()
-	<-app.Run(handler, []string{"foo"}, func(opts *RunOptions) {
-		opts.Retry = func(c z.ConfigStore) z.MessageRetry {
+	<-app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
+		opts.Retry = func(c ztype.ConfigStore) ztype.MessageRetry {
 			return retry
 		}
-		opts.MetricPublisher = func(c z.ConfigStore) z.MetricPublisher {
+		opts.MetricPublisher = func(c ztype.ConfigStore) ztype.MetricPublisher {
 			return metrics
 		}
-		opts.HTTPServer = func(c z.ConfigStore) z.Server {
+		opts.HTTPServer = func(c ztype.ConfigStore) ztype.Server {
 			return server
 		}
 	})
@@ -64,8 +64,8 @@ func TestZiggurat_Stop(t *testing.T) {
 func TestZiggurat_Run(t *testing.T) {
 	startCalled := int32(0)
 	stopCalled := int32(0)
-	app, kstreams := NewApp(), mock.NewKafkaStreams()
-	kstreams.StartFunc = func(a z.App) (chan struct{}, error) {
+	app, kstreams := New(), mock.NewKafkaStreams()
+	kstreams.StartFunc = func(a ztype.App) (chan struct{}, error) {
 		done := make(chan struct{})
 		go func() {
 			time.Sleep(1 * time.Second)
@@ -75,26 +75,26 @@ func TestZiggurat_Run(t *testing.T) {
 	}
 	app.configStore = mock.NewConfigStore()
 	app.streams = kstreams
-	app.configValidator = z.ValidatorFunc(func(config *zb.Config) error {
+	app.configValidator = ztype.ValidatorFunc(func(config *zbase.Config) error {
 		return nil
 	})
-	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	handler := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
-	<-app.Run(handler, []string{"foo"}, func(opts *RunOptions) {
-		opts.MetricPublisher = func(c z.ConfigStore) z.MetricPublisher {
+	<-app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
+		opts.MetricPublisher = func(c ztype.ConfigStore) ztype.MetricPublisher {
 			return mock.NewMetrics()
 		}
-		opts.Retry = func(c z.ConfigStore) z.MessageRetry {
+		opts.Retry = func(c ztype.ConfigStore) ztype.MessageRetry {
 			return mock.NewRetry()
 		}
-		opts.HTTPServer = func(c z.ConfigStore) z.Server {
+		opts.HTTPServer = func(c ztype.ConfigStore) ztype.Server {
 			return mock.NewServer()
 		}
 		opts.StopCallback = func() {
 			atomic.SwapInt32(&startCalled, 1)
 		}
-		opts.StartCallback = func(a z.App) {
+		opts.StartCallback = func(a ztype.App) {
 			atomic.SwapInt32(&stopCalled, 1)
 		}
 	})
@@ -108,19 +108,19 @@ func TestZiggurat_Run(t *testing.T) {
 
 func TestZiggurat_start(t *testing.T) {
 	callCount := 0
-	app := NewApp()
-	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	app := New()
+	handler := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
 	cs := mock.NewConfigStore()
-	cs.ConfigFunc = func() *zb.Config {
-		return &zb.Config{
-			Retry: zb.RetryConfig{
+	cs.ConfigFunc = func() *zbase.Config {
+		return &zbase.Config{
+			Retry: zbase.RetryConfig{
 				Enabled: true,
 			},
 		}
 	}
-	app.configValidator = z.ValidatorFunc(func(config *zb.Config) error {
+	app.configValidator = ztype.ValidatorFunc(func(config *zbase.Config) error {
 		return nil
 	})
 	app.configStore = cs
@@ -128,19 +128,19 @@ func TestZiggurat_start(t *testing.T) {
 	metrics := mock.NewMetrics()
 	server := mock.NewServer()
 	kstreams := mock.NewKafkaStreams()
-	server.StartFunc = func(a z.App) error {
+	server.StartFunc = func(a ztype.App) error {
 		callCount++
 		return nil
 	}
-	retry.StartFunc = func(app z.App) error {
+	retry.StartFunc = func(app ztype.App) error {
 		callCount++
 		return nil
 	}
-	metrics.StartFunc = func(a z.App) error {
+	metrics.StartFunc = func(a ztype.App) error {
 		callCount++
 		return nil
 	}
-	kstreams.StartFunc = func(a z.App) (chan struct{}, error) {
+	kstreams.StartFunc = func(a ztype.App) (chan struct{}, error) {
 		done := make(chan struct{})
 		go func() {
 			time.Sleep(500 * time.Millisecond)
@@ -149,14 +149,14 @@ func TestZiggurat_start(t *testing.T) {
 		return done, nil
 	}
 	app.streams = kstreams
-	<-app.Run(handler, []string{"foo"}, func(opts *RunOptions) {
-		opts.Retry = func(c z.ConfigStore) z.MessageRetry {
+	<-app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
+		opts.Retry = func(c ztype.ConfigStore) ztype.MessageRetry {
 			return retry
 		}
-		opts.MetricPublisher = func(c z.ConfigStore) z.MetricPublisher {
+		opts.MetricPublisher = func(c ztype.ConfigStore) ztype.MetricPublisher {
 			return metrics
 		}
-		opts.HTTPServer = func(c z.ConfigStore) z.Server {
+		opts.HTTPServer = func(c ztype.ConfigStore) ztype.Server {
 			return server
 		}
 	})
@@ -167,20 +167,20 @@ func TestZiggurat_start(t *testing.T) {
 }
 
 func TestZiggurat_RunWithOptions(t *testing.T) {
-	app := NewApp()
+	app := New()
 	cs := mock.NewConfigStore()
-	app.configValidator = z.ValidatorFunc(func(config *zb.Config) error {
+	app.configValidator = ztype.ValidatorFunc(func(config *zbase.Config) error {
 		return nil
 	})
-	handler := z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+	handler := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
 	})
 	app.configStore = cs
-	app.Run(handler, []string{"foo"}, func(opts *RunOptions) {
+	app.Run(handler, []string{"foo"}, func(opts *AppOptions) {
 		opts.HTTPServer = nil
 		opts.MetricPublisher = nil
 		opts.Retry = nil
-		opts.StartCallback = func(a z.App) {
+		opts.StartCallback = func(a ztype.App) {
 			if a.HTTPServer() == nil || a.MetricPublisher() == nil || a.MessageRetry() == nil {
 				t.Errorf("expected components to be not nil but are nil")
 			}

@@ -1,18 +1,18 @@
 package zconf
 
 import (
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
 )
 
 type DefaultValidator struct {
-	rules map[string]func(config *zb.Config) error
+	rules map[string]func(config *zbase.Config) error
 }
 
-func NewDefaultValidator(rules map[string]func(config *zb.Config) error) *DefaultValidator {
+func NewDefaultValidator(rules map[string]func(config *zbase.Config) error) *DefaultValidator {
 	return &DefaultValidator{rules: rules}
 }
 
-func (d *DefaultValidator) Validate(config *zb.Config) error {
+func (d *DefaultValidator) Validate(config *zbase.Config) error {
 	for _, ruleFunc := range d.rules {
 		if err := ruleFunc(config); err != nil {
 			return err

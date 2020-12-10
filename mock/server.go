@@ -1,35 +1,35 @@
 package mock
 
 import (
-	"github.com/gojekfarm/ziggurat/z"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"net/http"
 )
 
 type Server struct {
-	ConfigureRoutesFunc func(a z.App, configFunc func(a z.App, h http.Handler))
+	ConfigureRoutesFunc func(a ztype.App, configFunc func(a ztype.App, h http.Handler))
 	GetHandler          func() http.Handler
-	StartFunc           func(a z.App) error
-	StopFunc            func(a z.App)
+	StartFunc           func(a ztype.App) error
+	StopFunc            func(a ztype.App)
 }
 
 func NewServer() *Server {
 	return &Server{
-		ConfigureRoutesFunc: func(a z.App, configFunc func(a z.App, h http.Handler)) {
+		ConfigureRoutesFunc: func(a ztype.App, configFunc func(a ztype.App, h http.Handler)) {
 
 		},
 		GetHandler: func() http.Handler {
 			return http.DefaultServeMux
 		},
-		StopFunc: func(a z.App) {
+		StopFunc: func(a ztype.App) {
 
 		},
-		StartFunc: func(a z.App) error {
+		StartFunc: func(a ztype.App) error {
 			return nil
 		},
 	}
 }
 
-func (s Server) ConfigureRoutes(a z.App, configFunc func(a z.App, h http.Handler)) {
+func (s Server) ConfigureRoutes(a ztype.App, configFunc func(a ztype.App, h http.Handler)) {
 	s.ConfigureRoutesFunc(a, configFunc)
 }
 
@@ -37,10 +37,10 @@ func (s Server) Handler() http.Handler {
 	return s.GetHandler()
 }
 
-func (s Server) Start(a z.App) error {
+func (s Server) Start(a ztype.App) error {
 	return s.StartFunc(a)
 }
 
-func (s Server) Stop(a z.App) {
+func (s Server) Stop(a ztype.App) {
 	s.StopFunc(a)
 }

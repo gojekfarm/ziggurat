@@ -1,7 +1,7 @@
 package zconf
 
 import (
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
 	"os"
 	"reflect"
 	"testing"
@@ -11,8 +11,8 @@ const testConfPath = "../config/config.test.yaml"
 
 func TestViperConfig_Parse(t *testing.T) {
 	vc := NewViperConfig()
-	expectedConfig := zb.Config{
-		StreamRouter: map[string]zb.StreamRouterConfig{
+	expectedConfig := zbase.Config{
+		StreamRouter: map[string]zbase.StreamRouterConfig{
 			"plain-text-log": {
 				InstanceCount:    2,
 				BootstrapServers: "localhost:9092",
@@ -22,16 +22,16 @@ func TestViperConfig_Parse(t *testing.T) {
 		},
 		LogLevel:    "debug",
 		ServiceName: "test-app",
-		Retry: zb.RetryConfig{
+		Retry: zbase.RetryConfig{
 			Enabled: true,
 			Count:   5,
 		},
-		HTTPServer: zb.HTTPServerConfig{
+		HTTPServer: zbase.HTTPServerConfig{
 			Port: "8080",
 		},
 	}
 
-	err := vc.Parse(zb.CommandLineOptions{ConfigFilePath: testConfPath})
+	err := vc.Parse(zbase.CommandLineOptions{ConfigFilePath: testConfPath})
 	if err != nil {
 		t.Errorf("error parsing config %v", err.Error())
 	}
@@ -48,7 +48,7 @@ func TestViperConfig_EnvOverride(t *testing.T) {
 	if err := os.Setenv("ZIGGURAT_STREAM_ROUTER_PLAIN_TEXT_LOG_BOOTSTRAP_SERVERS", overriddenValue); err != nil {
 		t.Error(err)
 	}
-	vc.Parse(zb.CommandLineOptions{ConfigFilePath: testConfPath})
+	vc.Parse(zbase.CommandLineOptions{ConfigFilePath: testConfPath})
 	config := vc.Config()
 	actualValue := config.StreamRouter["plain-text-log"].BootstrapServers
 	if !(actualValue == overriddenValue) {
@@ -58,7 +58,7 @@ func TestViperConfig_EnvOverride(t *testing.T) {
 
 func TestViperConfig_GetByKey(t *testing.T) {
 	vc := NewViperConfig()
-	vc.Parse(zb.CommandLineOptions{ConfigFilePath: testConfPath})
+	vc.Parse(zbase.CommandLineOptions{ConfigFilePath: testConfPath})
 	expectedStatsDConf := map[string]interface{}{"host": "localhost:8125"}
 	statsdCfg := vc.GetByKey("statsd").(map[string]interface{})
 

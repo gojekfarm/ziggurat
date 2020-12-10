@@ -2,8 +2,8 @@ package retry
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
@@ -16,14 +16,14 @@ type RabbitMQRetry struct {
 	cfg     *RabbitMQConfig
 }
 
-func NewRabbitMQRetry(config z.ConfigStore) z.MessageRetry {
+func NewRabbitMQRetry(config ztype.ConfigStore) ztype.MessageRetry {
 	cfg := parseRabbitMQConfig(config)
 	return &RabbitMQRetry{
 		cfg: cfg,
 	}
 }
 
-func (R *RabbitMQRetry) Start(app z.App) error {
+func (R *RabbitMQRetry) Start(app ztype.App) error {
 	var err error
 	publishDialer, err := createDialer(app.Context(), splitHosts(R.cfg.Hosts))
 	if err != nil {
@@ -54,7 +54,7 @@ func (R *RabbitMQRetry) Start(app z.App) error {
 	return nil
 }
 
-func (R *RabbitMQRetry) Retry(app z.App, payload zb.MessageEvent) error {
+func (R *RabbitMQRetry) Retry(app ztype.App, payload zbase.MessageEvent) error {
 	ctx := app.Context()
 	p, err := createPublisher(ctx, R.pdialer)
 	if err != nil {
@@ -64,7 +64,7 @@ func (R *RabbitMQRetry) Retry(app z.App, payload zb.MessageEvent) error {
 	return retry(p, app.ConfigStore().Config(), payload, R.cfg.DelayQueueExpiration)
 }
 
-func (R *RabbitMQRetry) Stop(a z.App) {
+func (R *RabbitMQRetry) Stop(a ztype.App) {
 	if R.pdialer != nil {
 		R.pdialer.Close()
 	}
@@ -75,7 +75,7 @@ func (R *RabbitMQRetry) Stop(a z.App) {
 
 }
 
-func (R *RabbitMQRetry) Replay(app z.App, route string, count int) error {
+func (R *RabbitMQRetry) Replay(app ztype.App, route string, count int) error {
 	config := app.ConfigStore().Config()
 	p, perror := R.pdialer.Publisher(publisher.WithContext(app.Context()))
 	if perror != nil {

@@ -2,8 +2,8 @@ package server
 
 import (
 	"github.com/gojekfarm/ziggurat/mock"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/julienschmidt/httprouter"
 	"net"
 	"net/http"
@@ -16,15 +16,15 @@ const serverAddr = "localhost:8080"
 func TestDefaultHttpServer_Start(t *testing.T) {
 	cs := mock.NewConfigStore()
 	a := mock.NewApp()
-	a.ConfigStoreFunc = func() z.ConfigStore {
+	a.ConfigStoreFunc = func() ztype.ConfigStore {
 		return cs
 	}
-	cs.ConfigFunc = func() *zb.Config {
-		return &zb.Config{
-			HTTPServer: zb.HTTPServerConfig{Port: "8080"},
+	cs.ConfigFunc = func() *zbase.Config {
+		return &zbase.Config{
+			HTTPServer: zbase.HTTPServerConfig{Port: "8080"},
 		}
 	}
-	ds := NewDefaultHTTPServer(cs)
+	ds := New(cs)
 	ds.Start(a)
 	time.Sleep(5 * time.Second)
 	_, err := net.Dial("tcp", serverAddr)
@@ -36,7 +36,7 @@ func TestDefaultHttpServer_Start(t *testing.T) {
 
 func TestDefaultHttpServer_Stop(t *testing.T) {
 	cs := mock.NewConfigStore()
-	ds := NewDefaultHTTPServer(cs)
+	ds := New(cs)
 	a := mock.NewApp()
 	ds.Start(a)
 	ds.Stop(a)
@@ -48,9 +48,9 @@ func TestDefaultHttpServer_Stop(t *testing.T) {
 func TestDefaultHttpServer_ConfigureHTTPRoutes(t *testing.T) {
 	cs := mock.NewConfigStore()
 	a := mock.NewApp()
-	ds := NewDefaultHTTPServer(cs)
+	ds := New(cs)
 	ds.Start(a)
-	ds.ConfigureRoutes(a, func(a z.App, h http.Handler) {
+	ds.ConfigureRoutes(a, func(a ztype.App, h http.Handler) {
 		r := h.(*httprouter.Router)
 		r.GET("/test_route", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {})
 	})

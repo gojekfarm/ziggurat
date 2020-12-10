@@ -3,9 +3,9 @@ package kstream
 import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat/z"
 	"github.com/gojekfarm/ziggurat/zlog"
 	"github.com/gojekfarm/ziggurat/zmw"
+	"github.com/gojekfarm/ziggurat/ztype"
 	"sync"
 	"time"
 )
@@ -13,7 +13,7 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(app z.App, h z.MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(app ztype.App, h ztype.MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	go func(instanceID string) {
 		defer wg.Done()
 		doneCh := app.Context().Done()
@@ -43,7 +43,7 @@ var startConsumer = func(app z.App, h z.MessageHandler, consumer *kafka.Consumer
 	}(instanceID)
 }
 
-var StartConsumers = func(app z.App, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h z.MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(app ztype.App, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h ztype.MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
@@ -51,7 +51,7 @@ var StartConsumers = func(app z.App, consumerConfig *kafka.ConfigMap, route stri
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", route, groupID, i)
 		wg.Add(1)
-		startConsumer(app, zmw.DefaultTerminalMW(h), consumer, route, instanceID, wg)
+		startConsumer(app, zmw.Terminal(h), consumer, route, instanceID, wg)
 	}
 	return consumers
 }

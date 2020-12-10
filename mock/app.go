@@ -2,18 +2,18 @@ package mock
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/z"
-	"github.com/gojekfarm/ziggurat/zb"
+	"github.com/gojekfarm/ziggurat/zbase"
+	"github.com/gojekfarm/ziggurat/ztype"
 )
 
 type App struct {
 	ContextFunc         func() context.Context
 	RoutesFunc          func() []string
-	MessageRetryFunc    func() z.MessageRetry
-	MessageHandlerFunc  func() z.MessageHandler
-	MetricPublisherFunc func() z.MetricPublisher
-	HTTPServerFunc      func() z.Server
-	ConfigStoreFunc     func() z.ConfigStore
+	MessageRetryFunc    func() ztype.MessageRetry
+	MessageHandlerFunc  func() ztype.MessageHandler
+	MetricPublisherFunc func() ztype.MetricPublisher
+	HTTPServerFunc      func() ztype.Server
+	ConfigStoreFunc     func() ztype.ConfigStore
 }
 
 func NewApp() *App {
@@ -24,18 +24,18 @@ func NewApp() *App {
 		RoutesFunc: func() []string {
 			return []string{}
 		},
-		MessageHandlerFunc: func() z.MessageHandler {
-			return z.HandlerFunc(func(messageEvent zb.MessageEvent, app z.App) z.ProcessStatus {
-				return z.ProcessingSuccess
+		MessageHandlerFunc: func() ztype.MessageHandler {
+			return ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+				return ztype.ProcessingSuccess
 			})
 		},
-		HTTPServerFunc: func() z.Server {
+		HTTPServerFunc: func() ztype.Server {
 			return nil
 		},
-		ConfigStoreFunc: func() z.ConfigStore {
+		ConfigStoreFunc: func() ztype.ConfigStore {
 			return NewConfigStore()
 		},
-		MessageRetryFunc: func() z.MessageRetry {
+		MessageRetryFunc: func() ztype.MessageRetry {
 			return NewRetry()
 		},
 	}
@@ -49,22 +49,22 @@ func (m *App) Routes() []string {
 	return m.RoutesFunc()
 }
 
-func (m *App) MessageRetry() z.MessageRetry {
+func (m *App) MessageRetry() ztype.MessageRetry {
 	return m.MessageRetryFunc()
 }
 
-func (m *App) Handler() z.MessageHandler {
+func (m *App) Handler() ztype.MessageHandler {
 	return m.MessageHandlerFunc()
 }
 
-func (m *App) MetricPublisher() z.MetricPublisher {
+func (m *App) MetricPublisher() ztype.MetricPublisher {
 	return m.MetricPublisher()
 }
 
-func (m *App) HTTPServer() z.Server {
+func (m *App) HTTPServer() ztype.Server {
 	return m.HTTPServerFunc()
 }
 
-func (m *App) ConfigStore() z.ConfigStore {
+func (m *App) ConfigStore() ztype.ConfigStore {
 	return m.ConfigStoreFunc()
 }
