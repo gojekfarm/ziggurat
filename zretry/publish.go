@@ -10,14 +10,14 @@ import (
 
 const retryCount = "retryCount"
 
-func getRetryCount(m *zbase.MessageEvent) int {
+func GetRetryCount(m *zbase.MessageEvent) int {
 	if value := m.GetMessageAttribute(retryCount); value == nil {
 		return 0
 	}
 	return m.GetMessageAttribute(retryCount).(int)
 }
 
-func setRetryCount(m *zbase.MessageEvent) {
+func SetRetryCount(m *zbase.MessageEvent) {
 	value := m.GetMessageAttribute(retryCount)
 
 	if value == nil {
@@ -27,7 +27,7 @@ func setRetryCount(m *zbase.MessageEvent) {
 	m.SetMessageAttribute(retryCount, value.(int)+1)
 }
 
-var publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
+var PublishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
 	buff := bytes.Buffer{}
 	encoder := gob.NewEncoder(&buff)
 	if encodeErr := encoder.Encode(payload); encodeErr != nil {
@@ -50,10 +50,10 @@ var publishMessage = func(exchangeName string, p *publisher.Publisher, payload z
 func retry(p *publisher.Publisher, prefix string, retryCount int, payload zbase.MessageEvent, expiry string) error {
 	exchangeName := constructExchangeName(prefix, payload.StreamRoute, QueueTypeDelay)
 	deadLetterExchangeName := constructExchangeName(prefix, payload.StreamRoute, QueueTypeDL)
-	retryCountPayload := getRetryCount(&payload)
+	retryCountPayload := GetRetryCount(&payload)
 	if retryCountPayload == retryCount {
-		return publishMessage(deadLetterExchangeName, p, payload, "")
+		return PublishMessage(deadLetterExchangeName, p, payload, "")
 	}
-	setRetryCount(&payload)
-	return publishMessage(exchangeName, p, payload, expiry)
+	SetRetryCount(&payload)
+	return PublishMessage(exchangeName, p, payload, expiry)
 }

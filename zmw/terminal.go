@@ -20,14 +20,14 @@ var Terminal = func(next ztype.MessageHandler) ztype.MessageHandler {
 		switch status {
 		case ztype.ProcessingSuccess:
 			app.MetricPublisher().IncCounter("message_processing_success", 1, metricTags)
-		case ztype.SkipMessage:
+		case ztype.SkipMessage, ztype.RetryMessage:
 			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
-		case ztype.RetryMessage:
-			app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
-			retryErr := app.MessageRetry().Retry(app, event)
-			if retryErr != nil {
-				panic(retryErr)
-			}
+		//case ztype.RetryMessage:
+		//	app.MetricPublisher().IncCounter("message_processing_failure_skip", 1, metricTags)
+		//	retryErr := app.MessageRetry().Retry(app, event)
+		//	if retryErr != nil {
+		//		panic(retryErr)
+		//	}
 		default:
 			zlog.LogError(fmt.Errorf("invalid handler return code got %d", status), "", nil)
 		}

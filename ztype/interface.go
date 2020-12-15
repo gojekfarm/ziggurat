@@ -29,16 +29,9 @@ type MessageRetry interface {
 	StartStopper
 }
 
-type ConfigStore interface {
-	Config() *zbase.Config
-	Parse(options zbase.CommandLineOptions) error
-	GetByKey(key string) interface{}
-	UnmarshalByKey(key string, model interface{}) error
-}
-
 type App interface {
 	Context() context.Context
-	Routes() []zbase.StreamConfig
+	Routes() []zbase.Stream
 	MessageRetry() MessageRetry
 	Handler() MessageHandler
 	MetricPublisher() MetricPublisher
@@ -47,10 +40,6 @@ type App interface {
 
 type MessageHandler interface {
 	HandleMessage(event zbase.MessageEvent, app App) ProcessStatus
-}
-
-type ConfigValidator interface {
-	Validate(config *zbase.Config) error
 }
 
 type Streams interface {

@@ -10,9 +10,9 @@ var PipeHandlers = func(funcs ...Adapter) func(origHandler ztype.MessageHandler)
 		return ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
 			var handlerResult = next
 			lastIdx := len(funcs) - 1
-			for i := range funcs {
-				f := funcs[lastIdx-i]
-				if i == lastIdx-i {
+			for i := lastIdx; i >= 0; i-- {
+				f := funcs[i]
+				if i == lastIdx {
 					handlerResult = f(next)
 				} else {
 					handlerResult = f(handlerResult)

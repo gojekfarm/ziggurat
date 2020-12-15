@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/zlog"
-	"github.com/gojekfarm/ziggurat/zmw"
+	//"github.com/gojekfarm/ziggurat/zmw"
 	"github.com/gojekfarm/ziggurat/ztype"
 	"github.com/makasim/amqpextra"
 	"time"
@@ -29,7 +29,7 @@ var setupConsumers = func(app ztype.App, dialer *amqpextra.Dialer, prefix string
 
 	for _, route := range routes {
 		queueName := constructQueueName(prefix, route.RouteName, QueueTypeInstant)
-		messageHandler := zmw.Terminal(messageHandler)
+		//messageHandler := zmw.Terminal(messageHandler)
 		consumerCTAG := fmt.Sprintf("%s_%s_%s", queueName, prefix, "ctag")
 
 		c, err := createConsumer(app, dialer, consumerCTAG, queueName, messageHandler)

@@ -29,11 +29,11 @@ func TestRabbitMQRetry_StartWithDialerError(t *testing.T) {
 	app := mock.NewApp()
 	rmq := NewRabbitMQRetry(cs)
 	dialerError := errors.New("dialer error")
-	oldCreateDialer := createDialer
+	oldCreateDialer := CreateDialer
 	defer func() {
-		createDialer = oldCreateDialer
+		CreateDialer = oldCreateDialer
 	}()
-	createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
+	CreateDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 		return nil, dialerError
 	}
 	err := rmq.Start(app)
@@ -63,13 +63,13 @@ func TestRabbitMQRetry_StartSuccess(t *testing.T) {
 	app.RoutesFunc = func() []string {
 		return []string{"foo"}
 	}
-	createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
+	CreateDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 		return &amqpextra.Dialer{}, nil
 	}
 	setupConsumers = func(app ztype.App, dialer *amqpextra.Dialer) error {
 		return nil
 	}
-	getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
+	GetConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
 		return &amqp.Connection{}, nil
 	}
 	withChannel = func(connection *amqp.Connection, cb func(c *amqp.Channel) error) error {
@@ -107,7 +107,7 @@ func TestRabbitMQRetry_RetryDelayQueue(t *testing.T) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
+	PublishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_delay_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)
@@ -140,7 +140,7 @@ func TestRabbitMQRetry_RetryDLQueue(t *testing.T) {
 		ch := make(<-chan *publisher.Connection)
 		return publisher.New(ch)
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
+	PublishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
 		expectedExchangeName := "foo_baz_dead_letter_exchange"
 		if exchangeName != expectedExchangeName {
 			t.Errorf("expected exchange name %s got %s", expectedExchangeName, exchangeName)

@@ -24,13 +24,13 @@ func declareExchanges(c *amqp.Channel, topicEntities []string, serviceName strin
 		for _, et := range exchangeTypes {
 			exchName := constructExchangeName(serviceName, te, et)
 			zlog.LogInfo("rmq queues: creating exchange", map[string]interface{}{"exchange-name": exchName})
-			declareExchange(c, exchName)
+			DeclareExchange(c, exchName)
 		}
 	}
 }
 
 func createAndBindQueue(c *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
-	_, queueErr := queueDeclare(c, queueName, args)
+	_, queueErr := QueueDeclare(c, queueName, args)
 	if queueErr != nil {
 		return queueErr
 	}
@@ -38,7 +38,7 @@ func createAndBindQueue(c *amqp.Channel, queueName string, exchangeName string, 
 		"queue-name":    queueName,
 		"exchange-name": exchangeName,
 	})
-	bindErr := queueBind(c, queueName, exchangeName, args)
+	bindErr := QueueBind(c, queueName, exchangeName, args)
 	return bindErr
 }
 

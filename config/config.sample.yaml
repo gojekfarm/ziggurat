@@ -23,7 +23,7 @@ retry:
   enabled: false
   count: 2
 rabbitmq:
-  hosts: "amqp://user:bitnami@localhost:5672/"
+    hosts: "amqp://user:bitnami@localhost:5672/"
   delay-queue-expiration: "1000"
   dial-timeout-seconds: 30
 statsd:

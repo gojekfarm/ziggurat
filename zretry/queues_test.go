@@ -40,7 +40,7 @@ func TestDeclareExchanges(t *testing.T) {
 func TestDelayQueueCreateAndBind(t *testing.T) {
 	serviceName, routes := "baz", []string{"foo"}
 	expectedArgs := amqp.Table{"x-dead-letter-exchange": constructExchangeName(serviceName, routes[0], QueueTypeInstant)}
-	queueDeclare = func(c *amqp.Channel, queueName string, args amqp.Table) (amqp.Queue, error) {
+	QueueDeclare = func(c *amqp.Channel, queueName string, args amqp.Table) (amqp.Queue, error) {
 		expectedQueueName := "foo_baz_" + QueueTypeDelay + "_queue"
 		if queueName != expectedQueueName {
 			t.Errorf("expected queue name %s got %s", expectedQueueName, queueName)
@@ -51,7 +51,7 @@ func TestDelayQueueCreateAndBind(t *testing.T) {
 		return amqp.Queue{}, nil
 	}
 
-	queueBind = func(c *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
+	QueueBind = func(c *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
 		expectedQueueName := "foo_baz_" + QueueTypeDelay + "_queue"
 		expectedExchangeName := "foo_baz_" + QueueTypeDelay + "_exchange"
 		if queueName != expectedQueueName {

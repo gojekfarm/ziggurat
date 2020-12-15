@@ -9,31 +9,24 @@ import (
 	"time"
 )
 
-type StatsDConf struct {
-	Host string `mapstructure:"host"`
+type StatsDClient struct {
+	client statsd.Statter
+	host   string
+	prefix string
 }
 
-type StatsD struct {
-	client       statsd.Statter
-	metricConfig *StatsDConf
-	appName      string
-}
-
-func New(config ztype.ConfigStore) ztype.MetricPublisher {
-	metricConfig := parseStatsDConfig(config)
-	return &StatsD{
-		client:       nil,
-		metricConfig: metricConfig,
-		appName:      config.Config().ServiceName,
+func NewStatsD(opts ...func(s *StatsDClient)) *StatsDClient {
+	s := &StatsDClient{}
+	for _, opt := range opts {
+		opt(s)
 	}
-}
-
-func parseStatsDConfig(config ztype.ConfigStore) *StatsDConf {
-	statsDConf := &StatsDConf{}
-	if err := config.UnmarshalByKey("statsd", &statsDConf); err != nil {
-		return &StatsDConf{Host: "localhost:8125"}
+	if s.prefix == "" {
+		s.prefix = "ziggurat_statsd"
 	}
-	return statsDConf
+	if s.host == "" {
+		s.host = "localhost:8125"
+	}
+	return s
 }
 
 func constructTags(tags map[string]string) string {
@@ -44,10 +37,10 @@ func constructTags(tags map[string]string) string {
 	return strings.Join(tagSlice, ",")
 }
 
-func (s *StatsD) Start(app ztype.App) error {
+func (s *StatsDClient) Start(app ztype.App) error {
 	config := &statsd.ClientConfig{
-		Prefix:  app.ConfigStore().Config().ServiceName,
-		Address: s.metricConfig.Host,
+		Prefix:  s.prefix,
+		Address: s.host,
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
@@ -55,7 +48,6 @@ func (s *StatsD) Start(app ztype.App) error {
 		return clientErr
 	}
 	s.client = client
-	s.appName = app.ConfigStore().Config().ServiceName
 	go func() {
 		zlog.LogInfo("statsd: starting go-routine publisher", nil)
 		done := app.Context().Done()
@@ -75,23 +67,24 @@ func (s *StatsD) Start(app ztype.App) error {
 	return nil
 }
 
-func (s *StatsD) Stop(a ztype.App) {
+func (s *StatsDClient) Stop(a ztype.App) {
 	if s.client != nil {
 		zlog.LogError(s.client.Close(), "error stopping statsd client", nil)
 	}
 }
 
-func (s *StatsD) constructFullMetricStr(metricName, tags string) string {
-	return metricName + "," + tags + "," + "app_name=" + s.appName
+func (s *StatsDClient) constructFullMetricStr(metricName, tags string) string {
+	return metricName + "," + tags + "," + "app_name=" + s.prefix
 }
 
-func (s *StatsD) IncCounter(metricName string, value int64, arguments map[string]string) error {
+func (s *StatsDClient) IncCounter(metricName string, value int64, arguments map[string]string) error {
 	tags := constructTags(arguments)
 	finalMetricName := s.constructFullMetricStr(metricName, tags)
+
 	return s.client.Inc(finalMetricName, value, 1.0)
 }
 
-func (s *StatsD) Gauge(metricName string, value int64, arguments map[string]string) error {
+func (s *StatsDClient) Gauge(metricName string, value int64, arguments map[string]string) error {
 	tags := constructTags(arguments)
 	finalMetricName := s.constructFullMetricStr(metricName, tags)
 	return s.client.Gauge(finalMetricName, value, 1.0)

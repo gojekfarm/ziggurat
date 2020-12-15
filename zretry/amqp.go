@@ -23,7 +23,7 @@ var withChannel = func(connection *amqp.Connection, cb func(c *amqp.Channel) err
 	return cberr
 }
 
-var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
+var CreateDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer, error) {
 	d, cfgErr := amqpextra.NewDialer(
 		amqpextra.WithURL(hosts...),
 		amqpextra.WithLogger(logger.Func(func(format string, v ...interface{}) {
@@ -37,7 +37,7 @@ var createDialer = func(ctx context.Context, hosts []string) (*amqpextra.Dialer,
 	return d, nil
 }
 
-var getConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
+var GetConnectionFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Connection, error) {
 	connCtx, cancelFunc := context.WithTimeout(ctx, timeout)
 	defer cancelFunc()
 	conn, err := d.Connection(connCtx)
@@ -77,14 +77,14 @@ var createConsumer = func(app ztype.App, d *amqpextra.Dialer, ctag string, queue
 	return d.Consumer(options...)
 }
 
-var declareExchange = func(c *amqp.Channel, exchangeName string) {
+var DeclareExchange = func(c *amqp.Channel, exchangeName string) {
 	c.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil)
 }
 
-var queueBind = func(c *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
+var QueueBind = func(c *amqp.Channel, queueName string, exchangeName string, args amqp.Table) error {
 	return c.QueueBind(queueName, "", exchangeName, false, args)
 }
 
-var queueDeclare = func(c *amqp.Channel, queueName string, args amqp.Table) (amqp.Queue, error) {
+var QueueDeclare = func(c *amqp.Channel, queueName string, args amqp.Table) (amqp.Queue, error) {
 	return c.QueueDeclare(queueName, true, false, false, false, args)
 }

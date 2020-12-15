@@ -12,11 +12,6 @@ func (h HandlerFunc) HandleMessage(event zbase.MessageEvent, app App) ProcessSta
 
 type StartFunction func(a App)
 type StopFunction func()
-type ValidatorFunc func(config *zbase.Config) error
-
-func (v ValidatorFunc) Validate(config *zbase.Config) error {
-	return v(config)
-}
 
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1

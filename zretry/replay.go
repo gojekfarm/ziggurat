@@ -25,7 +25,7 @@ func replayMessages(c *amqp.Channel, p *publisher.Publisher, queueName string, e
 		if decodeErr != nil {
 			return decodeErr
 		}
-		publishErr := publishMessage(exchangeOutName, p, msg, expiry)
+		publishErr := PublishMessage(exchangeOutName, p, msg, expiry)
 		if publishErr != nil {
 			return publishErr
 		}

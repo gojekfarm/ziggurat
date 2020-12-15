@@ -22,7 +22,7 @@ func TestReplay(t *testing.T) {
 	decodeMessage = func(body []byte) (zbase.MessageEvent, error) {
 		return zbase.NewMessageEvent([]byte{}, []byte{}, "", "", "", time.Time{}), nil
 	}
-	publishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
+	PublishMessage = func(exchangeName string, p *publisher.Publisher, payload zbase.MessageEvent, expirationInMS string) error {
 		publishCallCount++
 		return nil
 	}

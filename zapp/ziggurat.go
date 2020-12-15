@@ -15,7 +15,6 @@ import (
 type Ziggurat struct {
 	httpServer      ztype.Server
 	messageRetry    ztype.MessageRetry
-	configValidator ztype.ConfigValidator
 	handler         ztype.MessageHandler
 	metricPublisher ztype.MetricPublisher
 	doneChan        chan struct{}
@@ -25,7 +24,7 @@ type Ziggurat struct {
 	ctx             context.Context
 	cancelFun       context.CancelFunc
 	isRunning       int32
-	routes          []zbase.StreamConfig
+	routes          []zbase.Stream
 	streams         ztype.Streams
 }
 
@@ -46,7 +45,7 @@ func New(opts ...ZigOptions) *Ziggurat {
 	return ziggurat
 }
 
-func (z *Ziggurat) Run(handler ztype.MessageHandler, routes ...zbase.StreamConfig) chan struct{} {
+func (z *Ziggurat) Run(handler ztype.MessageHandler, routes ...zbase.Stream) chan struct{} {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		zlog.LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
 		return nil
@@ -120,7 +119,7 @@ func (z *Ziggurat) Context() context.Context {
 	return z.ctx
 }
 
-func (z *Ziggurat) Routes() []zbase.StreamConfig {
+func (z *Ziggurat) Routes() []zbase.Stream {
 	return z.routes
 }
 

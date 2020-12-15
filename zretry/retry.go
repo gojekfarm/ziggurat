@@ -49,18 +49,18 @@ func (R *RabbitMQRetry) Start(app ztype.App) error {
 		routeNames = append(routeNames, route.RouteName)
 	}
 	var err error
-	publishDialer, err := createDialer(app.Context(), splitHosts(R.cfg.hosts))
+	publishDialer, err := CreateDialer(app.Context(), splitHosts(R.cfg.hosts))
 	if err != nil {
 		return err
 	}
 	R.pdialer = publishDialer
 
-	consumerDialer, err := createDialer(app.Context(), splitHosts(R.cfg.hosts))
+	consumerDialer, err := CreateDialer(app.Context(), splitHosts(R.cfg.hosts))
 	if err != nil {
 		return err
 	}
 	R.cdialer = consumerDialer
-	conn, err := getConnectionFromDialer(app.Context(), publishDialer, time.Duration(R.cfg.dialTimeoutInS)*time.Second)
+	conn, err := GetConnectionFromDialer(app.Context(), publishDialer, time.Duration(R.cfg.dialTimeoutInS)*time.Second)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (R *RabbitMQRetry) Retry(app ztype.App, payload zbase.MessageEvent) error {
 	return retry(p, R.cfg.queuePrefix, retryCount, payload, R.cfg.delayQueueExpiration)
 }
 
-func (R *RabbitMQRetry) Stop(a ztype.App) {
+func (R *RabbitMQRetry) Stop() {
 	if R.pdialer != nil {
 		R.pdialer.Close()
 	}
@@ -97,7 +97,6 @@ func (R *RabbitMQRetry) Stop(a ztype.App) {
 	if R.cdialer != nil {
 		R.cdialer.Close()
 	}
-
 }
 
 func (R *RabbitMQRetry) Replay(app ztype.App, route string, count int) error {
@@ -107,7 +106,7 @@ func (R *RabbitMQRetry) Replay(app ztype.App, route string, count int) error {
 	}
 	queueName := constructQueueName(R.cfg.queuePrefix, route, QueueTypeDL)
 	exchangeOut := constructExchangeName(R.cfg.queuePrefix, route, QueueTypeInstant)
-	conn, err := getConnectionFromDialer(app.Context(), R.pdialer, 30*time.Second)
+	conn, err := GetConnectionFromDialer(app.Context(), R.pdialer, 30*time.Second)
 	if err != nil {
 		return err
 	}
