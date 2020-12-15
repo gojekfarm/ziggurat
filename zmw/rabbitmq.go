@@ -68,21 +68,21 @@ func (r *RabbitMQRetry) connect(ctx context.Context) error {
 
 	queueTypes := []string{"instant", "delay", "dead_letter"}
 	for _, queueType := range queueTypes {
+		var args amqp.Table
 		for route, _ := range r.queueConfig {
+			if queueType == "delay" {
+				args = amqp.Table{"x-dead-letter-exchange": constructExchangeName(route, "instant")}
+			}
 			exchangeName := constructExchangeName(route, queueType)
 			if exchangeDeclareErr := channel.ExchangeDeclare(exchangeName, amqp.ExchangeFanout, true, false, false, false, nil); exchangeDeclareErr != nil {
 				return exchangeDeclareErr
 			}
 
 			queueName := constructQueueName(route, queueType)
-			if _, queueDeclareErr := channel.QueueDeclare(queueName, true, false, false, false, nil); queueDeclareErr != nil {
+			if _, queueDeclareErr := channel.QueueDeclare(queueName, true, false, false, false, args); queueDeclareErr != nil {
 				return queueDeclareErr
 			}
 
-			var args amqp.Table
-			if queueType == "delay" {
-				args = amqp.Table{"x-dead-letter-exchange": constructExchangeName(route, "instant")}
-			}
 			if bindErr := channel.QueueBind(queueName, "", exchangeName, false, args); bindErr != nil {
 				return bindErr
 			}
