@@ -293,7 +293,7 @@ const RoutePlainTextLog = "plain-text-log"
 func main() {
 	app := ziggurat.NewApp()
 	router := ziggurat.NewRouter()
-	statsdClient := statsd.NewStatsD(statsd.WithPrefix({{.AppName}}))
+	statsdClient := statsd.NewStatsD(statsd.WithPrefix("{{.AppName}}"))
 	httpServer := server.New()
 
 	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {

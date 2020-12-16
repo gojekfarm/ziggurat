@@ -38,11 +38,7 @@ func NewZigTemplateSet(basedir string, tplcfg []ZigTemplate) *ZigTemplateSet {
 }
 
 func (zts *ZigTemplateSet) createBaseDirectories() error {
-	err := os.MkdirAll(zts.basedir+"/"+"config", 0777)
-	if err != nil {
-		return fmt.Errorf("error creating config dir: %s", err.Error())
-	}
-	err = os.MkdirAll(zts.basedir+"/"+"sandbox", 0777)
+	err := os.MkdirAll(zts.basedir+"/"+"sandbox", 0777)
 	if err != nil {
 		return fmt.Errorf("error creating sandbox dir: %s", err.Error())
 	}
