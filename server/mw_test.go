@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat/zlog"
+	"github.com/gojekfarm/ziggurat"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -10,11 +10,11 @@ import (
 
 func TestRequestLoggerMW(t *testing.T) {
 	expectedArgs := map[string]interface{}{"METHOD": "GET", "URL": "/test"}
-	oldLogger := zlog.LogInfo
+	oldLogger := ziggurat.LogInfo
 	defer func() {
-		zlog.LogInfo = oldLogger
+		ziggurat.LogInfo = oldLogger
 	}()
-	zlog.LogInfo = func(msg string, args map[string]interface{}) {
+	ziggurat.LogInfo = func(msg string, args map[string]interface{}) {
 		if !reflect.DeepEqual(expectedArgs, args) {
 			t.Errorf("expected %v got %v", expectedArgs, args)
 		}

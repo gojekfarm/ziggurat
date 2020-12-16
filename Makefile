@@ -3,6 +3,7 @@
 TOPIC_JSON="json-log"
 TOPIC_PLAIN_TEXT="plain-text-log"
 TEST_PACKAGES=$(shell go list ./... | grep -v "zbase" | grep -v "zerror" | grep -v "zlog"| grep -v "cmd" | grep -v "internal" | grep -v "mock" | grep -v "ztype")
+EXAMPLE_BUILD_PKG="./example/main.go"
 
 docker.start-kafka:
 	docker-compose down
@@ -19,15 +20,15 @@ docker.start-metrics:
 	sleep 10
 
 app.start:
-	go build
-	./ziggurat --config=./config/config.sample.yaml
+	go build -o ziggurat $(EXAMPLE_BUILD_PKG)
+	./ziggurat
 
 lib.test:
 	go test -count 1 -v $(TEST_PACKAGES)
 
 app.start-race:
-	go build -race
-	./ziggurat --config=./config/config.sample.yaml
+	go build -race -o ziggurat $(EXAMPLE_BUILD_PKG)
+	./ziggurat
 
 docker.cleanup:
 	docker-compose down

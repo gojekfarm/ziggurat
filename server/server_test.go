@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat/mock"
+	"github.com/gojekfarm/ziggurat"
 	"github.com/julienschmidt/httprouter"
 	"net"
 	"net/http"
@@ -12,7 +12,7 @@ import (
 const serverAddr = "localhost:8080"
 
 func TestDefaultHttpServer_Start(t *testing.T) {
-	a := mock.NewZig()
+	a := ziggurat.NewZig()
 	ds := New()
 	ds.Start(a)
 	time.Sleep(100 * time.Millisecond)
@@ -24,7 +24,7 @@ func TestDefaultHttpServer_Start(t *testing.T) {
 }
 
 func TestDefaultHttpServer_Stop(t *testing.T) {
-	a := mock.NewZig()
+	a := ziggurat.NewZig()
 	ds := New()
 	ds.Start(a)
 	ds.Stop(a)
@@ -35,7 +35,7 @@ func TestDefaultHttpServer_Stop(t *testing.T) {
 
 func TestDefaultHttpServer_ConfigureHTTPRoutes(t *testing.T) {
 	ds := New()
-	ds.ConfigureHTTP(func(r *httprouter.Router) {
+	ds.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
 		r.GET("/test_route", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {})
 	})
 	if handle, _, _ := ds.router.Lookup(http.MethodGet, "/test_route"); handle == nil {
