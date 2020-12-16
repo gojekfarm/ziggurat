@@ -282,24 +282,39 @@ datasources:
 var Main = `package main
 
 import (
-	"github.com/gojekfarm/ziggurat/pkg/z"
-	"github.com/gojekfarm/ziggurat/pkg/za"
-	"github.com/gojekfarm/ziggurat/pkg/zb"
-	"github.com/gojekfarm/ziggurat/pkg/zmw"
-	"github.com/gojekfarm/ziggurat/pkg/zr"
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/mw/statsd"
+	"github.com/gojekfarm/ziggurat/server"
 )
 
-func main() {
-	app := za.NewApp()
-	router := zr.NewRouter()
+const RoutePlainTextLog = "plain-text-log"
 
-	router.HandleFunc("plain-text-log", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+func main() {
+	app := ziggurat.NewApp()
+	router := ziggurat.NewRouter()
+	statsdClient := statsd.NewStatsD(statsd.WithPrefix({{.AppName}}))
+	httpServer := server.New()
+
+	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
 	})
 
-	routerWithMW := router.Compose(zmw.MessageLogger, zmw.MessageMetricsPublisher)
+	rmw := router.Compose(mw.MessageLogger, statsdClient.PublishKafkaLag, statsdClient.PublishHandlerMetrics)
 
-	<-app.Run(routerWithMW, router.Routes())
+	app.OnStart(func(a ziggurat.App) {
+		statsdClient.Start(app)
+		httpServer.Start(app)
+	})
+
+	<-app.Run(rmw, ziggurat.Routes{
+		RoutePlainTextLog: {
+			InstanceCount:    1,
+			BootstrapServers: "localhost:9092",
+			OriginTopics:     "plain-text-log",
+			GroupID:          "plain_text_consumer",
+		},
+	})
 }`
 
 var Makefile = `.PHONY: all

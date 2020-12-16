@@ -2,7 +2,7 @@
 
 TOPIC_JSON="json-log"
 TOPIC_PLAIN_TEXT="plain-text-log"
-TEST_PACKAGES=$(shell go list ./... | grep -v "zbase" | grep -v "zerror" | grep -v "zlog"| grep -v "cmd" | grep -v "internal" | grep -v "mock" | grep -v "ztype")
+TEST_PACKAGES=$(shell go list ./... | grep -v "mock" | grep -v "errors" | grep -v "example" | grep -v "internal")
 EXAMPLE_BUILD_PKG="./example/main.go"
 
 docker.start-kafka:
