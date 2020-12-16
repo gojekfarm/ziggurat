@@ -53,6 +53,11 @@ func main() {
 		httpServer.Start(app)
 	})
 
+	app.OnStop(func(a ziggurat.App) {
+		httpServer.Stop(a)
+		statsdClient.Stop()
+	})
+
 	<-app.Run(rmw, ziggurat.Routes{
 		RoutePlainTextLog: {
 			InstanceCount:    1,
