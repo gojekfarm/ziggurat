@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/gojekfarm/ziggurat-go/cmd"
-	"github.com/gojekfarm/ziggurat-go/cmd/handlers"
+	"github.com/gojekfarm/ziggurat/cmd"
+	"github.com/gojekfarm/ziggurat/cmd/handlers"
 	"os"
 )
 

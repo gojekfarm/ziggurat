@@ -23,10 +23,10 @@ func (k *KafkaStreams) Start(app ztype.App) (chan struct{}, error) {
 	stopChan := make(chan struct{})
 	handler := app.Handler()
 
-	for _, stream := range app.Routes() {
+	for routeName, stream := range app.Routes() {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.GroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
-		k.routeConsumerMap[stream.RouteName] = StartConsumers(app, consumerConfig, stream.RouteName, topics, stream.InstanceCount, handler, &wg)
+		k.routeConsumerMap[routeName] = StartConsumers(app, consumerConfig, routeName, topics, stream.InstanceCount, handler, &wg)
 	}
 
 	go func() {

@@ -34,11 +34,11 @@ func TestMessageLogger_Success(t *testing.T) {
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "",
 		StreamRoute:       "",
-		KafkaTimestamp:    ts,
+		ActualTimestamp:   ts,
 		TimestampType:     "",
 		Attributes:        nil,
 	}
 
-	ml.HandleMessage(event, mock.NewApp())
+	ml.HandleMessage(event, mock.NewZig())
 
 }

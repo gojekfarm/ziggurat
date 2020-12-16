@@ -11,7 +11,7 @@ func (h HandlerFunc) HandleMessage(event zbase.MessageEvent, app App) ProcessSta
 }
 
 type StartFunction func(a App)
-type StopFunction func()
+type StopFunction func(a App)
 
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1

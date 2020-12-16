@@ -30,18 +30,3 @@ func MessageLogger(next ztype.MessageHandler) ztype.MessageHandler {
 		return status
 	})
 }
-
-func MessageMetricsPublisher(next ztype.MessageHandler) ztype.MessageHandler {
-	return ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
-		args := map[string]string{
-			"topic_entity": messageEvent.StreamRoute,
-			"kafka_topic":  messageEvent.Topic,
-		}
-		currTime := getCurrentTime()
-		kafkaTimestamp := messageEvent.KafkaTimestamp
-		delayInMS := currTime.Sub(kafkaTimestamp).Milliseconds()
-		app.MetricPublisher().IncCounter("message_count", 1, args)
-		app.MetricPublisher().Gauge("message_delay", delayInMS, args)
-		return next.HandleMessage(messageEvent, app)
-	})
-}

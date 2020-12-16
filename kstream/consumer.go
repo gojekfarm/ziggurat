@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat/zlog"
-	"github.com/gojekfarm/ziggurat/zmw"
 	"github.com/gojekfarm/ziggurat/ztype"
 	"sync"
 	"time"
@@ -51,7 +50,7 @@ var StartConsumers = func(app ztype.App, consumerConfig *kafka.ConfigMap, route 
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", route, groupID, i)
 		wg.Add(1)
-		startConsumer(app, zmw.Terminal(h), consumer, route, instanceID, wg)
+		startConsumer(app, h, consumer, route, instanceID, wg)
 	}
 	return consumers
 }

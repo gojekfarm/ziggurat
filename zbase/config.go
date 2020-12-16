@@ -12,5 +12,6 @@ type Stream struct {
 	BootstrapServers string
 	OriginTopics     string
 	GroupID          string
-	RouteName        string
 }
+
+type Routes map[string]Stream

@@ -7,7 +7,6 @@ import (
 	"github.com/gojekfarm/ziggurat/mock"
 	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/ztype"
-	"github.com/gojekfarm/ziggurat/zvoid"
 	"github.com/rs/zerolog"
 	"os"
 	"sync"
@@ -21,9 +20,11 @@ func TestMain(m *testing.M) {
 }
 
 func TestConsumer_create(t *testing.T) {
-	app := mock.NewApp()
+	app := mock.NewZig()
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := zvoid.VoidMessageHandler{}
+	handler := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
+	})
 	oldStartConsumer := startConsumer
 	oldCreateConsumer := createConsumer
 	defer func() {
@@ -62,7 +63,7 @@ func TestConsumer_start(t *testing.T) {
 			Headers:       nil,
 		}, nil
 	}
-	app := mock.NewApp()
+	app := mock.NewZig()
 	hf := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
 		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
@@ -91,7 +92,7 @@ func TestConsumer_start(t *testing.T) {
 
 func TestConsumer_AllBrokersDown(t *testing.T) {
 	callCount := 0
-	app := mock.NewApp()
+	app := mock.NewZig()
 	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
 		callCount++
 		return nil, kafka.NewError(kafka.ErrAllBrokersDown, "", true)
@@ -105,7 +106,9 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	app.ContextFunc = func() context.Context {
 		return ctx
 	}
-	h := zvoid.VoidMessageHandler{}
+	h := ztype.HandlerFunc(func(messageEvent zbase.MessageEvent, app ztype.App) ztype.ProcessStatus {
+		return ztype.ProcessingSuccess
+	})
 	wg.Add(1)
 	startConsumer(app, h, c, "", "", wg)
 	wg.Wait()

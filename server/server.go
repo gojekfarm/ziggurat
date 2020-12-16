@@ -14,37 +14,43 @@ type DefaultHttpServer struct {
 	router *httprouter.Router
 }
 
-func New(config ztype.ConfigStore) ztype.Server {
-	port := config.Config().HTTPServer.Port
-	if port == "" {
-		port = defaultHTTPPort
-	}
-	router := httprouter.New()
-	server := &http.Server{Addr: ":" + port, Handler: requestLogger(router)}
-	return &DefaultHttpServer{
-		server: server,
-		router: router,
+func WithPort(port string) func(s *DefaultHttpServer) {
+	return func(s *DefaultHttpServer) {
+		s.server.Addr = "localhost:" + port
 	}
 }
 
-func (s *DefaultHttpServer) Start(app ztype.App) error {
-	s.router.POST("/v1/dead_set/:topic_entity/:count", replayHandler(app))
-	s.router.GET("/v1/ping", pingHandler)
+func New(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
+	router := httprouter.New()
+	server := &http.Server{Handler: requestLogger(router)}
+	s := &DefaultHttpServer{
+		server: server,
+		router: router,
+	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	s.server.Addr = "localhost:" + defaultHTTPPort
+	return s
+}
 
+func (s *DefaultHttpServer) Start(app ztype.App) error {
+	s.router.GET("/v1/ping", pingHandler)
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
 			zlog.LogError(err, "default http server error", nil)
 		}
 	}(s.server)
+	zlog.LogInfo("http server start on "+s.server.Addr, nil)
 	return nil
 }
 
-func (s *DefaultHttpServer) ConfigureRoutes(a ztype.App, configFunc func(a ztype.App, h http.Handler)) {
-	configFunc(a, s.router)
+func (s *DefaultHttpServer) ConfigureHTTP(f func(r *httprouter.Router)) {
+	f(s.router)
 }
 
-func (s *DefaultHttpServer) Handler() http.Handler {
-	return s.router
+func (s *DefaultHttpServer) ConfigureHandler(f func(r *httprouter.Router) http.Handler) {
+	s.server.Handler = f(s.router)
 }
 
 func (s *DefaultHttpServer) Stop(app ztype.App) {

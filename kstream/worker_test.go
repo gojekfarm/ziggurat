@@ -14,7 +14,7 @@ func TestConsumerWorker_Run(t *testing.T) {
 	concurrency := 10
 	callCount := int32(0)
 	cw := NewWorker(concurrency)
-	send, stop := cw.run(mock.NewApp(), func(message *kafka.Message) {
+	send, stop := cw.run(mock.NewZig(), func(message *kafka.Message) {
 		atomic.AddInt32(&callCount, 1)
 	})
 	for i := 0; i < concurrency; i++ {
@@ -32,7 +32,7 @@ func TestConsumerWorker_ContextDone(t *testing.T) {
 	jobs := concurrency + 20
 	callCount := int32(0)
 	cw := NewWorker(concurrency)
-	a := mock.NewApp()
+	a := mock.NewZig()
 	c, cancelFunc := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancelFunc()
 	a.ContextFunc = func() context.Context {

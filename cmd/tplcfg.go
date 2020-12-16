@@ -1,13 +1,8 @@
 package cmd
 
-import "github.com/gojekfarm/ziggurat-go/cmd/templates"
+import "github.com/gojekfarm/ziggurat/cmd/templates"
 
 var templateConfig = []ZigTemplate{
-	{
-		TemplateName:    "yaml-config",
-		TemplateText:    templates.YamlConfig,
-		TemplateOutPath: "$APP_NAME/config/config.yaml",
-	},
 	{
 		TemplateName:    "go-mod",
 		TemplateText:    templates.GoMod,

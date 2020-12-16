@@ -10,31 +10,9 @@ import (
 )
 
 func TestKafkaStreams_Start(t *testing.T) {
-	a := mock.NewApp()
-	a.ConfigStoreFunc = func() ztype.ConfigStore {
-		c := mock.NewConfigStore()
-		c.ConfigFunc = func() *zbase.Config {
-			return &zbase.Config{
-				StreamRouter: map[string]zbase.StreamRouterConfig{
-					"foo": {
-						InstanceCount:    0,
-						BootstrapServers: "",
-						OriginTopics:     "",
-						GroupID:          "",
-					},
-					"bar": {
-						InstanceCount:    0,
-						BootstrapServers: "",
-						OriginTopics:     "",
-						GroupID:          "",
-					},
-				},
-			}
-		}
-		return c
-	}
-	a.RoutesFunc = func() []string {
-		return []string{"foo", "bar"}
+	a := mock.NewZig()
+	a.RoutesFunc = func() zbase.Routes {
+		return zbase.Routes{"foo": {}}
 	}
 	oldStartConsumers := StartConsumers
 	defer func() {

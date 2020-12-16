@@ -10,7 +10,7 @@ type MessageEvent struct {
 	MessageKeyBytes   []byte
 	Topic             string
 	StreamRoute       string
-	KafkaTimestamp    time.Time
+	ActualTimestamp   time.Time
 	TimestampType     string
 	Attributes        map[string]interface{}
 	attrMutex         *sync.Mutex
@@ -26,7 +26,7 @@ func NewMessageEvent(key []byte, value []byte, topic string, route string, times
 		Topic:             topic,
 		StreamRoute:       route,
 		TimestampType:     timestampType,
-		KafkaTimestamp:    ktimestamp,
+		ActualTimestamp:   ktimestamp,
 	}
 }
 

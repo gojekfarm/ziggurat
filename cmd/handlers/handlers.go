@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gojekfarm/ziggurat-go/cmd"
+	"github.com/gojekfarm/ziggurat/cmd"
 )
 
 var NewHandler = func(args []string) int {

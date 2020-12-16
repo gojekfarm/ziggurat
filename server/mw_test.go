@@ -10,9 +10,13 @@ import (
 
 func TestRequestLoggerMW(t *testing.T) {
 	expectedArgs := map[string]interface{}{"METHOD": "GET", "URL": "/test"}
+	oldLogger := zlog.LogInfo
+	defer func() {
+		zlog.LogInfo = oldLogger
+	}()
 	zlog.LogInfo = func(msg string, args map[string]interface{}) {
 		if !reflect.DeepEqual(expectedArgs, args) {
-			t.Errorf("expected args %v got %v", expectedArgs, args)
+			t.Errorf("expected %v got %v", expectedArgs, args)
 		}
 	}
 	rl := requestLogger(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {}))

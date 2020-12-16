@@ -5,8 +5,8 @@ Stream Processing made easy
 ### Install the zig CLI
 
 ```shell script
-go get -v -u github.com/gojekfarm/ziggurat-go/cmd/...
-go install github.com/gojekfarm/ziggurat-go/cmd/...                                                                                                                                                       
+go get -v -u github.com/gojekfarm/ziggurat/cmd/...
+go install github.com/gojekfarm/ziggurat/cmd/...                                                                                                                                                       
 ```
 
 #### How to use
@@ -60,7 +60,7 @@ package main
 
 import (
 	"github.com/gojekfarm/ziggurat/ztype"
-	"github.com/gojekfarm/ziggurat/zapp"
+	"github.com/gojekfarm/ziggurat/zigg"
 	"github.com/gojekfarm/ziggurat/zbase"
 	"github.com/gojekfarm/ziggurat/zmw"
 	"github.com/gojekfarm/ziggurat/zrouter"

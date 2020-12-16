@@ -27,5 +27,5 @@ func TestPipeHandlers(t *testing.T) {
 		return ztype.ProcessingSuccess
 	})
 	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
-	finalHandler.HandleMessage(zbase.MessageEvent{}, mock.NewApp())
+	finalHandler.HandleMessage(zbase.MessageEvent{}, mock.NewZig())
 }

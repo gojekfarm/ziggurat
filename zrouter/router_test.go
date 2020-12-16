@@ -22,7 +22,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 	event := zbase.MessageEvent{
 		StreamRoute: "bar",
 	}
-	a := mock.NewApp()
+	a := mock.NewZig()
 	dr.HandleMessage(event, a)
 
 	if !called {
@@ -37,7 +37,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "baz",
 		StreamRoute:       "foo",
-		KafkaTimestamp:    time.Time{},
+		ActualTimestamp:   time.Time{},
 		TimestampType:     "",
 		Attributes:        nil,
 	}
@@ -47,7 +47,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		}
 		return ztype.ProcessingSuccess
 	})
-	dr.HandleMessage(expectedEvent, mock.NewApp())
+	dr.HandleMessage(expectedEvent, mock.NewZig())
 }
 
 func TestDefaultRouter_Routes(t *testing.T) {
