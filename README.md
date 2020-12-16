@@ -5,8 +5,8 @@ Stream Processing made easy
 ### Install the zig CLI
 
 ```shell script
-go get -v -u github.com/gojekfarm/ziggurat/cmd/...
-go install github.com/gojekfarm/ziggurat/cmd/...                                                                                                                                                       
+go get -v -u github.com/gojekfarm/ziggurat/cmd/zig
+go install github.com/gojekfarm/ziggurat/cmd/zig                                                                                                                                                       
 ```
 
 #### How to use
@@ -15,37 +15,6 @@ go install github.com/gojekfarm/ziggurat/cmd/...
 
 ```shell
 zig new <app_name>
-```
-
-#### sample config file
-
-```yaml
-service-name: "test-app"
-stream-router:
-  plain-text-log:
-    bootstrap-servers: "localhost:9092"
-    instance-count: 2
-    origin-topics: "plain-text-log"
-    group-id: "plain_text_consumer"
-log-level: "debug"
-retry:
-  enabled: true
-  count: 5
-rabbitmq:
-  host: "amqp://user:bitnami@localhost:5672/"
-  delay-queue-expiration: "1000"
-statsd:
-  host: "localhost:8125"
-http-server:
-  port: 8080
-```
-
-#### Overriding the config using ENV variables
-
-- To override the boostrap-servers under plain-text-log
-
-```shell script
-export ZIGGURAT_STREAM_ROUTER_PLAIN_TEXT_LOG_BOOTSTRAP_SERVERS="localhost:9094"
 ```
 
 - sample `main.go`
@@ -59,23 +28,39 @@ with `--ziggurat-config="your_path/config_file.yaml"` option
 package main
 
 import (
-	"github.com/gojekfarm/ziggurat/ztype"
-	"github.com/gojekfarm/ziggurat/zigg"
-	"github.com/gojekfarm/ziggurat/zbase"
-	"github.com/gojekfarm/ziggurat/zmw"
-	"github.com/gojekfarm/ziggurat/zrouter"
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/mw/statsd"
+	"github.com/gojekfarm/ziggurat/server"
 )
 
-func main() {
-	app := za.NewApp()
-	router := zr.NewRouter()
+const RoutePlainTextLog = "plain-text-log"
 
-	router.HandleFunc("plain-text-log", func(event zb.MessageEvent, app z.App) z.ProcessStatus {
-		return z.ProcessingSuccess
+func main() {
+	app := ziggurat.NewApp()
+	router := ziggurat.NewRouter()
+	statsdClient := statsd.NewStatsD(statsd.WithPrefix("super-app"))
+	httpServer := server.New()
+
+	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
 	})
 
-	routerWithMW := router.Compose(zmw.MessageLogger, zmw.MessageMetricsPublisher)
+	rmw := router.Compose(mw.MessageLogger, statsdClient.PublishKafkaLag, statsdClient.PublishHandlerMetrics)
 
-	<-app.Run(routerWithMW, router.Routes())
+	app.OnStart(func(a ziggurat.App) {
+		statsdClient.Start(app)
+		httpServer.Start(app)
+	})
+
+	<-app.Run(rmw, ziggurat.Routes{
+		RoutePlainTextLog: {
+			InstanceCount:    1,
+			BootstrapServers: "localhost:9092",
+			OriginTopics:     "plain-text-log",
+			GroupID:          "plain_text_consumer",
+		},
+	})
 }
+
 ```
