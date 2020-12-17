@@ -19,7 +19,7 @@ func WithPort(port string) func(s *DefaultHttpServer) {
 	}
 }
 
-func New(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
+func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	router := httprouter.New()
 	server := &http.Server{Handler: requestLogger(router)}
 	s := &DefaultHttpServer{

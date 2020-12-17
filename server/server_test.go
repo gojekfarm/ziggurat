@@ -13,7 +13,7 @@ const serverAddr = "localhost:8080"
 
 func TestDefaultHttpServer_Start(t *testing.T) {
 	a := ziggurat.NewZig()
-	ds := New()
+	ds := NewHTTPServer()
 	ds.Start(a)
 	time.Sleep(100 * time.Millisecond)
 	_, err := net.Dial("tcp", serverAddr)
@@ -25,7 +25,7 @@ func TestDefaultHttpServer_Start(t *testing.T) {
 
 func TestDefaultHttpServer_Stop(t *testing.T) {
 	a := ziggurat.NewZig()
-	ds := New()
+	ds := NewHTTPServer()
 	ds.Start(a)
 	ds.Stop(a)
 	if _, err := net.Dial("tcp", serverAddr); err == nil {
@@ -34,7 +34,7 @@ func TestDefaultHttpServer_Stop(t *testing.T) {
 }
 
 func TestDefaultHttpServer_ConfigureHTTPRoutes(t *testing.T) {
-	ds := New()
+	ds := NewHTTPServer()
 	ds.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
 		r.GET("/test_route", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {})
 	})
