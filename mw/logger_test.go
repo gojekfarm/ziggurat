@@ -25,7 +25,7 @@ func TestMessageLogger_Success(t *testing.T) {
 	defer func() {
 		ziggurat.LogInfo = oldLogInfo
 	}()
-	ml := MessageLogger(handler)
+	ml := ProcessingStatusLogger(handler)
 	event := ziggurat.MessageEvent{
 		MessageValueBytes: []byte("foo"),
 		MessageKeyBytes:   []byte("foo"),

@@ -5,7 +5,7 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
-func MessageLogger(next ziggurat.MessageHandler) ziggurat.MessageHandler {
+func ProcessingStatusLogger(next ziggurat.MessageHandler) ziggurat.MessageHandler {
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
 		args := map[string]interface{}{
 			"ROUTE": messageEvent.StreamRoute,

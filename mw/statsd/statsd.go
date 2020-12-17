@@ -3,8 +3,6 @@ package statsd
 import (
 	"github.com/cactus/go-statsd-client/statsd"
 	"github.com/gojekfarm/ziggurat"
-	"runtime"
-	"strings"
 	"time"
 )
 
@@ -29,14 +27,6 @@ func NewStatsD(opts ...func(s *StatsDClient)) *StatsDClient {
 	return s
 }
 
-func constructTags(tags map[string]string) string {
-	var tagSlice []string
-	for k, v := range tags {
-		tagSlice = append(tagSlice, k+"="+v)
-	}
-	return strings.Join(tagSlice, ",")
-}
-
 func (s *StatsDClient) Start(app ziggurat.App) error {
 	config := &statsd.ClientConfig{
 		Prefix:  s.prefix,
@@ -48,22 +38,7 @@ func (s *StatsDClient) Start(app ziggurat.App) error {
 		return clientErr
 	}
 	s.client = client
-	go func() {
-		ziggurat.LogInfo("statsd: starting go-routine publisher", nil)
-		done := app.Context().Done()
-		t := time.NewTicker(10 * time.Second)
-		tickerChan := t.C
-		for {
-			select {
-			case <-done:
-				t.Stop()
-				ziggurat.LogInfo("statsd: halting go-routine publisher", nil)
-				return
-			case <-tickerChan:
-				s.client.Gauge("go_routine_count", int64(runtime.NumGoroutine()), 1.0)
-			}
-		}
-	}()
+	go GoRoutinePublisher(app.Context(), 10*time.Second, s)
 	return nil
 }
 
