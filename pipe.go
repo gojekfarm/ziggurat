@@ -2,7 +2,7 @@ package ziggurat
 
 var PipeHandlers = func(funcs ...Adapter) func(origHandler MessageHandler) MessageHandler {
 	return func(next MessageHandler) MessageHandler {
-		return HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
+		return HandlerFunc(func(messageEvent Event, app AppContext) ProcessStatus {
 			var handlerResult = next
 			lastIdx := len(funcs) - 1
 			for i := lastIdx; i >= 0; i-- {

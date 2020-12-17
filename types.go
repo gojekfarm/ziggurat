@@ -1,8 +1,8 @@
 package ziggurat
 
-type HandlerFunc func(messageEvent MessageEvent, app AppContext) ProcessStatus
+type HandlerFunc func(messageEvent Event, app AppContext) ProcessStatus
 
-func (h HandlerFunc) HandleMessage(event MessageEvent, app AppContext) ProcessStatus {
+func (h HandlerFunc) HandleMessage(event Event, app AppContext) ProcessStatus {
 	return h(event, app)
 }
 

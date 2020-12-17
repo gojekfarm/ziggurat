@@ -2,6 +2,7 @@ package ziggurat
 
 import (
 	"context"
+	"time"
 )
 
 type Routes map[string]RouteDefinition
@@ -13,7 +14,7 @@ type AppContext interface {
 }
 
 type MessageHandler interface {
-	HandleMessage(event MessageEvent, app AppContext) ProcessStatus
+	HandleMessage(event Event, app AppContext) ProcessStatus
 }
 
 type Streams interface {
@@ -26,4 +27,14 @@ type RouteDefinition interface {
 	Servers() string
 	ConsumerGroupID() string
 	Topics() string
+}
+
+type Event interface {
+	PublishTime() time.Time
+	MessageKey() []byte
+	MessageValue() []byte
+	OriginTopic() string
+	RouteName() string
+	GetAttribute(key string) interface{}
+	SetAttribute(key string, value interface{})
 }

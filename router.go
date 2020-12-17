@@ -10,8 +10,8 @@ type defaultRouter struct {
 
 type Adapter func(next MessageHandler) MessageHandler
 
-func (dr *defaultRouter) HandleMessage(event MessageEvent, app AppContext) ProcessStatus {
-	route := event.StreamRoute
+func (dr *defaultRouter) HandleMessage(event Event, app AppContext) ProcessStatus {
+	route := event.RouteName()
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
 		return SkipMessage
@@ -26,7 +26,7 @@ func NewRouter() *defaultRouter {
 	}
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event MessageEvent, app AppContext) ProcessStatus) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Event, app AppContext) ProcessStatus) {
 	if handlerFunc == nil {
 		LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
 	}

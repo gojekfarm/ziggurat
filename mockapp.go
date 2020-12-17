@@ -19,7 +19,7 @@ func NewZig() *Zig {
 			return Routes{}
 		},
 		HandlerFuncGetter: func() MessageHandler {
-			return HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
+			return HandlerFunc(func(messageEvent Event, app AppContext) ProcessStatus {
 				return ProcessingSuccess
 			})
 		},

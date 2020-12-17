@@ -20,24 +20,24 @@ func constructExchangeName(route StreamRouteName, queueType string) string {
 	return fmt.Sprintf("%s_%s_%s_exchange", "ziggurat", route, queueType)
 }
 
-func getRetryCount(m *ziggurat.MessageEvent) int {
-	if value := m.GetMessageAttribute("retryCount"); value == nil {
+func getRetryCount(m ziggurat.Event) int {
+	if value := m.GetAttribute("retryCount"); value == nil {
 		return 0
 	}
-	return m.GetMessageAttribute("retryCount").(int)
+	return m.GetAttribute("retryCount").(int)
 }
 
-func setRetryCount(m *ziggurat.MessageEvent) {
-	value := m.GetMessageAttribute("retryCount")
+func setRetryCount(m ziggurat.Event) {
+	value := m.GetAttribute("retryCount")
 
 	if value == nil {
-		m.SetMessageAttribute("retryCount", 1)
+		m.SetAttribute("retryCount", 1)
 		return
 	}
-	m.SetMessageAttribute("retryCount", value.(int)+1)
+	m.SetAttribute("retryCount", value.(int)+1)
 }
 
-func encodeMessage(message ziggurat.MessageEvent) (*bytes.Buffer, error) {
+func encodeMessage(message ziggurat.Event) (*bytes.Buffer, error) {
 	buff := bytes.NewBuffer([]byte{})
 	encoder := gob.NewEncoder(buff)
 
@@ -96,7 +96,7 @@ func (r *RabbitMQRetry) initPublisher(ctx context.Context) error {
 	return nil
 }
 
-func (r *RabbitMQRetry) retry(event ziggurat.MessageEvent, app ziggurat.AppContext) error {
+func (r *RabbitMQRetry) retry(event ziggurat.Event, app ziggurat.AppContext) error {
 	pub, pubCreateError := r.dialer.Publisher(publisher.WithContext(app.Context()))
 	if pubCreateError != nil {
 		return pubCreateError
@@ -106,13 +106,13 @@ func (r *RabbitMQRetry) retry(event ziggurat.MessageEvent, app ziggurat.AppConte
 	publishing := amqp.Publishing{}
 	message := publisher.Message{}
 
-	if getRetryCount(&event) >= r.queueConfig[StreamRouteName(event.StreamRoute)].RetryCount {
-		message.Exchange = constructExchangeName(StreamRouteName(event.StreamRoute), "dead_letter")
+	if getRetryCount(event) >= r.queueConfig[StreamRouteName(event.RouteName())].RetryCount {
+		message.Exchange = constructExchangeName(StreamRouteName(event.RouteName()), "dead_letter")
 		publishing.Expiration = ""
 	} else {
-		message.Exchange = constructExchangeName(StreamRouteName(event.StreamRoute), "delay")
-		publishing.Expiration = r.queueConfig[StreamRouteName(event.StreamRoute)].DelayQueueExpirationInMS
-		setRetryCount(&event)
+		message.Exchange = constructExchangeName(StreamRouteName(event.RouteName()), "delay")
+		publishing.Expiration = r.queueConfig[StreamRouteName(event.RouteName())].DelayQueueExpirationInMS
+		setRetryCount(event)
 	}
 
 	buff, err := encodeMessage(event)

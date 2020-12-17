@@ -24,13 +24,13 @@ func main() {
 		[]string{"amqp://user:bitnami@localhost:5672/"},
 		rabbitmq.QueueConfig{RouteJSONLog: {DelayQueueExpirationInMS: "500", RetryCount: 2}}, nil)
 
-	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
+	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.Event, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 
-	router.HandleFunc(RouteJSONLog, func(event ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
+	router.HandleFunc(RouteJSONLog, func(event ziggurat.Event, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		jsonLog := &JSONLog{}
-		if err := ziggurat.JSON(event.MessageValueBytes, jsonLog); err != nil {
+		if err := ziggurat.JSON(event.MessageValue(), jsonLog); err != nil {
 			ziggurat.LogError(err, "json decode error", nil)
 			return ziggurat.SkipMessage
 		}
@@ -54,13 +54,13 @@ func main() {
 	})
 
 	<-app.Run(rmw, ziggurat.Routes{
-		RoutePlainTextLog: {
+		RoutePlainTextLog: ziggurat.Stream{
 			InstanceCount:    1,
 			BootstrapServers: "localhost:9092",
 			OriginTopics:     "plain-text-log",
 			GroupID:          "plain_text_consumer",
 		},
-		RouteJSONLog: {
+		RouteJSONLog: ziggurat.Stream{
 			InstanceCount:    1,
 			BootstrapServers: "localhost:9092",
 			OriginTopics:     "json-log",

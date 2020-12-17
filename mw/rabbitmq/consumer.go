@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-var decodeMessage = func(body []byte) (ziggurat.MessageEvent, error) {
+var decodeMessage = func(body []byte) (ziggurat.Event, error) {
 	buff := bytes.Buffer{}
 	buff.Write(body)
 	decoder := gob.NewDecoder(&buff)
