@@ -27,7 +27,7 @@ func NewStatsD(opts ...func(s *StatsDClient)) *StatsDClient {
 	return s
 }
 
-func (s *StatsDClient) Start(app ziggurat.App) error {
+func (s *StatsDClient) Start(app ziggurat.AppContext) error {
 	config := &statsd.ClientConfig{
 		Prefix:  s.prefix,
 		Address: s.host,
@@ -66,7 +66,7 @@ func (s *StatsDClient) Gauge(metricName string, value int64, arguments map[strin
 }
 
 func (s *StatsDClient) PublishHandlerMetrics(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		arguments := map[string]string{"route": messageEvent.StreamRoute}
 		startTime := time.Now()
 		status := handler.HandleMessage(messageEvent, app)
@@ -84,7 +84,7 @@ func (s *StatsDClient) PublishHandlerMetrics(handler ziggurat.MessageHandler) zi
 }
 
 func (s *StatsDClient) PublishKafkaLag(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		actualTS := messageEvent.ActualTimestamp
 		now := time.Now()
 		diff := now.Sub(actualTS).Milliseconds()

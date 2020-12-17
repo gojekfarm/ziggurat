@@ -24,11 +24,11 @@ func main() {
 		[]string{"amqp://user:bitnami@localhost:5672/"},
 		rabbitmq.QueueConfig{RouteJSONLog: {DelayQueueExpirationInMS: "500", RetryCount: 2}}, nil)
 
-	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 
-	router.HandleFunc(RouteJSONLog, func(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	router.HandleFunc(RouteJSONLog, func(event ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		jsonLog := &JSONLog{}
 		if err := ziggurat.JSON(event.MessageValueBytes, jsonLog); err != nil {
 			ziggurat.LogError(err, "json decode error", nil)
@@ -42,13 +42,13 @@ func main() {
 
 	rmw := router.Compose(mw.ProcessingStatusLogger, statsdClient.PublishKafkaLag, statsdClient.PublishHandlerMetrics, rmq.Retrier)
 
-	app.OnStart(func(a ziggurat.App) {
+	app.OnStart(func(a ziggurat.AppContext) {
 		statsdClient.Start(app)
 		httpServer.Start(app)
 		rmq.StartConsumers(app, app.Handler())
 	})
 
-	app.OnStop(func(a ziggurat.App) {
+	app.OnStop(func(a ziggurat.AppContext) {
 		httpServer.Stop(a)
 		statsdClient.Stop()
 	})

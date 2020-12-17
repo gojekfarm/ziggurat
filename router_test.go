@@ -2,6 +2,7 @@ package ziggurat
 
 import (
 	"reflect"
+	"sort"
 	"testing"
 	"time"
 )
@@ -12,7 +13,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 		called = true
 	}
 	dr := NewRouter()
-	dr.HandleFunc("foo", func(event MessageEvent, app App) ProcessStatus {
+	dr.HandleFunc("foo", func(event MessageEvent, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
 	event := MessageEvent{
@@ -37,7 +38,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		TimestampType:     "",
 		Attributes:        nil,
 	}
-	dr.HandleFunc("foo", func(event MessageEvent, app App) ProcessStatus {
+	dr.HandleFunc("foo", func(event MessageEvent, app AppContext) ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
@@ -48,14 +49,16 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 
 func TestDefaultRouter_Routes(t *testing.T) {
 	dr := NewRouter()
-	dr.HandleFunc("foo", func(event MessageEvent, app App) ProcessStatus {
+	dr.HandleFunc("foo", func(event MessageEvent, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
-	dr.HandleFunc("bar", func(event MessageEvent, app App) ProcessStatus {
+	dr.HandleFunc("bar", func(event MessageEvent, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
-	expectedRoutes := []string{"foo", "bar"}
-	routes := dr.Routes()
+	expectedRoutes := sort.StringSlice([]string{"foo", "bar"})
+	expectedRoutes.Sort()
+	routes := sort.StringSlice(dr.Routes())
+	routes.Sort()
 	if !reflect.DeepEqual(expectedRoutes, routes) {
 		t.Errorf("expected %v got %v", expectedRoutes, routes)
 	}

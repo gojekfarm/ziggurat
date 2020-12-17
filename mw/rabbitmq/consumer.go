@@ -22,7 +22,7 @@ var decodeMessage = func(body []byte) (ziggurat.MessageEvent, error) {
 	return messageEvent, nil
 }
 
-var createConsumer = func(app ziggurat.App, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.MessageHandler) (*consumer.Consumer, error) {
+var createConsumer = func(app ziggurat.AppContext, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.MessageHandler) (*consumer.Consumer, error) {
 	options := []consumer.Option{
 		consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 			channel, err := conn.(*amqp.Connection).Channel()

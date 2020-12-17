@@ -6,7 +6,7 @@ import (
 )
 
 func ProcessingStatusLogger(next ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		args := map[string]interface{}{
 			"ROUTE": messageEvent.StreamRoute,
 			"VALUE": fmt.Sprintf("%s", messageEvent.MessageValueBytes),

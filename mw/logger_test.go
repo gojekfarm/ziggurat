@@ -8,7 +8,7 @@ import (
 )
 
 func TestMessageLogger_Success(t *testing.T) {
-	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 	ts := time.Time{}

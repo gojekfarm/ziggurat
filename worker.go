@@ -19,7 +19,7 @@ func NewWorker(concurrency int) *Worker {
 	}
 }
 
-func (w *Worker) run(app App, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
+func (w *Worker) run(app AppContext, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < w.concurrency; i++ {
 		wg.Add(1)

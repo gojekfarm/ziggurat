@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 func TestConsumer_create(t *testing.T) {
 	app := NewZig()
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
 	oldStartConsumer := startConsumer
@@ -28,7 +28,7 @@ func TestConsumer_create(t *testing.T) {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(app App, h MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+	startConsumer = func(app AppContext, h MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	}
 	createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 		return &kafka.Consumer{}
@@ -61,7 +61,7 @@ func TestConsumer_start(t *testing.T) {
 		}, nil
 	}
 	app := NewZig()
-	hf := HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	hf := HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
 		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
 		}
@@ -103,7 +103,7 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	app.ContextFunc = func() context.Context {
 		return ctx
 	}
-	h := HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	h := HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
 	wg.Add(1)

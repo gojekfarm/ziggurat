@@ -4,17 +4,26 @@ import (
 	"context"
 )
 
-type App interface {
+type Routes map[string]RouteDefinition
+
+type AppContext interface {
 	Context() context.Context
 	Routes() Routes
 	Handler() MessageHandler
 }
 
 type MessageHandler interface {
-	HandleMessage(event MessageEvent, app App) ProcessStatus
+	HandleMessage(event MessageEvent, app AppContext) ProcessStatus
 }
 
 type Streams interface {
-	Start(a App) (chan struct{}, error)
+	Start(a AppContext) (chan struct{}, error)
 	Stop()
+}
+
+type RouteDefinition interface {
+	ThreadCount() int
+	Servers() string
+	ConsumerGroupID() string
+	Topics() string
 }

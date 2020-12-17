@@ -31,7 +31,7 @@ func NewRabbitRetrier(ctx context.Context, hosts []string, queueConfig QueueConf
 	return r
 }
 
-func (r *RabbitMQRetry) HandleMessage(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+func (r *RabbitMQRetry) HandleMessage(event ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 	status := r.handler.HandleMessage(event, app)
 	if status == ziggurat.RetryMessage {
 		ziggurat.LogFatal(r.retry(event, app), "rabbitmq failed to retry", nil)
@@ -40,7 +40,7 @@ func (r *RabbitMQRetry) HandleMessage(event ziggurat.MessageEvent, app ziggurat.
 }
 
 func (r *RabbitMQRetry) Retrier(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.AppContext) ziggurat.ProcessStatus {
 		status := handler.HandleMessage(messageEvent, app)
 		if status == ziggurat.RetryMessage {
 			ziggurat.LogFatal(r.retry(messageEvent, app), "rabbitmq failed to retry", nil)
@@ -49,7 +49,7 @@ func (r *RabbitMQRetry) Retrier(handler ziggurat.MessageHandler) ziggurat.Messag
 	})
 }
 
-func (r *RabbitMQRetry) StartConsumers(app ziggurat.App, handler ziggurat.MessageHandler) error {
+func (r *RabbitMQRetry) StartConsumers(app ziggurat.AppContext, handler ziggurat.MessageHandler) error {
 	consumerDialer, dialErr := amqpextra.NewDialer(
 		amqpextra.WithContext(app.Context()),
 		amqpextra.WithURL(r.hosts...))

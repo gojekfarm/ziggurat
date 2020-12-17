@@ -1,12 +1,5 @@
 package ziggurat
 
-type StreamRouterConfig struct {
-	InstanceCount    int    `mapstructure:"instance-count"`
-	BootstrapServers string `mapstructure:"bootstrap-servers"`
-	OriginTopics     string `mapstructure:"origin-topics"`
-	GroupID          string `mapstructure:"group-id"`
-}
-
 type Stream struct {
 	InstanceCount    int
 	BootstrapServers string
@@ -14,4 +7,18 @@ type Stream struct {
 	GroupID          string
 }
 
-type Routes map[string]Stream
+func (s Stream) ThreadCount() int {
+	return s.InstanceCount
+}
+
+func (s Stream) Servers() string {
+	return s.BootstrapServers
+}
+
+func (s Stream) ConsumerGroupID() string {
+	return s.GroupID
+}
+
+func (s Stream) Topics() string {
+	return s.OriginTopics
+}

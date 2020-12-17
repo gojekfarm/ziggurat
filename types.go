@@ -1,13 +1,13 @@
 package ziggurat
 
-type HandlerFunc func(messageEvent MessageEvent, app App) ProcessStatus
+type HandlerFunc func(messageEvent MessageEvent, app AppContext) ProcessStatus
 
-func (h HandlerFunc) HandleMessage(event MessageEvent, app App) ProcessStatus {
+func (h HandlerFunc) HandleMessage(event MessageEvent, app AppContext) ProcessStatus {
 	return h(event, app)
 }
 
-type StartFunction func(a App)
-type StopFunction func(a App)
+type StartFunction func(a AppContext)
+type StopFunction func(a AppContext)
 
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1
