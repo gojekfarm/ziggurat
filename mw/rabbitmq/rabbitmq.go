@@ -1,7 +1,6 @@
 package rabbitmq
 
 import (
-	"context"
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/makasim/amqpextra"
@@ -22,12 +21,9 @@ type RabbitMQRetry struct {
 	queueConfig    QueueConfig
 }
 
-func NewRabbitRetrier(ctx context.Context, hosts []string, queueConfig QueueConfig, handler ziggurat.MessageHandler) *RabbitMQRetry {
+func NewRabbitRetrier(hosts []string, queueConfig QueueConfig, handler ziggurat.MessageHandler) *RabbitMQRetry {
 	r := &RabbitMQRetry{hosts: hosts, queueConfig: queueConfig, handler: handler}
 	ziggurat.LogInfo("rabbitmq dialing hosts", map[string]interface{}{"HOSTS": strings.Join(hosts, ",")})
-	if err := r.initPublisher(ctx); err != nil {
-		ziggurat.LogFatal(err, "rabbitmq init error", nil)
-	}
 	return r
 }
 
@@ -37,6 +33,10 @@ func (r *RabbitMQRetry) HandleMessage(event ziggurat.Event, app ziggurat.AppCont
 		ziggurat.LogFatal(r.retry(event, app), "rabbitmq failed to retry", nil)
 	}
 	return status
+}
+
+func (r *RabbitMQRetry) StartRetrier(app ziggurat.AppContext) error {
+	return r.initPublisher(app.Context())
 }
 
 func (r *RabbitMQRetry) Retrier(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
