@@ -64,11 +64,11 @@ func (z *Ziggurat) Run(handler MessageHandler, routes Routes) chan struct{} {
 func (z *Ziggurat) start(startCallback StartFunction) chan struct{} {
 
 	if startCallback != nil {
-		LogInfo("ZIGGURAT: invoking start callback", nil)
+		LogInfo("invoking start callback", nil)
 		startCallback(z)
 	}
 
-	LogInfo("ZIGGURAT: starting kafka streams", nil)
+	LogInfo("starting kafka streams", nil)
 
 	streamsStop, streamsStartErr := z.streams.Start(z)
 	if streamsStartErr != nil {
@@ -80,9 +80,9 @@ func (z *Ziggurat) start(startCallback StartFunction) chan struct{} {
 }
 
 func (z *Ziggurat) Stop() {
-	LogInfo("stopping app: cancelling context", nil)
+	LogInfo("cancelling context", nil)
 	z.cancelFun()
-	LogInfo("stopping app: stopping streams", nil)
+	LogInfo("stopping streams", nil)
 	z.streams.Stop()
 	z.stop(z.stopFunc)
 }

@@ -1,12 +1,12 @@
 package ziggurat
 
-var PipeHandlers = func(funcs ...Adapter) func(origHandler MessageHandler) MessageHandler {
+var PipeHandlers = func(adapters ...Adapter) func(origHandler MessageHandler) MessageHandler {
 	return func(next MessageHandler) MessageHandler {
 		return HandlerFunc(func(messageEvent Event, app AppContext) ProcessStatus {
 			var handlerResult = next
-			lastIdx := len(funcs) - 1
+			lastIdx := len(adapters) - 1
 			for i := lastIdx; i >= 0; i-- {
-				f := funcs[i]
+				f := adapters[i]
 				if i == lastIdx {
 					handlerResult = f(next)
 				} else {
