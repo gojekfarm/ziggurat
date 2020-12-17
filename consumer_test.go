@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 func TestConsumer_create(t *testing.T) {
 	app := NewZig()
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent Event, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
 	oldStartConsumer := startConsumer
@@ -61,9 +61,9 @@ func TestConsumer_start(t *testing.T) {
 		}, nil
 	}
 	app := NewZig()
-	hf := HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
-		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
-			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
+	hf := HandlerFunc(func(messageEvent Event, app AppContext) ProcessStatus {
+		if bytes.Compare(messageEvent.MessageValue(), expectedBytes) != 0 {
+			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValue())
 		}
 		return ProcessingSuccess
 	})
@@ -103,7 +103,7 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	app.ContextFunc = func() context.Context {
 		return ctx
 	}
-	h := HandlerFunc(func(messageEvent MessageEvent, app AppContext) ProcessStatus {
+	h := HandlerFunc(func(messageEvent Event, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
 	wg.Add(1)

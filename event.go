@@ -5,6 +5,8 @@ import (
 	"time"
 )
 
+const StructVersion = "1.0"
+
 type MessageEvent struct {
 	MessageValueBytes []byte
 	MessageKeyBytes   []byte
@@ -13,6 +15,7 @@ type MessageEvent struct {
 	ActualTimestamp   time.Time
 	TimestampType     string
 	Attributes        map[string]interface{}
+	StructVersion     string
 	//exposes Attributes for gob encoding, use GetAttribute and SetAttribute for thread safety
 	mut *sync.Mutex
 }
@@ -49,6 +52,10 @@ func (m *MessageEvent) SetAttribute(key string, value interface{}) {
 	m.Attributes[key] = value
 }
 
+func (m *MessageEvent) Version() string {
+	return m.StructVersion
+}
+
 func NewMessageEvent(key []byte, value []byte, topic string, route string, timestampType string, ktimestamp time.Time) *MessageEvent {
 	return &MessageEvent{
 		Attributes:        map[string]interface{}{},
@@ -59,5 +66,6 @@ func NewMessageEvent(key []byte, value []byte, topic string, route string, times
 		StreamRoute:       route,
 		TimestampType:     timestampType,
 		ActualTimestamp:   ktimestamp,
+		StructVersion:     StructVersion,
 	}
 }

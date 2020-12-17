@@ -13,12 +13,10 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 		called = true
 	}
 	dr := NewRouter()
-	dr.HandleFunc("foo", func(event MessageEvent, app AppContext) ProcessStatus {
+	dr.HandleFunc("foo", func(event Event, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
-	event := MessageEvent{
-		StreamRoute: "bar",
-	}
+	event := &MessageEvent{StreamRoute: "bar"}
 	a := NewZig()
 	dr.HandleMessage(event, a)
 
@@ -29,7 +27,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := NewRouter()
-	expectedEvent := MessageEvent{
+	expectedEvent := &MessageEvent{
 		MessageValueBytes: []byte("foo"),
 		MessageKeyBytes:   []byte("foo"),
 		Topic:             "baz",
@@ -38,7 +36,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		TimestampType:     "",
 		Attributes:        nil,
 	}
-	dr.HandleFunc("foo", func(event MessageEvent, app AppContext) ProcessStatus {
+	dr.HandleFunc("foo", func(event Event, app AppContext) ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
@@ -49,10 +47,10 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 
 func TestDefaultRouter_Routes(t *testing.T) {
 	dr := NewRouter()
-	dr.HandleFunc("foo", func(event MessageEvent, app AppContext) ProcessStatus {
+	dr.HandleFunc("foo", func(event Event, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
-	dr.HandleFunc("bar", func(event MessageEvent, app AppContext) ProcessStatus {
+	dr.HandleFunc("bar", func(event Event, app AppContext) ProcessStatus {
 		return ProcessingSuccess
 	})
 	expectedRoutes := sort.StringSlice([]string{"foo", "bar"})

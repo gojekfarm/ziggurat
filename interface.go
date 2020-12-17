@@ -37,4 +37,5 @@ type Event interface {
 	RouteName() string
 	GetAttribute(key string) interface{}
 	SetAttribute(key string, value interface{})
+	Version() string
 }
