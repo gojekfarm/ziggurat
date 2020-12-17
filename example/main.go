@@ -53,18 +53,21 @@ func main() {
 		statsdClient.Stop()
 	})
 
-	<-app.Run(rmw, ziggurat.Routes{
-		RoutePlainTextLog: ziggurat.Stream{
-			InstanceCount:    1,
-			BootstrapServers: "localhost:9092",
-			OriginTopics:     "plain-text-log",
-			GroupID:          "plain_text_consumer",
-		},
-		RouteJSONLog: ziggurat.Stream{
-			InstanceCount:    1,
-			BootstrapServers: "localhost:9092",
-			OriginTopics:     "json-log",
-			GroupID:          "json_consumer",
-		},
-	})
+	go func() {
+		<-app.Run(rmw, ziggurat.Routes{
+			RoutePlainTextLog: ziggurat.Stream{
+				InstanceCount:    1,
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "plain-text-log",
+				GroupID:          "plain_text_consumer",
+			},
+			RouteJSONLog: ziggurat.Stream{
+				InstanceCount:    1,
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "json-log",
+				GroupID:          "json_consumer",
+			},
+		})
+	}()
+
 }

@@ -14,7 +14,7 @@ type MessageEvent struct {
 	TimestampType     string
 	Attributes        map[string]interface{}
 	//exposes Attributes for gob encoding, use GetAttribute and SetAttribute for thread safety
-	*sync.Mutex
+	mut *sync.Mutex
 }
 
 func (m *MessageEvent) PublishTime() time.Time {
@@ -38,21 +38,21 @@ func (m *MessageEvent) RouteName() string {
 }
 
 func (m *MessageEvent) GetAttribute(key string) interface{} {
-	m.Lock()
-	defer m.Unlock()
+	m.mut.Lock()
+	defer m.mut.Unlock()
 	return m.Attributes[key]
 }
 
 func (m *MessageEvent) SetAttribute(key string, value interface{}) {
-	m.Lock()
-	defer m.Unlock()
+	m.mut.Lock()
+	defer m.mut.Unlock()
 	m.Attributes[key] = value
 }
 
 func NewMessageEvent(key []byte, value []byte, topic string, route string, timestampType string, ktimestamp time.Time) *MessageEvent {
 	return &MessageEvent{
 		Attributes:        map[string]interface{}{},
-		Mutex:             &sync.Mutex{},
+		mut:               &sync.Mutex{},
 		MessageValueBytes: value,
 		MessageKeyBytes:   key,
 		Topic:             topic,
