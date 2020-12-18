@@ -303,11 +303,11 @@ func main() {
 	rmw := router.Compose(mw.MessageLogger, statsdClient.PublishKafkaLag, statsdClient.PublishHandlerMetrics)
 
 	app.OnStart(func(a ziggurat.App) {
-		statsdClient.Start(app)
-		httpServer.Start(app)
+		statsdClient.Consume(app)
+		httpServer.Consume(app)
 	})
 
-	<-app.Run(rmw, ziggurat.Routes{
+	<-app.Run(rmw, ziggurat.ActiveRoutes{
 		RoutePlainTextLog: {
 			InstanceCount:    1,
 			BootstrapServers: "localhost:9092",

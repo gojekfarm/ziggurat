@@ -10,7 +10,7 @@ func NewKafkaStreams() *MockKStreams {
 	}}
 }
 
-func (k MockKStreams) Start(z *Ziggurat) (chan struct{}, error) {
+func (k MockKStreams) Consume(z *Ziggurat) (chan struct{}, error) {
 	return k.StartFunc(z)
 }
 

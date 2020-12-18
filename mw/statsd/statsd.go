@@ -1,6 +1,7 @@
 package statsd
 
 import (
+	"context"
 	"github.com/cactus/go-statsd-client/statsd"
 	"github.com/gojekfarm/ziggurat"
 	"time"
@@ -13,21 +14,21 @@ type Client struct {
 	handler ziggurat.MessageHandler
 }
 
-func NewClient(opts ...func(s *Client)) *Client {
-	s := &Client{}
+func NewClient(opts ...func(c *Client)) *Client {
+	c := &Client{}
 	for _, opt := range opts {
-		opt(s)
+		opt(c)
 	}
-	if s.prefix == "" {
-		s.prefix = "ziggurat_statsd"
+	if c.prefix == "" {
+		c.prefix = "ziggurat_statsd"
 	}
-	if s.host == "" {
-		s.host = "localhost:8125"
+	if c.host == "" {
+		c.host = "localhost:8125"
 	}
-	return s
+	return c
 }
 
-func (s *Client) Start(z *ziggurat.Ziggurat) error {
+func (s *Client) Run(ctx context.Context) error {
 	config := &statsd.ClientConfig{
 		Prefix:  s.prefix,
 		Address: s.host,
@@ -38,14 +39,15 @@ func (s *Client) Start(z *ziggurat.Ziggurat) error {
 		return clientErr
 	}
 	s.client = client
-	go GoRoutinePublisher(z.Context(), 10*time.Second, s)
+	go func() {
+		done := ctx.Done()
+		<-done
+		if s.client != nil {
+			s.client.Close()
+		}
+	}()
+	go GoRoutinePublisher(ctx, 10*time.Second, s)
 	return nil
-}
-
-func (s *Client) Stop() {
-	if s.client != nil {
-		ziggurat.LogError(s.client.Close(), "error stopping statsd client", nil)
-	}
 }
 
 func (s *Client) constructFullMetricStr(metricName, tags string) string {
@@ -66,10 +68,10 @@ func (s *Client) Gauge(metricName string, value int64, arguments map[string]stri
 }
 
 func (s *Client) PublishHandlerMetrics(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, z *ziggurat.Ziggurat) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
 		arguments := map[string]string{"route": messageEvent.StreamRoute}
 		startTime := time.Now()
-		status := handler.HandleMessage(messageEvent, z)
+		status := handler.HandleMessage(messageEvent, ctx)
 		endTime := time.Now()
 		diffTimeInMS := endTime.Sub(startTime).Milliseconds()
 		s.Gauge("handler_func_exec_time", diffTimeInMS, arguments)
@@ -84,13 +86,13 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.MessageHandler) ziggurat
 }
 
 func (s *Client) PublishKafkaLag(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, z *ziggurat.Ziggurat) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
 		actualTS := messageEvent.ActualTimestamp
 		now := time.Now()
 		diff := now.Sub(actualTS).Milliseconds()
 		s.Gauge("kafka_message_lag", diff, map[string]string{
 			"route": messageEvent.StreamRoute,
 		})
-		return handler.HandleMessage(messageEvent, z)
+		return handler.HandleMessage(messageEvent, ctx)
 	})
 }

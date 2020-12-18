@@ -1,13 +1,9 @@
 package ziggurat
 
-type HandlerFunc func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus
+import "context"
 
-func (h HandlerFunc) HandleMessage(event MessageEvent, z *Ziggurat) ProcessStatus {
-	return h(event, z)
-}
-
-type StartFunction func(z *Ziggurat)
-type StopFunction func(z *Ziggurat)
+type StartFunction func(ctx context.Context, routeNames []string)
+type StopFunction func()
 
 const ProcessingSuccess ProcessStatus = 0
 const RetryMessage ProcessStatus = 1

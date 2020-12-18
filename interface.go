@@ -1,10 +1,11 @@
 package ziggurat
 
+import "context"
+
 type MessageHandler interface {
-	HandleMessage(event MessageEvent, z *Ziggurat) ProcessStatus
+	HandleMessage(event MessageEvent, ctx context.Context) ProcessStatus
 }
 
 type Streams interface {
-	Start(z *Ziggurat) (chan struct{}, error)
-	Stop()
+	Consume(ctx context.Context, routes Routes, handler MessageHandler) chan error
 }

@@ -5,24 +5,24 @@ import (
 	"errors"
 	"github.com/sethvargo/go-signalcontext"
 	"sync/atomic"
+	"syscall"
 )
 
 type Ziggurat struct {
-	handler   MessageHandler
-	doneChan  chan struct{}
-	logLevel  string
-	startFunc StartFunction
-	stopFunc  StopFunction
-	ctx       context.Context
-	cancelFun context.CancelFunc
-	isRunning int32
-	routes    Routes
-	streams   Streams
+	handler    MessageHandler
+	doneChan   chan error
+	logLevel   string
+	startFunc  StartFunction
+	stopFunc   StopFunction
+	isRunning  int32
+	routes     Routes
+	routeNames []string
+	streams    Streams
 }
 
 func NewApp(opts ...ZigOptions) *Ziggurat {
 	ziggurat := &Ziggurat{
-		doneChan: make(chan struct{}),
+		doneChan: make(chan error),
 		streams:  New(),
 	}
 	for _, opts := range opts {
@@ -31,19 +31,23 @@ func NewApp(opts ...ZigOptions) *Ziggurat {
 	if ziggurat.logLevel == "" {
 		ziggurat.logLevel = "info"
 	}
-	if ziggurat.ctx == nil {
-		ctx, cancelFn := signalcontext.OnInterrupt()
-		ziggurat.ctx = ctx
-		ziggurat.cancelFun = cancelFn
-	}
 	return ziggurat
 }
 
-func (z *Ziggurat) Run(handler MessageHandler, routes Routes) chan struct{} {
+func (z *Ziggurat) appendRouteNames(routes Routes) {
+	for name, _ := range routes {
+		z.routeNames = append(z.routeNames, name)
+	}
+}
+
+func (z *Ziggurat) Run(ctx context.Context, handler MessageHandler, routes Routes) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
 		return nil
 	}
+
+	z.appendRouteNames(routes)
+	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
 
 	ConfigureLogger(z.logLevel)
 
@@ -52,57 +56,32 @@ func (z *Ziggurat) Run(handler MessageHandler, routes Routes) chan struct{} {
 
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
-		<-z.start(z.startFunc)
-		z.cancelFun()
+		err := <-z.start(parentCtx, z.startFunc)
+		LogError(err, "error starting streams", nil)
+		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
-		z.stop(z.stopFunc)
-		close(z.doneChan)
+		z.stop(parentCtx, z.stopFunc)
+		z.doneChan <- parentCtx.Err()
 	}()
 	return z.doneChan
 }
 
-func (z *Ziggurat) start(startCallback StartFunction) chan struct{} {
-
+func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan error {
 	if startCallback != nil {
 		LogInfo("ZIGGURAT: invoking start callback", nil)
-		startCallback(z)
+		startCallback(ctx, z.routeNames)
 	}
 
 	LogInfo("ZIGGURAT: starting kafka streams", nil)
 
-	streamsStop, streamsStartErr := z.streams.Start(z)
-	if streamsStartErr != nil {
-		LogFatal(streamsStartErr, "error starting kafka streams", nil)
-	}
-
+	streamsStop := z.streams.Consume(ctx, z.routes, z.handler)
 	return streamsStop
-
 }
 
-func (z *Ziggurat) Stop() {
-	LogInfo("stopping app: cancelling context", nil)
-	z.cancelFun()
-	LogInfo("stopping app: stopping streams", nil)
-	z.streams.Stop()
-	z.stop(z.stopFunc)
-}
-
-func (z *Ziggurat) stop(stopFunc StopFunction) {
+func (z *Ziggurat) stop(ctx context.Context, stopFunc StopFunction) {
 	if stopFunc != nil {
-		stopFunc(z)
+		stopFunc()
 	}
-}
-
-func (z *Ziggurat) Context() context.Context {
-	return z.ctx
-}
-
-func (z *Ziggurat) Routes() Routes {
-	return z.routes
-}
-
-func (z *Ziggurat) Handler() MessageHandler {
-	return z.handler
 }
 
 func (z *Ziggurat) IsRunning() bool {
@@ -118,12 +97,4 @@ func (z *Ziggurat) OnStart(function StartFunction) {
 
 func (z *Ziggurat) OnStop(function StopFunction) {
 	z.stopFunc = function
-}
-
-func (z *Ziggurat) RouteNames() []string {
-	var routeNames []string
-	for name, _ := range z.routes {
-		routeNames = append(routeNames, name)
-	}
-	return routeNames
 }

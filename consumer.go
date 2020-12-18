@@ -1,6 +1,7 @@
 package ziggurat
 
 import (
+	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"sync"
@@ -10,13 +11,13 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(z *Ziggurat, h MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(ctx context.Context, h MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	go func(instanceID string) {
 		defer wg.Done()
-		doneCh := z.Context().Done()
+		doneCh := ctx.Done()
 		worker := NewWorker(10)
-		sendCh, _ := worker.run(z, func(message *kafka.Message) {
-			processor(message, route, consumer, h, z)
+		sendCh, _ := worker.run(ctx, func(message *kafka.Message) {
+			processor(message, route, consumer, h, ctx)
 		})
 		for {
 			select {
@@ -40,7 +41,7 @@ var startConsumer = func(z *Ziggurat, h MessageHandler, consumer *kafka.Consumer
 	}(instanceID)
 }
 
-var StartConsumers = func(z *Ziggurat, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
@@ -48,7 +49,7 @@ var StartConsumers = func(z *Ziggurat, consumerConfig *kafka.ConfigMap, route st
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", route, groupID, i)
 		wg.Add(1)
-		startConsumer(z, h, consumer, route, instanceID, wg)
+		startConsumer(ctx, h, consumer, route, instanceID, wg)
 	}
 	return consumers
 }

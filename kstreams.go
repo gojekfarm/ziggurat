@@ -1,6 +1,7 @@
 package ziggurat
 
 import (
+	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"strings"
 	"sync"
@@ -16,27 +17,26 @@ func New() *KafkaStreams {
 	}
 }
 
-func (k *KafkaStreams) Start(z *Ziggurat) (chan struct{}, error) {
+func (k *KafkaStreams) Consume(ctx context.Context, routes Routes, handler MessageHandler) chan error {
 	var wg sync.WaitGroup
-	stopChan := make(chan struct{})
-	handler := z.Handler()
+	stopChan := make(chan error)
 
-	for routeName, stream := range z.Routes() {
+	for routeName, stream := range routes {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.GroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
-		k.routeConsumerMap[routeName] = StartConsumers(z, consumerConfig, routeName, topics, stream.InstanceCount, handler, &wg)
+		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.InstanceCount, handler, &wg)
 	}
 
 	go func() {
 		wg.Wait()
-		k.Stop()
-		close(stopChan)
+		k.stop()
+		stopChan <- nil
 	}()
 
-	return stopChan, nil
+	return stopChan
 }
 
-func (k *KafkaStreams) Stop() {
+func (k *KafkaStreams) stop() {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
 			LogError(consumers[i].Close(), "consumer close error", nil)

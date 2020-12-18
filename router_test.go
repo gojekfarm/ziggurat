@@ -55,7 +55,7 @@ func TestDefaultRouter_Routes(t *testing.T) {
 		return ProcessingSuccess
 	})
 	expectedRoutes := []string{"foo", "bar"}
-	routes := dr.Routes()
+	routes := dr.ActiveRoutes()
 	if !reflect.DeepEqual(expectedRoutes, routes) {
 		t.Errorf("expected %v got %v", expectedRoutes, routes)
 	}

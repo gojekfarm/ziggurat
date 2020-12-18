@@ -21,7 +21,7 @@ func TestKafkaStreams_Start(t *testing.T) {
 		return []*kafka.Consumer{}
 	}
 	kstreams := New()
-	done, _ := kstreams.Start(a)
+	done, _ := kstreams.Consume(a)
 	if len(kstreams.routeConsumerMap) < len(a.Routes()) {
 		t.Errorf("expected count %d but got %d", len(kstreams.routeConsumerMap), len(a.Routes()))
 	}

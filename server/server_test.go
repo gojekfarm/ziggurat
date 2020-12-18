@@ -14,7 +14,7 @@ const serverAddr = "localhost:8080"
 func TestDefaultHttpServer_Start(t *testing.T) {
 	a := ziggurat.NewApp()
 	ds := NewHTTPServer()
-	ds.Start(a)
+	ds.Run(a)
 	time.Sleep(100 * time.Millisecond)
 	_, err := net.Dial("tcp", serverAddr)
 	if err != nil {
@@ -26,7 +26,7 @@ func TestDefaultHttpServer_Start(t *testing.T) {
 func TestDefaultHttpServer_Stop(t *testing.T) {
 	a := ziggurat.NewApp()
 	ds := NewHTTPServer()
-	ds.Start(a)
+	ds.Run(a)
 	ds.Stop(a)
 	if _, err := net.Dial("tcp", serverAddr); err == nil {
 		t.Errorf("expected error but got nil")

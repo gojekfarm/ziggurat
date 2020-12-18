@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/makasim/amqpextra"
-	"strings"
 )
 
 type StreamRouteName string
@@ -23,10 +22,10 @@ type RabbitMQRetry struct {
 }
 
 func NewRabbitRetrier(ctx context.Context, hosts []string, queueConfig QueueConfig, handler ziggurat.MessageHandler) *RabbitMQRetry {
-	r := &RabbitMQRetry{hosts: hosts, queueConfig: queueConfig, handler: handler}
-	ziggurat.LogInfo("rabbitmq dialing hosts", map[string]interface{}{"HOSTS": strings.Join(hosts, ",")})
-	if err := r.initPublisher(ctx); err != nil {
-		ziggurat.LogFatal(err, "rabbitmq init error", nil)
+	r := &RabbitMQRetry{
+		hosts:       hosts,
+		handler:     handler,
+		queueConfig: queueConfig,
 	}
 	return r
 }

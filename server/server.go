@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
@@ -33,15 +34,21 @@ func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	return s
 }
 
-func (s *DefaultHttpServer) Start(app *ziggurat.Ziggurat) error {
+func (s *DefaultHttpServer) Run(ctx context.Context) chan error {
+	errorChan := make(chan error)
 	s.router.GET("/v1/ping", pingHandler)
 	go func(server *http.Server) {
-		if err := server.ListenAndServe(); err != nil {
-			ziggurat.LogError(err, "default http server error", nil)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errorChan <- err
 		}
 	}(s.server)
+
+	go func() {
+		errorChan <- s.server.Shutdown(ctx)
+	}()
+
 	ziggurat.LogInfo("http server start on "+s.server.Addr, nil)
-	return nil
+	return errorChan
 }
 
 func (s *DefaultHttpServer) ConfigureHTTPEndpoints(f func(r *httprouter.Router)) {
@@ -50,8 +57,4 @@ func (s *DefaultHttpServer) ConfigureHTTPEndpoints(f func(r *httprouter.Router))
 
 func (s *DefaultHttpServer) ConfigureHandler(f func(r *httprouter.Router) http.Handler) {
 	s.server.Handler = f(s.router)
-}
-
-func (s *DefaultHttpServer) Stop(app *ziggurat.Ziggurat) {
-	ziggurat.LogError(s.server.Shutdown(app.Context()), "default http server: stopping http server", nil)
 }

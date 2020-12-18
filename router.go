@@ -1,6 +1,7 @@
 package ziggurat
 
 import (
+	"context"
 	"errors"
 )
 
@@ -10,13 +11,13 @@ type defaultRouter struct {
 
 type Adapter func(next MessageHandler) MessageHandler
 
-func (dr *defaultRouter) HandleMessage(event MessageEvent, z *Ziggurat) ProcessStatus {
+func (dr *defaultRouter) HandleMessage(event MessageEvent, ctx context.Context) ProcessStatus {
 	route := event.StreamRoute
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
 		return SkipMessage
 	} else {
-		return handler.HandleMessage(event, z)
+		return handler.HandleMessage(event, ctx)
 	}
 }
 
@@ -26,7 +27,7 @@ func NewRouter() *defaultRouter {
 	}
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event MessageEvent, z *Ziggurat) ProcessStatus) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event MessageEvent, ctx context.Context) ProcessStatus) {
 	if handlerFunc == nil {
 		LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
 	}
@@ -35,14 +36,6 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Message
 
 func (dr *defaultRouter) Compose(mw ...Adapter) MessageHandler {
 	return PipeHandlers(mw...)(dr)
-}
-
-func (dr *defaultRouter) Routes() []string {
-	var routes []string
-	for route, _ := range dr.handlerFunctionMap {
-		routes = append(routes, route)
-	}
-	return routes
 }
 
 func (dr *defaultRouter) Lookup(route string) (MessageHandler, bool) {
