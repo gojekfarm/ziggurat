@@ -96,8 +96,8 @@ func (r *RabbitMQRetry) initPublisher(ctx context.Context) error {
 	return nil
 }
 
-func (r *RabbitMQRetry) retry(event ziggurat.MessageEvent, app ziggurat.App) error {
-	pub, pubCreateError := r.dialer.Publisher(publisher.WithContext(app.Context()))
+func (r *RabbitMQRetry) retry(event ziggurat.MessageEvent, z *ziggurat.Ziggurat) error {
+	pub, pubCreateError := r.dialer.Publisher(publisher.WithContext(z.Context()))
 	if pubCreateError != nil {
 		return pubCreateError
 	}

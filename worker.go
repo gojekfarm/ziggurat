@@ -19,12 +19,12 @@ func NewWorker(concurrency int) *Worker {
 	}
 }
 
-func (w *Worker) run(app App, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
+func (w *Worker) run(z *Ziggurat, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < w.concurrency; i++ {
 		wg.Add(1)
 		go func() {
-			done := app.Context().Done()
+			done := z.Context().Done()
 			defer wg.Done()
 			for {
 				select {

@@ -12,7 +12,7 @@ import (
 const serverAddr = "localhost:8080"
 
 func TestDefaultHttpServer_Start(t *testing.T) {
-	a := ziggurat.NewZig()
+	a := ziggurat.NewApp()
 	ds := NewHTTPServer()
 	ds.Start(a)
 	time.Sleep(100 * time.Millisecond)
@@ -24,7 +24,7 @@ func TestDefaultHttpServer_Start(t *testing.T) {
 }
 
 func TestDefaultHttpServer_Stop(t *testing.T) {
-	a := ziggurat.NewZig()
+	a := ziggurat.NewApp()
 	ds := NewHTTPServer()
 	ds.Start(a)
 	ds.Stop(a)

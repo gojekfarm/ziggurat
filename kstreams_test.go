@@ -7,16 +7,15 @@ import (
 )
 
 func TestKafkaStreams_Start(t *testing.T) {
-	a := NewZig()
-	a.RoutesFunc = func() Routes {
-		return Routes{"foo": {}}
-	}
+	a := NewApp()
+	a.routes = Routes{"foo": {}}
+
 	oldStartConsumers := StartConsumers
 	defer func() {
 		StartConsumers = oldStartConsumers
 	}()
 
-	StartConsumers = func(app App, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+	StartConsumers = func(z *Ziggurat, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
 		wg.Add(1)
 		wg.Done()
 		return []*kafka.Consumer{}

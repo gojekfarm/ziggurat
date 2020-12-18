@@ -8,7 +8,7 @@ import (
 )
 
 func TestMessageLogger_Success(t *testing.T) {
-	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, z *ziggurat.Ziggurat) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 	ts := time.Time{}
@@ -36,6 +36,6 @@ func TestMessageLogger_Success(t *testing.T) {
 		Attributes:        nil,
 	}
 
-	ml.HandleMessage(event, ziggurat.NewZig())
+	ml.HandleMessage(event, ziggurat.NewApp())
 
 }

@@ -31,27 +31,27 @@ func NewRabbitRetrier(ctx context.Context, hosts []string, queueConfig QueueConf
 	return r
 }
 
-func (r *RabbitMQRetry) HandleMessage(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
-	status := r.handler.HandleMessage(event, app)
+func (r *RabbitMQRetry) HandleMessage(event ziggurat.MessageEvent, z *ziggurat.Ziggurat) ziggurat.ProcessStatus {
+	status := r.handler.HandleMessage(event, z)
 	if status == ziggurat.RetryMessage {
-		ziggurat.LogFatal(r.retry(event, app), "rabbitmq failed to retry", nil)
+		ziggurat.LogFatal(r.retry(event, z), "rabbitmq failed to retry", nil)
 	}
 	return status
 }
 
 func (r *RabbitMQRetry) Retrier(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
-		status := handler.HandleMessage(messageEvent, app)
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, z *ziggurat.Ziggurat) ziggurat.ProcessStatus {
+		status := handler.HandleMessage(messageEvent, z)
 		if status == ziggurat.RetryMessage {
-			ziggurat.LogFatal(r.retry(messageEvent, app), "rabbitmq failed to retry", nil)
+			ziggurat.LogFatal(r.retry(messageEvent, z), "rabbitmq failed to retry", nil)
 		}
 		return status
 	})
 }
 
-func (r *RabbitMQRetry) StartConsumers(app ziggurat.App, handler ziggurat.MessageHandler) error {
+func (r *RabbitMQRetry) StartConsumers(z *ziggurat.Ziggurat, handler ziggurat.MessageHandler) error {
 	consumerDialer, dialErr := amqpextra.NewDialer(
-		amqpextra.WithContext(app.Context()),
+		amqpextra.WithContext(z.Context()),
 		amqpextra.WithURL(r.hosts...))
 	if dialErr != nil {
 		return dialErr
@@ -60,7 +60,7 @@ func (r *RabbitMQRetry) StartConsumers(app ziggurat.App, handler ziggurat.Messag
 	for routeName, _ := range r.queueConfig {
 		queueName := constructQueueName(routeName, "instant")
 		ctag := fmt.Sprintf("%s_%s_%s", queueName, "ziggurat", "ctag")
-		c, err := createConsumer(app, r.consumerDialer, ctag, queueName, handler)
+		c, err := createConsumer(z, r.consumerDialer, ctag, queueName, handler)
 		if err != nil {
 			return err
 		}

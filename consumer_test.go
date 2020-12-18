@@ -17,9 +17,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestConsumer_create(t *testing.T) {
-	app := NewZig()
+	app := NewApp()
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
 	oldStartConsumer := startConsumer
@@ -28,7 +28,7 @@ func TestConsumer_create(t *testing.T) {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(app App, h MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+	startConsumer = func(z *Ziggurat, h MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
 	}
 	createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
 		return &kafka.Consumer{}
@@ -60,8 +60,8 @@ func TestConsumer_start(t *testing.T) {
 			Headers:       nil,
 		}, nil
 	}
-	app := NewZig()
-	hf := HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	app := NewApp()
+	hf := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
 		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
 		}
@@ -75,9 +75,7 @@ func TestConsumer_start(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	app.ContextFunc = func() context.Context {
-		return ctx
-	}
+	app.ctx = ctx
 	defer cancelFunc()
 	go func() {
 		time.Sleep(1 * time.Second)
@@ -89,7 +87,7 @@ func TestConsumer_start(t *testing.T) {
 
 func TestConsumer_AllBrokersDown(t *testing.T) {
 	callCount := 0
-	app := NewZig()
+	app := NewApp()
 	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
 		callCount++
 		return nil, kafka.NewError(kafka.ErrAllBrokersDown, "", true)
@@ -100,10 +98,8 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	deadlineTime := time.Now().Add(time.Second * 6)
 	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
 	defer cancelFunc()
-	app.ContextFunc = func() context.Context {
-		return ctx
-	}
-	h := HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	app.ctx = ctx
+	h := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
 	wg.Add(1)

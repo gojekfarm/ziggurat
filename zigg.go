@@ -119,3 +119,11 @@ func (z *Ziggurat) OnStart(function StartFunction) {
 func (z *Ziggurat) OnStop(function StopFunction) {
 	z.stopFunc = function
 }
+
+func (z *Ziggurat) RouteNames() []string {
+	var routeNames []string
+	for name, _ := range z.routes {
+		routeNames = append(routeNames, name)
+	}
+	return routeNames
+}

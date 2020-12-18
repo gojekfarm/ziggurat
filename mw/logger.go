@@ -6,12 +6,12 @@ import (
 )
 
 func ProcessingStatusLogger(next ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, z *ziggurat.Ziggurat) ziggurat.ProcessStatus {
 		args := map[string]interface{}{
 			"ROUTE": messageEvent.StreamRoute,
 			"VALUE": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
 		}
-		status := next.HandleMessage(messageEvent, app)
+		status := next.HandleMessage(messageEvent, z)
 		switch status {
 		case ziggurat.ProcessingSuccess:
 			ziggurat.LogInfo("[Msg logger]: successfully processed message", args)

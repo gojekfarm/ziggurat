@@ -33,7 +33,7 @@ func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	return s
 }
 
-func (s *DefaultHttpServer) Start(app ziggurat.App) error {
+func (s *DefaultHttpServer) Start(app *ziggurat.Ziggurat) error {
 	s.router.GET("/v1/ping", pingHandler)
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
@@ -52,6 +52,6 @@ func (s *DefaultHttpServer) ConfigureHandler(f func(r *httprouter.Router) http.H
 	s.server.Handler = f(s.router)
 }
 
-func (s *DefaultHttpServer) Stop(app ziggurat.App) {
+func (s *DefaultHttpServer) Stop(app *ziggurat.Ziggurat) {
 	ziggurat.LogError(s.server.Shutdown(app.Context()), "default http server: stopping http server", nil)
 }

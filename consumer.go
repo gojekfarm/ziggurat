@@ -10,13 +10,13 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(app App, h MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(z *Ziggurat, h MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	go func(instanceID string) {
 		defer wg.Done()
-		doneCh := app.Context().Done()
+		doneCh := z.Context().Done()
 		worker := NewWorker(10)
-		sendCh, _ := worker.run(app, func(message *kafka.Message) {
-			processor(message, route, consumer, h, app)
+		sendCh, _ := worker.run(z, func(message *kafka.Message) {
+			processor(message, route, consumer, h, z)
 		})
 		for {
 			select {
@@ -40,7 +40,7 @@ var startConsumer = func(app App, h MessageHandler, consumer *kafka.Consumer, ro
 	}(instanceID)
 }
 
-var StartConsumers = func(app App, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(z *Ziggurat, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, topics)
@@ -48,7 +48,7 @@ var StartConsumers = func(app App, consumerConfig *kafka.ConfigMap, route string
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", route, groupID, i)
 		wg.Add(1)
-		startConsumer(app, h, consumer, route, instanceID, wg)
+		startConsumer(z, h, consumer, route, instanceID, wg)
 	}
 	return consumers
 }

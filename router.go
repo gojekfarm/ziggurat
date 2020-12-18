@@ -10,13 +10,13 @@ type defaultRouter struct {
 
 type Adapter func(next MessageHandler) MessageHandler
 
-func (dr *defaultRouter) HandleMessage(event MessageEvent, app App) ProcessStatus {
+func (dr *defaultRouter) HandleMessage(event MessageEvent, z *Ziggurat) ProcessStatus {
 	route := event.StreamRoute
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
 		return SkipMessage
 	} else {
-		return handler.HandleMessage(event, app)
+		return handler.HandleMessage(event, z)
 	}
 }
 
@@ -26,7 +26,7 @@ func NewRouter() *defaultRouter {
 	}
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event MessageEvent, app App) ProcessStatus) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event MessageEvent, z *Ziggurat) ProcessStatus) {
 	if handlerFunc == nil {
 		LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
 	}
@@ -38,7 +38,7 @@ func (dr *defaultRouter) Compose(mw ...Adapter) MessageHandler {
 }
 
 func (dr *defaultRouter) Routes() []string {
-	routes := []string{}
+	var routes []string
 	for route, _ := range dr.handlerFunctionMap {
 		routes = append(routes, route)
 	}

@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func GoRoutinePublisher(ctx context.Context, interval time.Duration, s *StatsDClient) {
+func GoRoutinePublisher(ctx context.Context, interval time.Duration, s *Client) {
 	ziggurat.LogInfo("statsd: starting go-routine publisher", nil)
 	done := ctx.Done()
 	t := time.NewTicker(interval)

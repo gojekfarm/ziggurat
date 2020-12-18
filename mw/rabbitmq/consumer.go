@@ -22,7 +22,7 @@ var decodeMessage = func(body []byte) (ziggurat.MessageEvent, error) {
 	return messageEvent, nil
 }
 
-var createConsumer = func(app ziggurat.App, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.MessageHandler) (*consumer.Consumer, error) {
+var createConsumer = func(z *ziggurat.Ziggurat, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.MessageHandler) (*consumer.Consumer, error) {
 	options := []consumer.Option{
 		consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 			channel, err := conn.(*amqp.Connection).Channel()
@@ -32,7 +32,7 @@ var createConsumer = func(app ziggurat.App, d *amqpextra.Dialer, ctag string, qu
 			ziggurat.LogError(channel.Qos(1, 0, false), "rmq consumer: error setting QOS", nil)
 			return channel, nil
 		}),
-		consumer.WithContext(app.Context()),
+		consumer.WithContext(z.Context()),
 		consumer.WithConsumeArgs(ctag, false, false, false, false, nil),
 		consumer.WithQueue(queueName),
 		consumer.WithHandler(consumer.HandlerFunc(func(ctx context.Context, msg amqp.Delivery) interface{} {
@@ -41,7 +41,7 @@ var createConsumer = func(app ziggurat.App, d *amqpextra.Dialer, ctag string, qu
 			if err != nil {
 				return msg.Reject(true)
 			}
-			msgHandler.HandleMessage(msgEvent, app)
+			msgHandler.HandleMessage(msgEvent, z)
 			return msg.Ack(false)
 		}))}
 	return d.Consumer(options...)

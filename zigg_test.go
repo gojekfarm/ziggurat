@@ -12,16 +12,16 @@ func TestZigguratStartStop(t *testing.T) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancelFunc()
 	z := NewApp(WithContext(ctx), WithLogLevel("disabled"))
-	z.OnStart(func(a App) {
+	z.OnStart(func(z *Ziggurat) {
 		isStartCalled = true
 	})
-	z.OnStop(func(a App) {
+	z.OnStop(func(z *Ziggurat) {
 		isStopCalled = true
 	})
 	kstreams := NewKafkaStreams()
-	kstreams.StartFunc = func(a App) (chan struct{}, error) {
+	kstreams.StartFunc = func(z *Ziggurat) (chan struct{}, error) {
 		done := make(chan struct{})
-		ctxDone := a.Context().Done()
+		ctxDone := z.Context().Done()
 		go func() {
 			<-ctxDone
 			close(done)
@@ -31,7 +31,7 @@ func TestZigguratStartStop(t *testing.T) {
 
 	z.streams = kstreams
 
-	<-z.Run(HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	<-z.Run(HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	}),
 		Routes{
@@ -47,10 +47,10 @@ func TestZigguratStartStop(t *testing.T) {
 
 func TestZigguratRun(t *testing.T) {
 	z := NewApp(WithLogLevel("disabled"))
-	handler := HandlerFunc(func(messageEvent MessageEvent, app App) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
-	z.OnStart(func(a App) {
+	z.OnStart(func(z *Ziggurat) {
 		if !z.IsRunning() {
 			t.Errorf("expected app to be running")
 		}
