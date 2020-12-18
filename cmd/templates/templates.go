@@ -422,7 +422,7 @@ root_url = %(protocol)s://%(domain)s:%(http_port)s/
 # Serve Grafana from subpath specified in` + `root_url` + `setting. By default it is set to` + `false` + `for compatibility reasons.
 serve_from_sub_path = false
 
-# Log web requests
+# LogStatus web requests
 router_logging = false
 
 # the path relative working path

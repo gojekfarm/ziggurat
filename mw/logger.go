@@ -5,19 +5,42 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
-type ProcessingStatusLogger struct {
-	l ziggurat.LeveledLogger
+type (
+	Opts                   func(p *ProcessingStatusLogger)
+	ProcessingStatusLogger struct {
+		l       ziggurat.LeveledLogger
+		handler ziggurat.MessageHandler
+	}
+)
+
+func (p *ProcessingStatusLogger) HandleMessage(event ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
+	return p.LogStatus(p.handler).HandleMessage(event, ctx)
 }
 
-func NewProcessingStatusLogger(logger ziggurat.LeveledLogger) *ProcessingStatusLogger {
-	p := &ProcessingStatusLogger{l: logger}
+func WithLogger(logger ziggurat.LeveledLogger) func(p *ProcessingStatusLogger) {
+	return func(p *ProcessingStatusLogger) {
+		p.l = logger
+	}
+}
+
+func WithHandler(h ziggurat.MessageHandler) func(p *ProcessingStatusLogger) {
+	return func(p *ProcessingStatusLogger) {
+		p.handler = h
+	}
+}
+
+func NewProcessingStatusLogger(opts ...Opts) *ProcessingStatusLogger {
+	p := &ProcessingStatusLogger{}
+	for _, opt := range opts {
+		opt(p)
+	}
 	if p.l == nil {
 		p.l = ziggurat.NewLogger("info")
 	}
 	return p
 }
 
-func (p *ProcessingStatusLogger) Log(next ziggurat.MessageHandler) ziggurat.MessageHandler {
+func (p *ProcessingStatusLogger) LogStatus(next ziggurat.MessageHandler) ziggurat.MessageHandler {
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
 		status := next.HandleMessage(messageEvent, ctx)
 		switch status {
