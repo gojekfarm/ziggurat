@@ -2,11 +2,11 @@ package ziggurat
 
 import (
 	"context"
-	"errors"
 )
 
 type defaultRouter struct {
 	handlerFunctionMap map[string]HandlerFunc
+	l                  LeveledLogger
 }
 
 type Adapter func(next MessageHandler) MessageHandler
@@ -14,7 +14,7 @@ type Adapter func(next MessageHandler) MessageHandler
 func (dr *defaultRouter) HandleMessage(event MessageEvent, ctx context.Context) ProcessStatus {
 	route := event.StreamRoute
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
-		LogWarn("handler not found, skipping message", map[string]interface{}{"ROUTE": route})
+		dr.l.Warnf("handler not found, skipping message, ROUTE_NAME=%s", route)
 		return SkipMessage
 	} else {
 		return handler.HandleMessage(event, ctx)
@@ -29,7 +29,7 @@ func NewRouter() *defaultRouter {
 
 func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event MessageEvent, ctx context.Context) ProcessStatus) {
 	if handlerFunc == nil {
-		LogFatal(errors.New("handler cannot be nil"), "router error", map[string]interface{}{"ROUTE": route})
+		panic("handler cannot be nil")
 	}
 	dr.handlerFunctionMap[route] = handlerFunc
 }

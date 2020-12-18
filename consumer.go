@@ -11,13 +11,13 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(ctx context.Context, h MessageHandler, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(ctx context.Context, h MessageHandler, l LeveledLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	go func(instanceID string) {
 		defer wg.Done()
 		doneCh := ctx.Done()
 		worker := NewWorker(10)
 		sendCh, _ := worker.run(ctx, func(message *kafka.Message) {
-			processor(message, route, consumer, h, ctx)
+			processor(message, route, consumer, h, l, ctx)
 		})
 		for {
 			select {
@@ -29,7 +29,7 @@ var startConsumer = func(ctx context.Context, h MessageHandler, consumer *kafka.
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					LogError(err, "retrying broker...", nil)
+					l.Errorf("retrying broker: %v", err.Error())
 					time.Sleep(brokerRetryTimeout)
 					continue
 				}
@@ -41,15 +41,15 @@ var startConsumer = func(ctx context.Context, h MessageHandler, consumer *kafka.
 	}(instanceID)
 }
 
-var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h MessageHandler, l LeveledLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
-		consumer := createConsumer(consumerConfig, topics)
+		consumer := createConsumer(consumerConfig, l, topics)
 		consumers = append(consumers, consumer)
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", route, groupID, i)
 		wg.Add(1)
-		startConsumer(ctx, h, consumer, route, instanceID, wg)
+		startConsumer(ctx, h, l, consumer, route, instanceID, wg)
 	}
 	return consumers
 }

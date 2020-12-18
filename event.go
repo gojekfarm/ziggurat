@@ -6,27 +6,27 @@ import (
 )
 
 type MessageEvent struct {
-	MessageValueBytes []byte
-	MessageKeyBytes   []byte
-	Topic             string
-	StreamRoute       string
-	ActualTimestamp   time.Time
-	TimestampType     string
-	Attributes        map[string]interface{}
-	attrMutex         *sync.Mutex
+	MessageValue    []byte
+	MessageKey      []byte
+	Topic           string
+	StreamRoute     string
+	ActualTimestamp time.Time
+	TimestampType   string
+	Attributes      map[string]interface{}
+	attrMutex       *sync.Mutex
 	//exposes Attributes for gob encoding, use Get and Set for thread safety
 }
 
 func NewMessageEvent(key []byte, value []byte, topic string, route string, timestampType string, ktimestamp time.Time) MessageEvent {
 	return MessageEvent{
-		Attributes:        map[string]interface{}{},
-		attrMutex:         &sync.Mutex{},
-		MessageValueBytes: value,
-		MessageKeyBytes:   key,
-		Topic:             topic,
-		StreamRoute:       route,
-		TimestampType:     timestampType,
-		ActualTimestamp:   ktimestamp,
+		Attributes:      map[string]interface{}{},
+		attrMutex:       &sync.Mutex{},
+		MessageValue:    value,
+		MessageKey:      key,
+		Topic:           topic,
+		StreamRoute:     route,
+		TimestampType:   timestampType,
+		ActualTimestamp: ktimestamp,
 	}
 }
 

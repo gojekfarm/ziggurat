@@ -27,13 +27,13 @@ func TestMessageLogger_Success(t *testing.T) {
 	}()
 	ml := ProcessingStatusLogger(handler)
 	event := ziggurat.MessageEvent{
-		MessageValueBytes: []byte("foo"),
-		MessageKeyBytes:   []byte("foo"),
-		Topic:             "",
-		StreamRoute:       "",
-		ActualTimestamp:   ts,
-		TimestampType:     "",
-		Attributes:        nil,
+		MessageValue:    []byte("foo"),
+		MessageKey:      []byte("foo"),
+		Topic:           "",
+		StreamRoute:     "",
+		ActualTimestamp: ts,
+		TimestampType:   "",
+		Attributes:      nil,
 	}
 
 	ml.HandleMessage(event, ziggurat.NewApp())

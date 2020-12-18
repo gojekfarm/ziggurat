@@ -7,19 +7,19 @@ import (
 func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next MessageHandler) MessageHandler {
 		return HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
-			messageEvent.MessageValueBytes = []byte("foo")
+			messageEvent.MessageValue = []byte("foo")
 			return next.HandleMessage(messageEvent, z)
 		})
 	}
 	mw2 := func(next MessageHandler) MessageHandler {
 		return HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
-			messageEvent.MessageValueBytes = append(messageEvent.MessageValueBytes, []byte("-bar")...)
+			messageEvent.MessageValue = append(messageEvent.MessageValue, []byte("-bar")...)
 			return next.HandleMessage(messageEvent, z)
 		})
 	}
 	actualHandler := HandlerFunc(func(event MessageEvent, z *Ziggurat) ProcessStatus {
-		if string(event.MessageValueBytes) != "foo-bar" {
-			t.Errorf("expected message to be %s,but got %s", "foo-bar", string(event.MessageValueBytes))
+		if string(event.MessageValue) != "foo-bar" {
+			t.Errorf("expected message to be %s,but got %s", "foo-bar", string(event.MessageValue))
 		}
 		return ProcessingSuccess
 	})

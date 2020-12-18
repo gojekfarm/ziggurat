@@ -10,6 +10,7 @@ import (
 
 type Ziggurat struct {
 	handler    MessageHandler
+	logger     LeveledLogger
 	doneChan   chan error
 	logLevel   string
 	startFunc  StartFunction
@@ -17,19 +18,17 @@ type Ziggurat struct {
 	isRunning  int32
 	routes     Routes
 	routeNames []string
-	streams    Streams
 }
 
 func NewApp(opts ...ZigOptions) *Ziggurat {
 	ziggurat := &Ziggurat{
 		doneChan: make(chan error),
-		streams:  New(),
 	}
 	for _, opts := range opts {
 		opts(ziggurat)
 	}
-	if ziggurat.logLevel == "" {
-		ziggurat.logLevel = "info"
+	if ziggurat.logger == nil {
+		ziggurat.logger = NewLogger("info")
 	}
 	return ziggurat
 }
@@ -42,14 +41,15 @@ func (z *Ziggurat) appendRouteNames(routes Routes) {
 
 func (z *Ziggurat) Run(ctx context.Context, handler MessageHandler, routes Routes) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
-		LogError(errors.New("attempted to call `Run` on an already running app"), "app run error", nil)
 		return nil
+	}
+
+	if len(routes) < 1 {
+		z.logger.Fatalf("error starting app: %v", errors.New("no routes found"))
 	}
 
 	z.appendRouteNames(routes)
 	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
-
-	ConfigureLogger(z.logLevel)
 
 	z.handler = handler
 	z.routes = routes
@@ -57,10 +57,10 @@ func (z *Ziggurat) Run(ctx context.Context, handler MessageHandler, routes Route
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
 		err := <-z.start(parentCtx, z.startFunc)
-		LogError(err, "error starting streams", nil)
+		z.logger.Errorf("error starting streams: %v", err)
 		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
-		z.stop(parentCtx, z.stopFunc)
+		z.stop(z.stopFunc)
 		z.doneChan <- parentCtx.Err()
 	}()
 	return z.doneChan
@@ -68,17 +68,15 @@ func (z *Ziggurat) Run(ctx context.Context, handler MessageHandler, routes Route
 
 func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan error {
 	if startCallback != nil {
-		LogInfo("ZIGGURAT: invoking start callback", nil)
 		startCallback(ctx, z.routeNames)
 	}
 
-	LogInfo("ZIGGURAT: starting kafka streams", nil)
-
-	streamsStop := z.streams.Consume(ctx, z.routes, z.handler)
+	streams := NewKafkaStreams(z.logger)
+	streamsStop := streams.Consume(ctx, z.routes, z.handler)
 	return streamsStop
 }
 
-func (z *Ziggurat) stop(ctx context.Context, stopFunc StopFunction) {
+func (z *Ziggurat) stop(stopFunc StopFunction) {
 	if stopFunc != nil {
 		stopFunc()
 	}

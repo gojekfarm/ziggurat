@@ -1,4 +1,4 @@
-package rabbitmq
+package retry
 
 import (
 	"bytes"
@@ -22,26 +22,26 @@ var decodeMessage = func(body []byte) (ziggurat.MessageEvent, error) {
 	return messageEvent, nil
 }
 
-var createConsumer = func(z *ziggurat.Ziggurat, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.MessageHandler) (*consumer.Consumer, error) {
+var createConsumer = func(ctx context.Context, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.MessageHandler, l ziggurat.LeveledLogger) (*consumer.Consumer, error) {
 	options := []consumer.Option{
 		consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 			channel, err := conn.(*amqp.Connection).Channel()
 			if err != nil {
 				return nil, err
 			}
-			ziggurat.LogError(channel.Qos(1, 0, false), "rmq consumer: error setting QOS", nil)
+			l.Errorf("rabbitmq: error setting QOS, %v", channel.Qos(1, 0, false))
 			return channel, nil
 		}),
-		consumer.WithContext(z.Context()),
+		consumer.WithContext(ctx),
 		consumer.WithConsumeArgs(ctag, false, false, false, false, nil),
 		consumer.WithQueue(queueName),
 		consumer.WithHandler(consumer.HandlerFunc(func(ctx context.Context, msg amqp.Delivery) interface{} {
-			ziggurat.LogInfo("rmq consumer: processing message", map[string]interface{}{"QUEUE-NAME": queueName})
+			l.Infof("rabbitmq processing message from QUEUE_NAME %s", queueName)
 			msgEvent, err := decodeMessage(msg.Body)
 			if err != nil {
 				return msg.Reject(true)
 			}
-			msgHandler.HandleMessage(msgEvent, z)
+			msgHandler.HandleMessage(msgEvent, ctx)
 			return msg.Ack(false)
 		}))}
 	return d.Consumer(options...)

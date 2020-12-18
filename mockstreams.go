@@ -4,7 +4,7 @@ type MockKStreams struct {
 	StartFunc func(z *Ziggurat) (chan struct{}, error)
 }
 
-func NewKafkaStreams() *MockKStreams {
+func NewMockKafkaStreams() *MockKStreams {
 	return &MockKStreams{StartFunc: func(z *Ziggurat) (chan struct{}, error) {
 		return make(chan struct{}), nil
 	}}

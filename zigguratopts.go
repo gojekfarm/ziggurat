@@ -2,8 +2,8 @@ package ziggurat
 
 type ZigOptions func(z *Ziggurat)
 
-func WithLogLevel(level string) ZigOptions {
+func WithLogger(l LeveledLogger) ZigOptions {
 	return func(z *Ziggurat) {
-		z.logLevel = level
+		z.logger = l
 	}
 }

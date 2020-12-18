@@ -29,13 +29,13 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := NewRouter()
 	expectedEvent := MessageEvent{
-		MessageValueBytes: []byte("foo"),
-		MessageKeyBytes:   []byte("foo"),
-		Topic:             "baz",
-		StreamRoute:       "foo",
-		ActualTimestamp:   time.Time{},
-		TimestampType:     "",
-		Attributes:        nil,
+		MessageValue:    []byte("foo"),
+		MessageKey:      []byte("foo"),
+		Topic:           "baz",
+		StreamRoute:     "foo",
+		ActualTimestamp: time.Time{},
+		TimestampType:   "",
+		Attributes:      nil,
 	}
 	dr.HandleFunc("foo", func(event MessageEvent, z *Ziggurat) ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {

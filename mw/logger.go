@@ -2,24 +2,31 @@ package mw
 
 import (
 	"context"
-	"fmt"
 	"github.com/gojekfarm/ziggurat"
 )
 
-func ProcessingStatusLogger(next ziggurat.MessageHandler) ziggurat.MessageHandler {
+type ProcessingStatusLogger struct {
+	l ziggurat.LeveledLogger
+}
+
+func NewProcessingStatusLogger(logger ziggurat.LeveledLogger) *ProcessingStatusLogger {
+	p := &ProcessingStatusLogger{l: logger}
+	if p.l == nil {
+		p.l = ziggurat.NewLogger("info")
+	}
+	return p
+}
+
+func (p *ProcessingStatusLogger) Log(next ziggurat.MessageHandler) ziggurat.MessageHandler {
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
-		args := map[string]interface{}{
-			"ROUTE": messageEvent.StreamRoute,
-			"VALUE": fmt.Sprintf("%s", messageEvent.MessageValueBytes),
-		}
 		status := next.HandleMessage(messageEvent, ctx)
 		switch status {
 		case ziggurat.ProcessingSuccess:
-			ziggurat.LogInfo("[Msg logger]: successfully processed message", args)
+			p.l.Infof("successfully processed message ROUTE=%s TOPIC=%s VALUE=%s", messageEvent.StreamRoute, messageEvent.Topic, messageEvent.MessageValue)
 		case ziggurat.RetryMessage:
-			ziggurat.LogInfo("[Msg logger]: retrying message", args)
+			p.l.Infof("retrying message message ROUTE=%s TOPIC=%s VALUE=%s", messageEvent.StreamRoute, messageEvent.Topic, messageEvent.MessageValue)
 		case ziggurat.SkipMessage:
-			ziggurat.LogInfo("[Msg logger]: skipping message", args)
+			p.l.Infof("retrying message message ROUTE=%s TOPIC=%s VALUE=%s", messageEvent.StreamRoute, messageEvent.Topic, messageEvent.MessageValue)
 		}
 		return status
 	})

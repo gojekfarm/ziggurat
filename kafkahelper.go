@@ -5,13 +5,15 @@ import (
 	"time"
 )
 
-var consumerLogContext = map[string]interface{}{"component": "consumer"}
-
-var createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
+var createConsumer = func(consumerConfig *kafka.ConfigMap, l LeveledLogger, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
-	LogError(err, "ziggurat consumer", consumerLogContext)
+	if err != nil {
+		panic(err)
+	}
 	subscribeErr := consumer.SubscribeTopics(topics, nil)
-	LogError(subscribeErr, "ziggurat consumer", consumerLogContext)
+	if subscribeErr != nil {
+		panic(subscribeErr)
+	}
 	return consumer
 }
 

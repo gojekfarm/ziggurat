@@ -9,11 +9,13 @@ import (
 
 type KafkaStreams struct {
 	routeConsumerMap map[string][]*kafka.Consumer
+	l                LeveledLogger
 }
 
-func New() *KafkaStreams {
+func NewKafkaStreams(l LeveledLogger) *KafkaStreams {
 	return &KafkaStreams{
 		routeConsumerMap: map[string][]*kafka.Consumer{},
+		l:                l,
 	}
 }
 
@@ -24,7 +26,7 @@ func (k *KafkaStreams) Consume(ctx context.Context, routes Routes, handler Messa
 	for routeName, stream := range routes {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.GroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
-		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.InstanceCount, handler, &wg)
+		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.InstanceCount, handler, k.l, &wg)
 	}
 
 	go func() {
@@ -39,7 +41,7 @@ func (k *KafkaStreams) Consume(ctx context.Context, routes Routes, handler Messa
 func (k *KafkaStreams) stop() {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
-			LogError(consumers[i].Close(), "consumer close error", nil)
+			k.l.Errorf("error stopping consumer %v", consumers[i].Close())
 		}
 	}
 }

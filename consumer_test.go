@@ -62,8 +62,8 @@ func TestConsumer_start(t *testing.T) {
 	}
 	app := NewApp()
 	hf := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
-		if bytes.Compare(messageEvent.MessageValueBytes, expectedBytes) != 0 {
-			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValueBytes)
+		if bytes.Compare(messageEvent.MessageValue, expectedBytes) != 0 {
+			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValue)
 		}
 		return ProcessingSuccess
 	})
