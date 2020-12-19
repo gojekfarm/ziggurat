@@ -2,7 +2,7 @@ package ziggurat
 
 import "context"
 
-type StartFunction func(ctx context.Context, routeNames []string)
+type StartFunction func(ctx context.Context)
 type StopFunction func()
 
 const ProcessingSuccess ProcessStatus = 0

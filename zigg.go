@@ -9,10 +9,8 @@ import (
 )
 
 type Ziggurat struct {
-	handler    Handler
-	logger     LeveledLogger
-	doneChan   chan error
-	logLevel   string
+	Handler    Handler
+	Logger     LeveledLogger
 	startFunc  StartFunction
 	stopFunc   StopFunction
 	isRunning  int32
@@ -21,14 +19,12 @@ type Ziggurat struct {
 }
 
 func NewApp(opts ...ZigOptions) *Ziggurat {
-	ziggurat := &Ziggurat{
-		doneChan: make(chan error),
-	}
+	ziggurat := &Ziggurat{}
 	for _, opts := range opts {
 		opts(ziggurat)
 	}
-	if ziggurat.logger == nil {
-		ziggurat.logger = NewLogger("info")
+	if ziggurat.Logger == nil {
+		ziggurat.Logger = NewLogger("info")
 	}
 	return ziggurat
 }
@@ -45,34 +41,39 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes Routes) chan
 	}
 
 	if len(routes) < 1 {
-		z.logger.Fatalf("error starting app: %v", errors.New("no routes found"))
+		z.Logger.Fatalf("error starting app: %v", errors.New("no routes found"))
 	}
 
+	if z.Logger == nil {
+		z.Logger = NewLogger("info")
+	}
+
+	doneChan := make(chan error)
 	z.appendRouteNames(routes)
 	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
 
-	z.handler = handler
+	z.Handler = handler
 	z.routes = routes
 
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
 		err := <-z.start(parentCtx, z.startFunc)
-		z.logger.Errorf("error starting streams: %v", err)
+		z.Logger.Errorf("error starting streams: %v", err)
 		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)
-		z.doneChan <- parentCtx.Err()
+		doneChan <- parentCtx.Err()
 	}()
-	return z.doneChan
+	return doneChan
 }
 
 func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan error {
 	if startCallback != nil {
-		startCallback(ctx, z.routeNames)
+		startCallback(ctx)
 	}
 
-	streams := NewKafkaStreams(z.logger)
-	streamsStop := streams.Consume(ctx, z.routes, z.handler)
+	streams := NewKafkaStreams(z.Logger)
+	streamsStop := streams.Consume(ctx, z.routes, z.Handler)
 	return streamsStop
 }
 

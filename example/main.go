@@ -12,25 +12,22 @@ import (
 const RoutePlainTextLog = "plain-text-log"
 
 func main() {
-	app := ziggurat.NewApp()
+	app := &ziggurat.Ziggurat{}
 	router := ziggurat.NewRouter()
 	loggerMW := mw.NewProcessingStatusLogger()
 	retryMW := retry.NewRabbitRetrier(
 		[]string{"amqp://user:bitnami@localhost:5672"},
-		retry.QueueConfig{
-			RoutePlainTextLog: {DelayQueueExpirationInMS: "500", RetryCount: 2},
-		},
-		nil)
+		retry.QueueConfig{RoutePlainTextLog: {DelayQueueExpirationInMS: "500", RetryCount: 2}}, nil)
 	statsDClient := metrics.NewClient(metrics.WithPrefix("super-app"))
 	httpServer := server.NewHTTPServer()
 
 	router.HandleFunc(RoutePlainTextLog, func(event *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
 		return ziggurat.RetryMessage
 	})
-
+	
 	handler := router.Compose(loggerMW.LogStatus, statsDClient.PublishKafkaLag, statsDClient.PublishHandlerMetrics, retryMW.Retrier)
 
-	app.StartFunc(func(ctx context.Context, routeNames []string) {
+	app.StartFunc(func(ctx context.Context) {
 		retryMW.RunPublisher(ctx)
 		retryMW.RunConsumers(ctx, handler)
 		statsDClient.Run(ctx)

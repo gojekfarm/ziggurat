@@ -37,16 +37,18 @@ func (s *DefaultHttpServer) Run(ctx context.Context) chan error {
 	errorChan := make(chan error)
 	s.router.GET("/v1/ping", pingHandler)
 	go func(server *http.Server) {
-		done := ctx.Done()
-		select {
-		case <-done:
-		default:
-			if err := server.ListenAndServe(); err != nil {
-
-			}
+		if err := server.ListenAndServe(); err != nil {
+			errorChan <- err
 		}
-
 	}(s.server)
+
+	go func() {
+		done := ctx.Done()
+		<-done
+		if err := s.server.Shutdown(ctx); err != nil {
+			errorChan <- err
+		}
+	}()
 
 	return errorChan
 }
