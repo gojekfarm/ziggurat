@@ -1,28 +1,29 @@
 package ziggurat
 
 import (
+	"context"
 	"testing"
 )
 
 func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next Handler) Handler {
-		return HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
-			messageEvent.MessageValue = []byte("foo")
-			return next.HandleMessage(messageEvent, z)
+		return HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus {
+			messageEvent.Value = []byte("foo")
+			return next.HandleMessage(messageEvent, ctx)
 		})
 	}
 	mw2 := func(next Handler) Handler {
-		return HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
-			messageEvent.MessageValue = append(messageEvent.MessageValue, []byte("-bar")...)
-			return next.HandleMessage(messageEvent, z)
+		return HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus {
+			messageEvent.Value = append(messageEvent.Value, []byte("-bar")...)
+			return next.HandleMessage(messageEvent, ctx)
 		})
 	}
-	actualHandler := HandlerFunc(func(event Message, z *Ziggurat) ProcessStatus {
-		if string(event.MessageValue) != "foo-bar" {
-			t.Errorf("expected message to be %s,but got %s", "foo-bar", string(event.MessageValue))
+	actualHandler := HandlerFunc(func(event *Message, ctx context.Context) ProcessStatus {
+		if string(event.Value) != "foo-bar" {
+			t.Errorf("expected message to be %s,but got %s", "foo-bar", string(event.Value))
 		}
 		return ProcessingSuccess
 	})
 	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
-	finalHandler.HandleMessage(Message{}, NewApp())
+	finalHandler.HandleMessage(&Message{}, context.Background())
 }

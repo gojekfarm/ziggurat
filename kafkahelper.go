@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var createConsumer = func(consumerConfig *kafka.ConfigMap, l LeveledLogger, topics []string) *kafka.Consumer {
+var createConsumer = func(consumerConfig *kafka.ConfigMap, l StructuredLogger, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
 	if err != nil {
 		panic(err)
@@ -41,6 +41,7 @@ func NewConsumerConfig(bootstrapServers string, groupID string) *kafka.ConfigMap
 		"enable.auto.commit":       true,
 		"auto.commit.interval.ms":  2000,
 		"debug":                    "consumer,broker",
+		"go.logs.channel.enable":   true,
 		"enable.auto.offset.store": false,
 		//disable for at-least once delivery
 	}

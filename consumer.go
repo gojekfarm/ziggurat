@@ -11,7 +11,7 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(ctx context.Context, h Handler, l LeveledLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	go func(instanceID string) {
 		defer wg.Done()
 		doneCh := ctx.Done()
@@ -19,6 +19,12 @@ var startConsumer = func(ctx context.Context, h Handler, l LeveledLogger, consum
 		sendCh, _ := worker.run(ctx, func(message *kafka.Message) {
 			processor(message, route, consumer, h, l, ctx)
 		})
+		logChan := consumer.Logs()
+		go func() {
+			for evt := range logChan {
+				l.Info(evt.Message, map[string]interface{}{"client": evt.Name, "tag": evt.Tag, "kafka_ts": evt.Timestamp, "severity": evt.Level})
+			}
+		}()
 		for {
 			select {
 			case <-doneCh:
@@ -29,7 +35,7 @@ var startConsumer = func(ctx context.Context, h Handler, l LeveledLogger, consum
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					l.Errorf("retrying broker: %v", err.Error())
+					l.Error("retrying broker: %v", nil, nil)
 					time.Sleep(brokerRetryTimeout)
 					continue
 				}
@@ -41,7 +47,7 @@ var startConsumer = func(ctx context.Context, h Handler, l LeveledLogger, consum
 	}(instanceID)
 }
 
-var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h Handler, l LeveledLogger, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h Handler, l StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, l, topics)

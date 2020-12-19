@@ -9,10 +9,10 @@ import (
 
 type KafkaStreams struct {
 	routeConsumerMap map[string][]*kafka.Consumer
-	l                LeveledLogger
+	l                StructuredLogger
 }
 
-func NewKafkaStreams(l LeveledLogger) *KafkaStreams {
+func NewKafkaStreams(l StructuredLogger) *KafkaStreams {
 	return &KafkaStreams{
 		routeConsumerMap: map[string][]*kafka.Consumer{},
 		l:                l,
@@ -41,7 +41,7 @@ func (k *KafkaStreams) Consume(ctx context.Context, routes Routes, handler Handl
 func (k *KafkaStreams) stop() {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
-			k.l.Errorf("error stopping consumer %v", consumers[i].Close())
+			k.l.Error("error stopping consumer %v", consumers[i].Close(), nil)
 		}
 	}
 }

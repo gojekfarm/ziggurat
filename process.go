@@ -5,7 +5,7 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func processor(msg *kafka.Message, route string, c *kafka.Consumer, h Handler, l LeveledLogger, ctx context.Context) {
+func processor(msg *kafka.Message, route string, c *kafka.Consumer, h Handler, l StructuredLogger, ctx context.Context) {
 	attributes := MsgAttributes{
 		"kafka-timestamp": msg.Timestamp,
 		"kafka-partition": msg.TopicPartition.Partition,
@@ -14,5 +14,5 @@ func processor(msg *kafka.Message, route string, c *kafka.Consumer, h Handler, l
 	event := NewMessage(msg.Key, msg.Value, route, attributes)
 	h.HandleMessage(event, ctx)
 	err := storeOffsets(c, msg.TopicPartition)
-	l.Errorf("error storing offsets: %v", err)
+	l.Error("error storing offsets: %v", err, nil)
 }

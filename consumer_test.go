@@ -17,9 +17,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestConsumer_create(t *testing.T) {
-	app := NewApp()
+	l := NewLogger("disabled")
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus {
 		return ProcessingSuccess
 	})
 	oldStartConsumer := startConsumer
@@ -28,14 +28,14 @@ func TestConsumer_create(t *testing.T) {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(ctx context.Context, h Handler, l LeveledLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+	startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 
 	}
-	createConsumer = func(consumerConfig *kafka.ConfigMap, l LeveledLogger, topics []string) *kafka.Consumer {
+	createConsumer = func(consumerConfig *kafka.ConfigMap, l StructuredLogger, topics []string) *kafka.Consumer {
 		return &kafka.Consumer{}
 	}
 
-	consumers := StartConsumers(context.Background(), cfgMap, "foo", []string{"bar"}, 2, handler, &sync.WaitGroup{})
+	consumers := StartConsumers(context.Background(), cfgMap, "foo", []string{"bar"}, 2, handler, l, &sync.WaitGroup{})
 	if len(consumers) < 2 {
 		t.Errorf("could not start consuemrs")
 	}
@@ -43,6 +43,7 @@ func TestConsumer_create(t *testing.T) {
 
 func TestConsumer_start(t *testing.T) {
 	expectedBytes := []byte("foo")
+	l := NewLogger("disabled")
 	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
 		t := ""
 		return &kafka.Message{
@@ -61,10 +62,9 @@ func TestConsumer_start(t *testing.T) {
 			Headers:       nil,
 		}, nil
 	}
-	app := NewApp()
-	hf := HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
-		if bytes.Compare(messageEvent.MessageValue, expectedBytes) != 0 {
-			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValue)
+	hf := HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus {
+		if bytes.Compare(messageEvent.Value, expectedBytes) != 0 {
+			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value)
 		}
 		return ProcessingSuccess
 	})
@@ -76,19 +76,18 @@ func TestConsumer_start(t *testing.T) {
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
 	ctx, cancelFunc := context.WithCancel(context.Background())
-	app.ctx = ctx
 	defer cancelFunc()
 	go func() {
 		time.Sleep(1 * time.Second)
 		cancelFunc()
 	}()
-	startConsumer(app, hf, c, "", "", wg)
+	startConsumer(ctx, hf, l, c, "", "", wg)
 	wg.Wait()
 }
 
 func TestConsumer_AllBrokersDown(t *testing.T) {
 	callCount := 0
-	app := NewApp()
+	l := NewLogger("disabled")
 	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
 		callCount++
 		return nil, kafka.NewError(kafka.ErrAllBrokersDown, "", true)
@@ -99,12 +98,11 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	deadlineTime := time.Now().Add(time.Second * 6)
 	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
 	defer cancelFunc()
-	app.ctx = ctx
-	h := HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
+	h := HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus {
 		return ProcessingSuccess
 	})
 	wg.Add(1)
-	startConsumer(app, h, c, "", "", wg)
+	startConsumer(ctx, h, l, c, "", "", wg)
 	wg.Wait()
 	if callCount < 1 {
 		t.Errorf("expected call count to be atleast 2")

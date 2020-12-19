@@ -1,11 +1,8 @@
 package ziggurat
 
 import (
-	"fmt"
 	"github.com/rs/zerolog"
 	"os"
-	"strings"
-	"time"
 )
 
 const callerFrameSkipCount = 3
@@ -26,66 +23,41 @@ type Log struct {
 	logger    zerolog.Logger
 }
 
-func (l *Log) Infof(format string, v ...interface{}) {
-	l.logger.Info().Msgf(format, v...)
+func appendFields(l *zerolog.Event, kvs []map[string]interface{}) *zerolog.Event {
+	for _, m := range kvs {
+		l.Fields(m)
+	}
+	return l
 }
 
-func (l *Log) Debugf(format string, v ...interface{}) {
-	l.logger.Debug().Msgf(format, v...)
+func (l *Log) Info(message string, kvs ...map[string]interface{}) {
+	appendFields(l.logger.Info(), kvs).Msg(message)
 }
 
-func (l *Log) Warnf(format string, v ...interface{}) {
-	l.logger.Warn().Msgf(format, v...)
+func (l *Log) Debug(message string, kvs ...map[string]interface{}) {
+	appendFields(l.logger.Debug(), kvs).Msg(message)
 }
 
-func (l *Log) Errorf(format string, v ...interface{}) {
-	if len(v) > 0 && v[0] != nil {
-		l.logger.Error().Msgf(format, v...)
+func (l *Log) Warn(message string, kvs ...map[string]interface{}) {
+	appendFields(l.logger.Warn(), kvs).Msg(message)
+}
+
+func (l *Log) Error(message string, err error, kvs ...map[string]interface{}) {
+	if err != nil {
+		appendFields(l.errLogger.Err(err), kvs).Msg(message)
 	}
 }
 
-func (l *Log) Fatalf(format string, v ...interface{}) {
-	if len(v) > 0 && v[0] != nil {
-		l.logger.Fatal().Msgf(format, v...)
+func (l *Log) Fatal(message string, err error, kvs ...map[string]interface{}) {
+	if err != nil {
+		appendFields(l.errLogger.Fatal(), kvs).Msg(message)
 	}
-}
-
-func (l *Log) Warn(format string) {
-	l.logger.Warn().Msg(format)
-}
-
-func (l *Log) Info(format string) {
-	l.logger.Info().Msg(format)
-}
-
-func (l *Log) Debug(format string) {
-	l.logger.Debug().Msg(format)
-}
-
-func (l *Log) Error(format string) {
-	l.errLogger.Error().Msg(format)
-}
-
-func (l *Log) Fatal(format string) {
-	l.logger.Fatal().Msg(format)
 }
 
 func NewLogger(level string) *Log {
 	zerolog.SetGlobalLevel(logLevelMapping[level])
-	consoleLogger := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
-		w.Out = os.Stderr
-		w.NoColor = true
-		w.TimeFormat = time.RFC3339
-		w.FormatMessage = func(i interface{}) string {
-			return fmt.Sprintf("[ziggurat] %s", i)
-		}
-		w.FormatLevel = func(i interface{}) string {
-			return strings.ToUpper(fmt.Sprintf("[%s]", i))
-		}
-		w.TimeFormat = time.RFC850
-	})
-	loggerInst := zerolog.New(consoleLogger).With().Timestamp().Logger()
-	errLoggerInst := zerolog.New(consoleLogger).With().Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger()
+	loggerInst := zerolog.New(os.Stdout).With().Timestamp().Logger()
+	errLoggerInst := zerolog.New(os.Stderr).With().Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger()
 	return &Log{
 		errLogger: errLoggerInst,
 		logger:    loggerInst,

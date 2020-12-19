@@ -6,7 +6,7 @@ import (
 
 type defaultRouter struct {
 	handlerFunctionMap map[string]HandlerFunc
-	l                  LeveledLogger
+	l                  StructuredLogger
 }
 
 type Adapter func(next Handler) Handler
@@ -14,7 +14,7 @@ type Adapter func(next Handler) Handler
 func (dr *defaultRouter) HandleMessage(event *Message, ctx context.Context) ProcessStatus {
 	route := event.RouteName
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
-		dr.l.Warnf("handler not found, skipping message, ROUTE_NAME=%s", route)
+		dr.l.Warn("handler not found", map[string]interface{}{"ROUTE": route})
 		return SkipMessage
 	} else {
 		return handler.HandleMessage(event, ctx)

@@ -3,40 +3,23 @@ package ziggurat
 import (
 	"context"
 	"testing"
-	"time"
 )
 
 func TestZigguratStartStop(t *testing.T) {
 	isStartCalled := false
 	isStopCalled := false
-	ctx, cancelFunc := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cancelFunc()
-	z := NewApp(WithContext(ctx), WithLogLevel("disabled"))
-	z.StartFunc(func(z *Ziggurat) {
+	z := NewApp(WithLogger(NewLogger("disabled")))
+	z.StartFunc(func(ctx context.Context) {
 		isStartCalled = true
 	})
-	z.StopFunc(func(z *Ziggurat) {
+	z.StopFunc(func() {
 		isStopCalled = true
 	})
-	kstreams := NewKafkaStreams()
-	kstreams.StartFunc = func(z *Ziggurat) (chan struct{}, error) {
-		done := make(chan struct{})
-		ctxDone := z.Context().Done()
-		go func() {
-			<-ctxDone
-			close(done)
-		}()
-		return done, nil
-	}
 
-	z.streams = kstreams
+	z.streams = NewMockKafkaStreams()
 
-	<-z.Run(HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
-		return ProcessingSuccess
-	}),
-		Routes{
-			"foo": {},
-		})
+	<-z.Run(context.Background(), HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus { return ProcessingSuccess }), Routes{"foo": {}})
+
 	if !isStartCalled {
 		t.Error("expected start callback to be called")
 	}
@@ -46,14 +29,11 @@ func TestZigguratStartStop(t *testing.T) {
 }
 
 func TestZigguratRun(t *testing.T) {
-	z := NewApp(WithLogLevel("disabled"))
-	handler := HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
-		return ProcessingSuccess
-	})
-	z.StartFunc(func(z *Ziggurat) {
+	z := &Ziggurat{}
+	z.StartFunc(func(ctx context.Context) {
 		if !z.IsRunning() {
-			t.Errorf("expected app to be running")
+			t.Errorf("expected app to be running state")
 		}
 	})
-	<-z.Run(handler, Routes{"foo": {}})
+	<-z.Run(context.Background(), HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus { return ProcessingSuccess }), Routes{"foo": {}})
 }
