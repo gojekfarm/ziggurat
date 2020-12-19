@@ -9,7 +9,7 @@ import (
 )
 
 type Ziggurat struct {
-	handler    MessageHandler
+	handler    Handler
 	logger     LeveledLogger
 	doneChan   chan error
 	logLevel   string
@@ -39,7 +39,7 @@ func (z *Ziggurat) appendRouteNames(routes Routes) {
 	}
 }
 
-func (z *Ziggurat) Run(ctx context.Context, handler MessageHandler, routes Routes) chan error {
+func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes Routes) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		return nil
 	}

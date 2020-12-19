@@ -11,7 +11,7 @@ type Client struct {
 	client  statsd.Statter
 	host    string
 	prefix  string
-	handler ziggurat.MessageHandler
+	handler ziggurat.Handler
 }
 
 func NewClient(opts ...func(c *Client)) *Client {
@@ -35,7 +35,6 @@ func (s *Client) Run(ctx context.Context) error {
 	}
 	client, clientErr := statsd.NewClientWithConfig(config)
 	if clientErr != nil {
-		ziggurat.LogError(clientErr, "ziggurat statsD", nil)
 		return clientErr
 	}
 	s.client = client
@@ -67,9 +66,9 @@ func (s *Client) Gauge(metricName string, value int64, arguments map[string]stri
 	return s.client.Gauge(finalMetricName, value, 1.0)
 }
 
-func (s *Client) PublishHandlerMetrics(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
-		arguments := map[string]string{"route": messageEvent.StreamRoute}
+func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handler {
+	return ziggurat.HandlerFunc(func(messageEvent *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
+		arguments := map[string]string{"route": messageEvent.RouteName}
 		startTime := time.Now()
 		status := handler.HandleMessage(messageEvent, ctx)
 		endTime := time.Now()
@@ -85,13 +84,16 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.MessageHandler) ziggurat
 	})
 }
 
-func (s *Client) PublishKafkaLag(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
-		actualTS := messageEvent.ActualTimestamp
+func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
+	return ziggurat.HandlerFunc(func(messageEvent *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
+		actualTS := messageEvent.Attribute("kafka-timestamp")
+		if actualTS == nil {
+			return handler.HandleMessage(messageEvent, ctx)
+		}
 		now := time.Now()
-		diff := now.Sub(actualTS).Milliseconds()
+		diff := now.Sub(actualTS.(time.Time)).Milliseconds()
 		s.Gauge("kafka_message_lag", diff, map[string]string{
-			"route": messageEvent.StreamRoute,
+			"route": messageEvent.RouteName,
 		})
 		return handler.HandleMessage(messageEvent, ctx)
 	})

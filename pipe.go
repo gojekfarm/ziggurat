@@ -2,9 +2,9 @@ package ziggurat
 
 import "context"
 
-var PipeHandlers = func(funcs ...Adapter) func(origHandler MessageHandler) MessageHandler {
-	return func(next MessageHandler) MessageHandler {
-		return HandlerFunc(func(messageEvent MessageEvent, ctx context.Context) ProcessStatus {
+var PipeHandlers = func(funcs ...Adapter) func(origHandler Handler) Handler {
+	return func(next Handler) Handler {
+		return HandlerFunc(func(messageEvent *Message, ctx context.Context) ProcessStatus {
 			var handlerResult = next
 			lastIdx := len(funcs) - 1
 			for i := lastIdx; i >= 0; i-- {

@@ -19,7 +19,7 @@ func NewKafkaStreams(l LeveledLogger) *KafkaStreams {
 	}
 }
 
-func (k *KafkaStreams) Consume(ctx context.Context, routes Routes, handler MessageHandler) chan error {
+func (k *KafkaStreams) Consume(ctx context.Context, routes Routes, handler Handler) chan error {
 	var wg sync.WaitGroup
 	stopChan := make(chan error)
 

@@ -11,7 +11,7 @@ import (
 const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
-var startConsumer = func(ctx context.Context, h MessageHandler, l LeveledLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(ctx context.Context, h Handler, l LeveledLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	go func(instanceID string) {
 		defer wg.Done()
 		doneCh := ctx.Done()
@@ -41,7 +41,7 @@ var startConsumer = func(ctx context.Context, h MessageHandler, l LeveledLogger,
 	}(instanceID)
 }
 
-var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h MessageHandler, l LeveledLogger, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h Handler, l LeveledLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, l, topics)

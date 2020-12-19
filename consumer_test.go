@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 func TestConsumer_create(t *testing.T) {
 	app := NewApp()
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
 		return ProcessingSuccess
 	})
 	oldStartConsumer := startConsumer
@@ -28,13 +28,14 @@ func TestConsumer_create(t *testing.T) {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(z *Ziggurat, h MessageHandler, consumer *kafka.Consumer, topicEntity string, instanceID string, wg *sync.WaitGroup) {
+	startConsumer = func(ctx context.Context, h Handler, l LeveledLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+
 	}
-	createConsumer = func(consumerConfig *kafka.ConfigMap, topics []string) *kafka.Consumer {
+	createConsumer = func(consumerConfig *kafka.ConfigMap, l LeveledLogger, topics []string) *kafka.Consumer {
 		return &kafka.Consumer{}
 	}
 
-	consumers := StartConsumers(app, cfgMap, "foo", []string{"bar"}, 2, handler, &sync.WaitGroup{})
+	consumers := StartConsumers(context.Background(), cfgMap, "foo", []string{"bar"}, 2, handler, &sync.WaitGroup{})
 	if len(consumers) < 2 {
 		t.Errorf("could not start consuemrs")
 	}
@@ -61,7 +62,7 @@ func TestConsumer_start(t *testing.T) {
 		}, nil
 	}
 	app := NewApp()
-	hf := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
+	hf := HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
 		if bytes.Compare(messageEvent.MessageValue, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.MessageValue)
 		}
@@ -99,7 +100,7 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
 	defer cancelFunc()
 	app.ctx = ctx
-	h := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
+	h := HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
 	wg.Add(1)

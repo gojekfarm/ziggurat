@@ -15,7 +15,7 @@ func TestKafkaStreams_Start(t *testing.T) {
 		StartConsumers = oldStartConsumers
 	}()
 
-	StartConsumers = func(z *Ziggurat, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h MessageHandler, wg *sync.WaitGroup) []*kafka.Consumer {
+	StartConsumers = func(z *Ziggurat, consumerConfig *kafka.ConfigMap, topicEntity string, topics []string, instances int, h Handler, wg *sync.WaitGroup) []*kafka.Consumer {
 		wg.Add(1)
 		wg.Done()
 		return []*kafka.Consumer{}

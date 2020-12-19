@@ -21,7 +21,7 @@ type RabbitMQRetry struct {
 	hosts          []string
 	dialer         *amqpextra.Dialer
 	consumerDialer *amqpextra.Dialer
-	handler        ziggurat.MessageHandler
+	handler        ziggurat.Handler
 	queueConfig    QueueConfig
 	logger         ziggurat.LeveledLogger
 }
@@ -32,13 +32,13 @@ func NewRabbitRetrier(hosts []string, queueConfig QueueConfig, logger ziggurat.L
 		queueConfig: queueConfig,
 		logger:      logger,
 	}
-	if r.logger != nil {
+	if r.logger == nil {
 		r.logger = ziggurat.NewLogger("info")
 	}
 	return r
 }
 
-func (r *RabbitMQRetry) HandleMessage(event ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
+func (r *RabbitMQRetry) HandleMessage(event *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
 	status := r.handler.HandleMessage(event, ctx)
 	if status == ziggurat.RetryMessage {
 		err := r.retry(event, ctx)
@@ -47,11 +47,11 @@ func (r *RabbitMQRetry) HandleMessage(event ziggurat.MessageEvent, ctx context.C
 	return status
 }
 
-func (r *RabbitMQRetry) Retrier(handler ziggurat.MessageHandler) ziggurat.MessageHandler {
-	if r.dialer == nil {
-		panic("dialer nil error: please start the call the `RunPublisher` method")
-	}
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.MessageEvent, ctx context.Context) ziggurat.ProcessStatus {
+func (r *RabbitMQRetry) Retrier(handler ziggurat.Handler) ziggurat.Handler {
+	return ziggurat.HandlerFunc(func(messageEvent *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
+		if r.dialer == nil {
+			panic("dialer nil error: please start the call the `RunPublisher` method")
+		}
 		status := handler.HandleMessage(messageEvent, ctx)
 		if status == ziggurat.RetryMessage {
 			err := r.retry(messageEvent, ctx)
@@ -65,7 +65,7 @@ func (r *RabbitMQRetry) RunPublisher(ctx context.Context) error {
 	return r.initPublisher(ctx)
 }
 
-func (r *RabbitMQRetry) RunConsumers(ctx context.Context, handler ziggurat.MessageHandler) error {
+func (r *RabbitMQRetry) RunConsumers(ctx context.Context, handler ziggurat.Handler) error {
 	consumerDialer, dialErr := amqpextra.NewDialer(
 		amqpextra.WithContext(ctx),
 		amqpextra.WithURL(r.hosts...))
@@ -88,7 +88,7 @@ func (r *RabbitMQRetry) RunConsumers(ctx context.Context, handler ziggurat.Messa
 	return nil
 }
 
-func (r *RabbitMQRetry) retry(event ziggurat.MessageEvent, ctx context.Context) error {
+func (r *RabbitMQRetry) retry(event *ziggurat.Message, ctx context.Context) error {
 	pub, pubCreateError := r.dialer.Publisher(publisher.WithContext(ctx))
 	if pubCreateError != nil {
 		return pubCreateError
@@ -98,13 +98,13 @@ func (r *RabbitMQRetry) retry(event ziggurat.MessageEvent, ctx context.Context) 
 	publishing := amqp.Publishing{}
 	message := publisher.Message{}
 
-	if getRetryCount(&event) >= r.queueConfig[StreamRouteName(event.StreamRoute)].RetryCount {
-		message.Exchange = constructExchangeName(StreamRouteName(event.StreamRoute), "dead_letter")
+	if getRetryCount(event) >= r.queueConfig[StreamRouteName(event.RouteName)].RetryCount {
+		message.Exchange = constructExchangeName(StreamRouteName(event.RouteName), "dead_letter")
 		publishing.Expiration = ""
 	} else {
-		message.Exchange = constructExchangeName(StreamRouteName(event.StreamRoute), "delay")
-		publishing.Expiration = r.queueConfig[StreamRouteName(event.StreamRoute)].DelayQueueExpirationInMS
-		setRetryCount(&event)
+		message.Exchange = constructExchangeName(StreamRouteName(event.RouteName), "delay")
+		publishing.Expiration = r.queueConfig[StreamRouteName(event.RouteName)].DelayQueueExpirationInMS
+		setRetryCount(event)
 	}
 
 	buff, err := encodeMessage(event)

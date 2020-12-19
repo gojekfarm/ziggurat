@@ -9,10 +9,10 @@ type defaultRouter struct {
 	l                  LeveledLogger
 }
 
-type Adapter func(next MessageHandler) MessageHandler
+type Adapter func(next Handler) Handler
 
-func (dr *defaultRouter) HandleMessage(event MessageEvent, ctx context.Context) ProcessStatus {
-	route := event.StreamRoute
+func (dr *defaultRouter) HandleMessage(event *Message, ctx context.Context) ProcessStatus {
+	route := event.RouteName
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		dr.l.Warnf("handler not found, skipping message, ROUTE_NAME=%s", route)
 		return SkipMessage
@@ -24,21 +24,22 @@ func (dr *defaultRouter) HandleMessage(event MessageEvent, ctx context.Context) 
 func NewRouter() *defaultRouter {
 	return &defaultRouter{
 		handlerFunctionMap: map[string]HandlerFunc{},
+		l:                  NewLogger("info"),
 	}
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event MessageEvent, ctx context.Context) ProcessStatus) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event *Message, ctx context.Context) ProcessStatus) {
 	if handlerFunc == nil {
 		panic("handler cannot be nil")
 	}
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
-func (dr *defaultRouter) Compose(mw ...Adapter) MessageHandler {
+func (dr *defaultRouter) Compose(mw ...Adapter) Handler {
 	return PipeHandlers(mw...)(dr)
 }
 
-func (dr *defaultRouter) Lookup(route string) (MessageHandler, bool) {
+func (dr *defaultRouter) Lookup(route string) (Handler, bool) {
 	h, ok := dr.handlerFunctionMap[route]
 	return h, ok
 }

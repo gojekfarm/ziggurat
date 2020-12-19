@@ -31,7 +31,7 @@ func TestZigguratStartStop(t *testing.T) {
 
 	z.streams = kstreams
 
-	<-z.Run(HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
+	<-z.Run(HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	}),
 		Routes{
@@ -47,7 +47,7 @@ func TestZigguratStartStop(t *testing.T) {
 
 func TestZigguratRun(t *testing.T) {
 	z := NewApp(WithLogLevel("disabled"))
-	handler := HandlerFunc(func(messageEvent MessageEvent, z *Ziggurat) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
 	z.OnStart(func(z *Ziggurat) {

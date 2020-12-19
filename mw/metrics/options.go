@@ -16,7 +16,7 @@ func WithHost(host string) func(s *Client) {
 	}
 }
 
-func WithHandler(handler ziggurat.MessageHandler) func(s *Client) {
+func WithHandler(handler ziggurat.Handler) func(s *Client) {
 	return func(s *Client) {
 		s.handler = handler
 	}

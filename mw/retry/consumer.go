@@ -8,21 +8,20 @@ import (
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/consumer"
 	"github.com/streadway/amqp"
-	"time"
 )
 
-var decodeMessage = func(body []byte) (ziggurat.MessageEvent, error) {
+var decodeMessage = func(body []byte) (*ziggurat.Message, error) {
 	buff := bytes.Buffer{}
 	buff.Write(body)
 	decoder := gob.NewDecoder(&buff)
-	messageEvent := ziggurat.NewMessageEvent(nil, nil, "", "", "", time.Time{})
-	if decodeErr := decoder.Decode(&messageEvent); decodeErr != nil {
+	messageEvent := ziggurat.NewMessage(nil, nil, "", map[string]interface{}{})
+	if decodeErr := decoder.Decode(messageEvent); decodeErr != nil {
 		return messageEvent, decodeErr
 	}
 	return messageEvent, nil
 }
 
-var createConsumer = func(ctx context.Context, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.MessageHandler, l ziggurat.LeveledLogger) (*consumer.Consumer, error) {
+var createConsumer = func(ctx context.Context, d *amqpextra.Dialer, ctag string, queueName string, msgHandler ziggurat.Handler, l ziggurat.LeveledLogger) (*consumer.Consumer, error) {
 	options := []consumer.Option{
 		consumer.WithInitFunc(func(conn consumer.AMQPConnection) (consumer.AMQPChannel, error) {
 			channel, err := conn.(*amqp.Connection).Channel()
