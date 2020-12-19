@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/mw/metrics"
 	"github.com/gojekfarm/ziggurat/mw/retry"
 )
 
@@ -17,15 +18,18 @@ func main() {
 		[]string{"amqp://user:bitnami@localhost:5672"},
 		retry.QueueConfig{RoutePlainTextLog: {DelayQueueExpirationInMS: "500", RetryCount: 2}},
 		nil)
+	statsDClient := metrics.NewClient(metrics.WithPrefix("super-app"))
 
 	router.HandleFunc(RoutePlainTextLog, func(event *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
 		return ziggurat.RetryMessage
 	})
 
-	handler := retryMW.Retrier(loggerMW.LogStatus(router))
+	handler := router.Compose(loggerMW.LogStatus, statsDClient.PublishKafkaLag, statsDClient.PublishHandlerMetrics, retryMW.Retrier)
+
 	app.OnStart(func(ctx context.Context, routeNames []string) {
 		retryMW.RunPublisher(ctx)
 		retryMW.RunConsumers(ctx, handler)
+		statsDClient.Run(ctx)
 
 	})
 
