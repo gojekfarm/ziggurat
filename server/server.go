@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
@@ -38,16 +37,17 @@ func (s *DefaultHttpServer) Run(ctx context.Context) chan error {
 	errorChan := make(chan error)
 	s.router.GET("/v1/ping", pingHandler)
 	go func(server *http.Server) {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			errorChan <- err
+		done := ctx.Done()
+		select {
+		case <-done:
+		default:
+			if err := server.ListenAndServe(); err != nil {
+
+			}
 		}
+
 	}(s.server)
 
-	go func() {
-		errorChan <- s.server.Shutdown(ctx)
-	}()
-
-	ziggurat.LogInfo("http server start on "+s.server.Addr, nil)
 	return errorChan
 }
 

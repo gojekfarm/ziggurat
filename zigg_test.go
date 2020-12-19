@@ -12,10 +12,10 @@ func TestZigguratStartStop(t *testing.T) {
 	ctx, cancelFunc := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancelFunc()
 	z := NewApp(WithContext(ctx), WithLogLevel("disabled"))
-	z.OnStart(func(z *Ziggurat) {
+	z.StartFunc(func(z *Ziggurat) {
 		isStartCalled = true
 	})
-	z.OnStop(func(z *Ziggurat) {
+	z.StopFunc(func(z *Ziggurat) {
 		isStopCalled = true
 	})
 	kstreams := NewKafkaStreams()
@@ -50,7 +50,7 @@ func TestZigguratRun(t *testing.T) {
 	handler := HandlerFunc(func(messageEvent Message, z *Ziggurat) ProcessStatus {
 		return ProcessingSuccess
 	})
-	z.OnStart(func(z *Ziggurat) {
+	z.StartFunc(func(z *Ziggurat) {
 		if !z.IsRunning() {
 			t.Errorf("expected app to be running")
 		}

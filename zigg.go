@@ -89,10 +89,10 @@ func (z *Ziggurat) IsRunning() bool {
 	return false
 }
 
-func (z *Ziggurat) OnStart(function StartFunction) {
+func (z *Ziggurat) StartFunc(function StartFunction) {
 	z.startFunc = function
 }
 
-func (z *Ziggurat) OnStop(function StopFunction) {
+func (z *Ziggurat) StopFunc(function StopFunction) {
 	z.stopFunc = function
 }

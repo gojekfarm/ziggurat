@@ -302,7 +302,7 @@ func main() {
 
 	rmw := router.Compose(mw.MessageLogger, statsdClient.PublishKafkaLag, statsdClient.PublishHandlerMetrics)
 
-	app.OnStart(func(a ziggurat.App) {
+	app.StartFunc(func(a ziggurat.App) {
 		statsdClient.Consume(app)
 		httpServer.Consume(app)
 	})
