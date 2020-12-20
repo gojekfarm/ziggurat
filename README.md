@@ -28,44 +28,36 @@ with `--ziggurat-config="your_path/config_file.yaml"` option
 package main
 
 import (
+	"context"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/mw"
-	"github.com/gojekfarm/ziggurat/mw/statsd"
-	"github.com/gojekfarm/ziggurat/server"
 )
 
 const RoutePlainTextLog = "plain-text-log"
 
 func main() {
-	app := ziggurat.NewApp()
+	app := &ziggurat.Ziggurat{}
 	router := ziggurat.NewRouter()
-	statsdClient := statsd.NewStatsD(statsd.WithPrefix("super-app"))
-	httpServer := server.New()
+	statusLogger := mw.NewProcessingStatusLogger()
 
-	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.MessageEvent, app ziggurat.App) ziggurat.ProcessStatus {
+	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 
-	rmw := router.Compose(mw.MessageLogger, statsdClient.PublishKafkaLag, statsdClient.PublishHandlerMetrics)
+	handler := router.Compose(statusLogger.LogStatus)
 
-	app.OnStart(func(a ziggurat.App) {
-		statsdClient.Start(app)
-		httpServer.Start(app)
+	app.StartFunc(func(ctx context.Context) {
+
 	})
 
-	app.OnStop(func(a ziggurat.App) {
-		httpServer.Stop(a)
-		statsdClient.Stop()
-	})
-
-	<-app.Run(rmw, ziggurat.Routes{
-		RoutePlainTextLog: {
-			InstanceCount:    1,
-			BootstrapServers: "localhost:9092",
-			OriginTopics:     "plain-text-log",
-			GroupID:          "plain_text_consumer",
-		},
-	})
+	<-app.Run(context.Background(), handler,
+		ziggurat.StreamRoutes{
+			RoutePlainTextLog: {
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "plain-text-log",
+				ConsumerGroupID:  "plain_text_consumer",
+				ConsumerCount:    2,
+			},
+		})
 }
-
 ```
