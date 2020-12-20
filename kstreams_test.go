@@ -9,7 +9,7 @@ import (
 
 func TestKafkaStreams_Start(t *testing.T) {
 	l := NewLogger("disabled")
-	routes := Routes{"foo": {}}
+	routes := StreamRoutes{"foo": {}}
 	oldStartConsumers := StartConsumers
 	defer func() {
 		StartConsumers = oldStartConsumers
@@ -18,7 +18,7 @@ func TestKafkaStreams_Start(t *testing.T) {
 	StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h Handler, l StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 		return []*kafka.Consumer{}
 	}
-	kstreams := NewKafkaStreams(l, Routes{"foo": {}})
+	kstreams := NewKafkaStreams(l, StreamRoutes{"foo": {}})
 	kstreams.Consume(context.Background(), HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
 		return ProcessingSuccess
 	}))

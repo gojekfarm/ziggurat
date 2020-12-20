@@ -10,7 +10,7 @@ type Message struct {
 	Value      []byte
 	Key        []byte
 	Attributes MsgAttributes
-	RouteName  string
+	RoutingKey string
 	attrMutex  *sync.Mutex
 	//exposes Attributes for gob encoding, use Get and Set for thread safety
 }
@@ -32,7 +32,7 @@ func CreateMessage(key []byte, value []byte, routeName string, attributes map[st
 		Value:      value,
 		Key:        key,
 		Attributes: attributes,
-		RouteName:  routeName,
+		RoutingKey: routeName,
 		attrMutex:  &sync.Mutex{},
 	}
 	if m.Attributes == nil {

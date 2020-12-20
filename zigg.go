@@ -2,20 +2,19 @@ package ziggurat
 
 import (
 	"context"
+	"errors"
 	"github.com/sethvargo/go-signalcontext"
 	"sync/atomic"
 	"syscall"
 )
 
 type Ziggurat struct {
-	Handler    Handler
-	Logger     StructuredLogger
-	startFunc  StartFunction
-	stopFunc   StopFunction
-	isRunning  int32
-	streams    Streams
-	routes     Routes
-	routeNames []string
+	Handler   Handler
+	Logger    StructuredLogger
+	startFunc StartFunction
+	stopFunc  StopFunction
+	isRunning int32
+	streams   Streams
 }
 
 func NewApp(opts ...ZigOptions) *Ziggurat {
@@ -29,19 +28,13 @@ func NewApp(opts ...ZigOptions) *Ziggurat {
 	return ziggurat
 }
 
-func (z *Ziggurat) appendRouteNames(routes Routes) {
-	for name, _ := range routes {
-		z.routeNames = append(z.routeNames, name)
-	}
-}
-
-func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes Routes) chan error {
+func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes StreamRoutes) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		return nil
 	}
 
 	if len(routes) < 1 {
-		z.Logger.Error("error starting app: %v", nil, nil)
+		z.Logger.Error("error starting streams: ", errors.New("no routes found"))
 	}
 
 	if z.Logger == nil {
@@ -53,11 +46,9 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes Routes) chan
 	}
 
 	doneChan := make(chan error)
-	z.appendRouteNames(routes)
 	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
 
 	z.Handler = handler
-	z.routes = routes
 
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {

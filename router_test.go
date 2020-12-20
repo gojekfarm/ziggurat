@@ -13,7 +13,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 		return ProcessingSuccess
 	})
 	event := Message{
-		RouteName: "bar",
+		RoutingKey: "bar",
 	}
 	if status := dr.HandleMessage(event, context.Background()); status != SkipMessage {
 		t.Errorf("expected status %d got status %d", SkipMessage, status)
@@ -24,7 +24,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := NewRouter()
 	expectedEvent := Message{
-		RouteName:  "foo",
+		RoutingKey: "foo",
 		Attributes: MsgAttributes{"bar": "baz"},
 	}
 	dr.HandleFunc("foo", func(event Message, ctx context.Context) ProcessStatus {
@@ -33,5 +33,5 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		}
 		return ProcessingSuccess
 	})
-	dr.HandleMessage(Message{RouteName: "foo", Attributes: MsgAttributes{"bar": "baz"}}, context.Background())
+	dr.HandleMessage(Message{RoutingKey: "foo", Attributes: MsgAttributes{"bar": "baz"}}, context.Background())
 }

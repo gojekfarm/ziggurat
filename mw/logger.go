@@ -44,7 +44,7 @@ func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handl
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
 		status := next.HandleMessage(messageEvent, ctx)
 		topic := messageEvent.Attribute("kafka-topic")
-		args := map[string]interface{}{"route": messageEvent.RouteName, "topic": topic, "value": messageEvent.Value}
+		args := map[string]interface{}{"route": messageEvent.RoutingKey, "topic": topic, "value": messageEvent.Value}
 		switch status {
 		case ziggurat.ProcessingSuccess:
 			args["status"] = "success"
