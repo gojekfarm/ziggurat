@@ -18,10 +18,10 @@ func TestKafkaStreams_Start(t *testing.T) {
 	StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h Handler, l StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 		return []*kafka.Consumer{}
 	}
-	kstreams := NewKafkaStreams(l)
+	kstreams := NewKafkaStreams(l, Routes{"foo": {}})
 	kstreams.Consume(context.Background(), HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
 		return ProcessingSuccess
-	}), Routes{"foo": {}})
+	}))
 	if len(kstreams.routeConsumerMap) < len(routes) {
 		t.Errorf("expected count %d but got %d", len(kstreams.routeConsumerMap), len(routes))
 	}
