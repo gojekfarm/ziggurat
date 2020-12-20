@@ -8,10 +8,11 @@ import (
 
 func TestDefaultRouter_HandleMessageError(t *testing.T) {
 	dr := NewRouter()
-	dr.HandleFunc("foo", func(event *Message, ctx context.Context) ProcessStatus {
+	dr.l = NewLogger("disabled")
+	dr.HandleFunc("foo", func(event Message, ctx context.Context) ProcessStatus {
 		return ProcessingSuccess
 	})
-	event := &Message{
+	event := Message{
 		RouteName: "bar",
 	}
 	if status := dr.HandleMessage(event, context.Background()); status != SkipMessage {
@@ -26,14 +27,11 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		RouteName:  "foo",
 		Attributes: MsgAttributes{"bar": "baz"},
 	}
-	dr.HandleFunc("foo", func(event *Message, ctx context.Context) ProcessStatus {
+	dr.HandleFunc("foo", func(event Message, ctx context.Context) ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
 		return ProcessingSuccess
 	})
-	dr.HandleMessage(&Message{
-		RouteName:  "foo",
-		Attributes: MsgAttributes{"bar": "baz"},
-	}, context.Background())
+	dr.HandleMessage(Message{RouteName: "foo", Attributes: MsgAttributes{"bar": "baz"}}, context.Background())
 }

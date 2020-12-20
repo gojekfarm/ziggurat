@@ -63,7 +63,7 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes Routes) chan
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
 		err := <-z.start(parentCtx, z.startFunc)
-		z.Logger.Error("error starting streams: %v", err, nil)
+		z.Logger.Error("error starting streams", err)
 		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)
@@ -77,7 +77,7 @@ func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan 
 		startCallback(ctx)
 	}
 
-	streamsStop := z.streams.Consume(ctx, z.routes, z.Handler)
+	streamsStop := z.streams.Consume(ctx, z.Handler, z.routes)
 	return streamsStop
 }
 

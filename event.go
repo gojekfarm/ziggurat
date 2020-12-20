@@ -27,10 +27,10 @@ func (m *Message) SetAttribute(key string, value interface{}) {
 	m.Attributes[key] = value
 }
 
-func NewMessage(key []byte, value []byte, routeName string, attributes map[string]interface{}) *Message {
-	m := &Message{
-		Value:      key,
-		Key:        value,
+func CreateMessage(key []byte, value []byte, routeName string, attributes map[string]interface{}) Message {
+	m := Message{
+		Value:      value,
+		Key:        key,
 		Attributes: attributes,
 		RouteName:  routeName,
 		attrMutex:  &sync.Mutex{},

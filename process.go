@@ -11,7 +11,7 @@ func processor(msg *kafka.Message, route string, c *kafka.Consumer, h Handler, l
 		"kafka-partition": msg.TopicPartition.Partition,
 		"kafka-topic":     *msg.TopicPartition.Topic,
 	}
-	event := NewMessage(msg.Key, msg.Value, route, attributes)
+	event := CreateMessage(msg.Key, msg.Value, route, attributes)
 	h.HandleMessage(event, ctx)
 	err := storeOffsets(c, msg.TopicPartition)
 	l.Error("error storing offsets: %v", err, nil)

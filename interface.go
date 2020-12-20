@@ -3,11 +3,11 @@ package ziggurat
 import "context"
 
 type Handler interface {
-	HandleMessage(event *Message, ctx context.Context) ProcessStatus
+	HandleMessage(event Message, ctx context.Context) ProcessStatus
 }
 
 type Streams interface {
-	Consume(ctx context.Context, routes Routes, handler Handler) chan error
+	Consume(ctx context.Context, handler Handler, routes Routes) chan error
 }
 
 type StructuredLogger interface {

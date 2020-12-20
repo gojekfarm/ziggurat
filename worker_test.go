@@ -34,7 +34,7 @@ func TestConsumerWorker_ContextDone(t *testing.T) {
 	c, cancelFunc := context.WithTimeout(context.Background(), time.Millisecond*100)
 	defer cancelFunc()
 
-	send, stop := cw.run(context.Background(), func(message *kafka.Message) {
+	send, stop := cw.run(c, func(message *kafka.Message) {
 		time.Sleep(100 * time.Millisecond)
 		atomic.AddInt32(&callCount, 1)
 	})

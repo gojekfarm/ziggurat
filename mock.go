@@ -8,7 +8,7 @@ type MockKStreams struct {
 	ConsumeFunc func(ctx context.Context, routes Routes, handler Handler) chan error
 }
 
-func (m MockKStreams) Consume(ctx context.Context, routes Routes, handler Handler) chan error {
+func (m MockKStreams) Consume(ctx context.Context, handler Handler, routes Routes) chan error {
 	return m.ConsumeFunc(ctx, routes, handler)
 }
 
@@ -20,50 +20,30 @@ func NewMockKafkaStreams() *MockKStreams {
 	}
 }
 
-//type MockLeveledLogger struct {
-//	InfofFunc  func(format string, v ...interface{})
-//	ErrorfFunc func(format string, v ...interface{})
-//	WarnfFunc  func(format string, v ...interface{})
-//	FatalfFunc func(format string, v ...interface{})
-//	DebugfFunc func(format string, v ...interface{})
-//}
-//
-//func (m MockLeveledLogger) Info(message string, kvs map[string]interface{}) {
-//	m.InfofFunc(message, kvs...)
-//}
-//
-//func (m MockLeveledLogger) Debug(message string, kvs map[string]interface{}) {
-//	m.DebugfFunc(message, kvs...)
-//}
-//
-//func (m MockLeveledLogger) Warn(message string, kvs map[string]interface{}) {
-//	m.WarnfFunc(message, kvs...)
-//}
-//
-//func (m MockLeveledLogger) Error(message string, err error, kvs map[string]interface{}) {
-//	m.ErrorfFunc(message, v...)
-//}
-//
-//func (m MockLeveledLogger) Fatal(message string, err error, kvs map[string]interface{}) {
-//	m.FatalfFunc(format, kvs...)
-//}
-//
-//func NewMockLogger(level string) *MockLeveledLogger {
-//	return &MockLeveledLogger{
-//		InfofFunc: func(format string, v ...interface{}) {
-//
-//		},
-//		ErrorfFunc: func(format string, v ...interface{}) {
-//
-//		},
-//		WarnfFunc: func(format string, v ...interface{}) {
-//
-//		},
-//		FatalfFunc: func(format string, v ...interface{}) {
-//
-//		},
-//		DebugfFunc: func(format string, v ...interface{}) {
-//
-//		},
-//	}
-//}
+type MockStructureLogger struct {
+	InfoFunc  func(m string, kv ...map[string]interface{})
+	WarnFunc  func(m string, kv ...map[string]interface{})
+	ErrorFunc func(m string, kv ...map[string]interface{})
+	FatalFunc func(m string, kv ...map[string]interface{})
+	DebugFunc func(m string, kv ...map[string]interface{})
+}
+
+func (m MockStructureLogger) Info(message string, kvs ...map[string]interface{}) {
+	m.InfoFunc(message, kvs...)
+}
+
+func (m MockStructureLogger) Debug(message string, kvs ...map[string]interface{}) {
+	m.DebugFunc(message, kvs...)
+}
+
+func (m MockStructureLogger) Warn(message string, kvs ...map[string]interface{}) {
+	m.WarnFunc(message, kvs...)
+}
+
+func (m MockStructureLogger) Error(message string, err error, kvs ...map[string]interface{}) {
+	m.ErrorFunc(message, kvs...)
+}
+
+func (m MockStructureLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
+	m.FatalFunc(message, kvs...)
+}

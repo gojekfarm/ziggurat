@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat"
+	"context"
 	"github.com/julienschmidt/httprouter"
 	"net"
 	"net/http"
@@ -12,22 +12,24 @@ import (
 const serverAddr = "localhost:8080"
 
 func TestDefaultHttpServer_Start(t *testing.T) {
-	a := ziggurat.NewApp()
 	ds := NewHTTPServer()
-	ds.Run(a)
-	time.Sleep(100 * time.Millisecond)
+	ctx, cfn := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cfn()
+	errChan := ds.Run(ctx)
+	time.Sleep(1 * time.Second)
 	_, err := net.Dial("tcp", serverAddr)
 	if err != nil {
 		t.Errorf("error connection to server %s", err)
 	}
-	ds.Stop(a)
+	<-errChan
 }
 
 func TestDefaultHttpServer_Stop(t *testing.T) {
-	a := ziggurat.NewApp()
+	ctx, cfn := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cfn()
 	ds := NewHTTPServer()
-	ds.Run(a)
-	ds.Stop(a)
+	errChan := ds.Run(ctx)
+	<-errChan
 	if _, err := net.Dial("tcp", serverAddr); err == nil {
 		t.Errorf("expected error but got nil")
 	}

@@ -13,7 +13,7 @@ type (
 	}
 )
 
-func (p *ProcessingStatusLogger) HandleMessage(event *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
+func (p *ProcessingStatusLogger) HandleMessage(event ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
 	return p.LogStatus(p.handler).HandleMessage(event, ctx)
 }
 
@@ -41,17 +41,23 @@ func NewProcessingStatusLogger(opts ...Opts) *ProcessingStatusLogger {
 }
 
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(messageEvent *ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
 		status := next.HandleMessage(messageEvent, ctx)
 		topic := messageEvent.Attribute("kafka-topic")
-		args := map[string]interface{}{"ROUTE": messageEvent.RouteName, "TOPIC": topic, "VALUE": messageEvent.Value}
+		args := map[string]interface{}{"route": messageEvent.RouteName, "topic": topic, "value": messageEvent.Value}
 		switch status {
 		case ziggurat.ProcessingSuccess:
-			p.l.Info("successfully processed message", args)
+			args["status"] = "success"
+			p.l.Info("", args)
+			break
 		case ziggurat.RetryMessage:
-			p.l.Info("retrying message message", args)
+			args["status"] = "retry"
+			p.l.Info("", args)
+			break
 		case ziggurat.SkipMessage:
-			p.l.Info("skipping message", args)
+			args["status"] = "skip"
+			p.l.Info("", args)
+			break
 		}
 		return status
 	})

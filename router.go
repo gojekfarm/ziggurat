@@ -11,7 +11,7 @@ type defaultRouter struct {
 
 type Adapter func(next Handler) Handler
 
-func (dr *defaultRouter) HandleMessage(event *Message, ctx context.Context) ProcessStatus {
+func (dr *defaultRouter) HandleMessage(event Message, ctx context.Context) ProcessStatus {
 	route := event.RouteName
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		dr.l.Warn("handler not found", map[string]interface{}{"ROUTE": route})
@@ -28,7 +28,7 @@ func NewRouter() *defaultRouter {
 	}
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event *Message, ctx context.Context) ProcessStatus) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Message, ctx context.Context) ProcessStatus) {
 	if handlerFunc == nil {
 		panic("handler cannot be nil")
 	}
