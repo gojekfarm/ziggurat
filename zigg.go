@@ -26,7 +26,6 @@ func NewApp(opts ...ZigOptions) *Ziggurat {
 	if ziggurat.Logger == nil {
 		ziggurat.Logger = NewLogger("info")
 	}
-	ziggurat.streams = NewKafkaStreams(ziggurat.Logger)
 	return ziggurat
 }
 
@@ -50,7 +49,7 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes Routes) chan
 	}
 
 	if z.streams == nil {
-		z.streams = NewKafkaStreams(z.Logger)
+		z.streams = NewKafkaStreams(z.Logger, routes)
 	}
 
 	doneChan := make(chan error)
@@ -77,7 +76,7 @@ func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan 
 		startCallback(ctx)
 	}
 
-	streamsStop := z.streams.Consume(ctx, z.Handler, z.routes)
+	streamsStop := z.streams.Consume(ctx, z.Handler)
 	return streamsStop
 }
 

@@ -26,24 +26,21 @@ type streamConfig struct {
 type KafkaStreams struct {
 	routeConsumerMap map[string][]*kafka.Consumer
 	l                StructuredLogger
+	consumerConf     map[string]streamConfig
 }
 
-func NewKafkaStreams(l StructuredLogger) *KafkaStreams {
-	return &KafkaStreams{routeConsumerMap: map[string][]*kafka.Consumer{}, l: l}
+func NewKafkaStreams(l StructuredLogger, consumerConf Routes) *KafkaStreams {
+	streamConfig := &map[string]streamConfig{}
+	if err := mapstructure.Decode(consumerConf, streamConfig); err != nil {
+		panic(fmt.Errorf("error creating kafka streams: %s", err.Error()))
+	}
+	return &KafkaStreams{routeConsumerMap: map[string][]*kafka.Consumer{}, l: l, consumerConf: *streamConfig}
 }
 
-func (k *KafkaStreams) Consume(ctx context.Context, handler Handler, routes Routes) chan error {
+func (k *KafkaStreams) Consume(ctx context.Context, handler Handler) chan error {
 	var wg sync.WaitGroup
 	stopChan := make(chan error)
-
-	for routeName, rawConfig := range routes {
-		stream := &streamConfig{}
-		if err := mapstructure.Decode(rawConfig, stream); err != nil {
-			go func() {
-				stopChan <- fmt.Errorf("consumer config parse error: %v", err.Error())
-			}()
-			return stopChan
-		}
+	for routeName, stream := range k.consumerConf {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.GroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
 		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.ConsumerCount, handler, k.l, &wg)

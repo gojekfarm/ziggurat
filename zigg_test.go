@@ -19,7 +19,7 @@ func TestZigguratStartStop(t *testing.T) {
 		isStopCalled = true
 	})
 
-	z.streams = MockKStreams{ConsumeFunc: func(ctx context.Context, routes Routes, handler Handler) chan error {
+	z.streams = MockKStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
 		done := make(chan error)
 		go func() {
 			<-ctx.Done()
@@ -47,7 +47,7 @@ func TestZigguratRun(t *testing.T) {
 			t.Errorf("expected app to be running state")
 		}
 	})
-	streams := MockKStreams{ConsumeFunc: func(ctx context.Context, routes Routes, handler Handler) chan error {
+	streams := MockKStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
 		done := make(chan error)
 		go func() {
 			<-ctx.Done()

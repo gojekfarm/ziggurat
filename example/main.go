@@ -23,12 +23,13 @@ func main() {
 
 	})
 
-	<-app.Run(context.Background(), handler, ziggurat.Routes{
-		RoutePlainTextLog: {
-			ziggurat.KafkaKeyBootstrapServers: "localhost:9092",
-			ziggurat.KafkaKeyOriginTopics:     "plain-text-log",
-			ziggurat.KafkaKeyConsumerGroup:    "plain_text_consumer",
-			ziggurat.KafkaKeyConsumerCount:    2,
-		},
-	})
+	<-app.Run(context.Background(), handler,
+		ziggurat.Routes{
+			RoutePlainTextLog: {
+				ziggurat.KafkaKeyBootstrapServers: "localhost:9092",
+				ziggurat.KafkaKeyOriginTopics:     "plain-text-log",
+				ziggurat.KafkaKeyConsumerGroup:    "plain_text_consumer",
+				ziggurat.KafkaKeyConsumerCount:    2,
+			},
+		})
 }

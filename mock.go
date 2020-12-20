@@ -5,16 +5,16 @@ import (
 )
 
 type MockKStreams struct {
-	ConsumeFunc func(ctx context.Context, routes Routes, handler Handler) chan error
+	ConsumeFunc func(ctx context.Context, handler Handler) chan error
 }
 
-func (m MockKStreams) Consume(ctx context.Context, handler Handler, routes Routes) chan error {
-	return m.ConsumeFunc(ctx, routes, handler)
+func (m MockKStreams) Consume(ctx context.Context, handler Handler) chan error {
+	return m.ConsumeFunc(ctx, handler)
 }
 
 func NewMockKafkaStreams() *MockKStreams {
 	return &MockKStreams{
-		ConsumeFunc: func(ctx context.Context, routes Routes, handler Handler) chan error {
+		ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
 			return make(chan error)
 		},
 	}

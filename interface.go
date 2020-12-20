@@ -7,7 +7,7 @@ type Handler interface {
 }
 
 type Streams interface {
-	Consume(ctx context.Context, handler Handler, routes Routes) chan error
+	Consume(ctx context.Context, handler Handler) chan error
 }
 
 type StructuredLogger interface {
