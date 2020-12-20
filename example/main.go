@@ -20,7 +20,7 @@ func main() {
 	handler := router.Compose(statusLogger.LogStatus)
 
 	app.StartFunc(func(ctx context.Context) {
-
+		
 	})
 
 	<-app.Run(context.Background(), handler,
