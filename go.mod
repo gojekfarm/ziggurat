@@ -1,6 +1,6 @@
 module github.com/gojekfarm/ziggurat
 
-go 1.14
+go 1.15
 
 require (
 	github.com/confluentinc/confluent-kafka-go v1.5.2

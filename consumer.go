@@ -35,7 +35,7 @@ var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, con
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					l.Error("retrying broker: %v", nil, nil)
+					l.Error("retrying broker", nil, nil)
 					time.Sleep(brokerRetryTimeout)
 					continue
 				}

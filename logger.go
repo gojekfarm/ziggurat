@@ -8,13 +8,11 @@ import (
 const callerFrameSkipCount = 3
 
 var logLevelMapping = map[string]zerolog.Level{
-	"off":      zerolog.NoLevel,
 	"debug":    zerolog.DebugLevel,
 	"info":     zerolog.InfoLevel,
 	"warn":     zerolog.WarnLevel,
 	"error":    zerolog.ErrorLevel,
 	"fatal":    zerolog.FatalLevel,
-	"panic":    zerolog.PanicLevel,
 	"disabled": zerolog.Disabled,
 }
 
@@ -56,8 +54,8 @@ func (l *ZiggLogger) Fatal(message string, err error, kvs ...map[string]interfac
 
 func NewLogger(level string) *ZiggLogger {
 	zerolog.SetGlobalLevel(logLevelMapping[level])
-	loggerInst := zerolog.New(os.Stdout).With().Timestamp().Logger()
-	errLoggerInst := zerolog.New(os.Stderr).With().Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger()
+	loggerInst := zerolog.New(os.Stdout).With().Str("log-type", "ziggurat").Timestamp().Logger()
+	errLoggerInst := zerolog.New(os.Stderr).With().Str("log-type", "ziggurat").Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger()
 	return &ZiggLogger{
 		errLogger: errLoggerInst,
 		logger:    loggerInst,
