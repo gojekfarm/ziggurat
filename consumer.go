@@ -12,6 +12,14 @@ const defaultPollTimeout = 100 * time.Millisecond
 const brokerRetryTimeout = 2 * time.Second
 
 var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+	logChan := consumer.Logs()
+
+	go func() {
+		for evt := range logChan {
+			l.Info(evt.Message, map[string]interface{}{"client": evt.Name, "tag": evt.Tag, "kafka_ts": evt.Timestamp, "severity": evt.Level})
+		}
+	}()
+
 	go func(instanceID string) {
 		defer wg.Done()
 		doneCh := ctx.Done()
@@ -19,12 +27,6 @@ var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, con
 		sendCh, _ := worker.run(ctx, func(message *kafka.Message) {
 			processor(message, route, consumer, h, l, ctx)
 		})
-		logChan := consumer.Logs()
-		go func() {
-			for evt := range logChan {
-				l.Info(evt.Message, map[string]interface{}{"client": evt.Name, "tag": evt.Tag, "kafka_ts": evt.Timestamp, "severity": evt.Level})
-			}
-		}()
 		for {
 			select {
 			case <-doneCh:
