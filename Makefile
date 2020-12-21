@@ -20,15 +20,15 @@ docker.start-metrics:
 	sleep 10
 
 app.start:
-	go build -o ziggurat $(EXAMPLE_BUILD_PKG)
-	./ziggurat
+	go build -o ziggurat_example $(EXAMPLE_BUILD_PKG)
+	./ziggurat_example
 
 lib.test:
 	go test -count 1 -v $(TEST_PACKAGES)
 
 app.start-race:
-	go build -race -o ziggurat $(EXAMPLE_BUILD_PKG)
-	./ziggurat
+	go build -race -o ziggurat_example $(EXAMPLE_BUILD_PKG)
+	./ziggurat_example
 
 docker.cleanup:
 	docker-compose down
