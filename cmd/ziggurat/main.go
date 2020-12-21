@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	cli := cmd.NewCLI("zig")
+	cli := cmd.NewCLI("ziggurat")
 	cli.AddUsage(`[USAGE]
 zig command_name <args>`)
 	cli.AddCommand("new", handlers.NewHandler)
