@@ -25,5 +25,4 @@ func TestKafkaStreams_Start(t *testing.T) {
 	if len(kstreams.routeConsumerMap) < len(routes) {
 		t.Errorf("expected count %d but got %d", len(kstreams.routeConsumerMap), len(routes))
 	}
-
 }
