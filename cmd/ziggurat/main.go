@@ -9,7 +9,7 @@ import (
 func main() {
 	cli := cmd.NewCLI("ziggurat")
 	cli.AddUsage(`[USAGE]
-zig command_name <args>`)
+ziggurat command_name <args>`)
 	cli.AddCommand("new", handlers.NewHandler)
 	cli.Run(os.Args)
 }
