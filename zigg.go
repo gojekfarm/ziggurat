@@ -42,7 +42,7 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes StreamRoutes
 	}
 
 	if z.streams == nil {
-		z.streams = NewKafkaStreams(z.Logger, routes)
+		z.streams = &KafkaStreams{Logger: z.Logger, StreamRoutes: routes}
 	}
 
 	doneChan := make(chan error)
