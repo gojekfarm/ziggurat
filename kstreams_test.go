@@ -7,8 +7,7 @@ import (
 	"testing"
 )
 
-func TestKafkaStreams_Start(t *testing.T) {
-	l := NewLogger("disabled")
+func TestKafkaStreams_Consume(t *testing.T) {
 	routes := StreamRoutes{"foo": {}}
 	oldStartConsumers := StartConsumers
 	defer func() {
@@ -18,8 +17,12 @@ func TestKafkaStreams_Start(t *testing.T) {
 	StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h Handler, l StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 		return []*kafka.Consumer{}
 	}
-	kstreams := NewKafkaStreams(l, StreamRoutes{"foo": {}})
-	kstreams.Consume(context.Background(), HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
+	kstreams := KafkaStreams{
+		routeConsumerMap: nil,
+		Logger:           NewLogger("disabled"),
+		StreamRoutes:     StreamRoutes{"foo": {}},
+	}
+	kstreams.Consume(context.Background(), HandlerFunc(func(messageEvent Event) ProcessStatus {
 		return ProcessingSuccess
 	}))
 	if len(kstreams.routeConsumerMap) < len(routes) {

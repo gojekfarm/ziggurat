@@ -1,9 +1,5 @@
 package ziggurat
 
-import (
-	"context"
-)
-
 type defaultRouter struct {
 	handlerFunctionMap map[string]HandlerFunc
 	l                  StructuredLogger
@@ -11,13 +7,13 @@ type defaultRouter struct {
 
 type Adapter func(next Handler) Handler
 
-func (dr *defaultRouter) HandleMessage(event Message, ctx context.Context) ProcessStatus {
-	route := event.RoutingKey
+func (dr *defaultRouter) HandleMessage(event Event, ) ProcessStatus {
+	route := event.Header(HeaderTypeRoute)
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		dr.l.Warn("handler not found", map[string]interface{}{"routing-key": route})
 		return SkipMessage
 	} else {
-		return handler.HandleMessage(event, ctx)
+		return handler.HandleMessage(event)
 	}
 }
 
@@ -28,7 +24,7 @@ func NewRouter() *defaultRouter {
 	}
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Message, ctx context.Context) ProcessStatus) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Event) ProcessStatus) {
 	if handlerFunc == nil {
 		panic("handler cannot be nil")
 	}

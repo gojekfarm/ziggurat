@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 func TestConsumer_create(t *testing.T) {
 	l := NewLogger("disabled")
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
+	handler := HandlerFunc(func(messageEvent Event) ProcessStatus {
 		return ProcessingSuccess
 	})
 	oldStartConsumer := startConsumer
@@ -62,9 +62,9 @@ func TestConsumer_start(t *testing.T) {
 			Headers:       nil,
 		}, nil
 	}
-	hf := HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
-		if bytes.Compare(messageEvent.Value, expectedBytes) != 0 {
-			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value)
+	hf := HandlerFunc(func(messageEvent Event, ) ProcessStatus {
+		if bytes.Compare(messageEvent.Value(), expectedBytes) != 0 {
+			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value())
 		}
 		return ProcessingSuccess
 	})
@@ -98,7 +98,7 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	deadlineTime := time.Now().Add(time.Second * 6)
 	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
 	defer cancelFunc()
-	h := HandlerFunc(func(messageEvent Message, ctx context.Context) ProcessStatus {
+	h := HandlerFunc(func(messageEvent Event, ) ProcessStatus {
 		return ProcessingSuccess
 	})
 	wg.Add(1)

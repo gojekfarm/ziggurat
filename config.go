@@ -1,10 +1,10 @@
 package ziggurat
 
-type KafkaStreamConfig struct {
+type KafkaStream struct {
 	BootstrapServers string
 	OriginTopics     string
 	ConsumerGroupID  string
 	ConsumerCount    int
 }
 
-type StreamRoutes map[string]KafkaStreamConfig
+type StreamRoutes map[string]KafkaStream

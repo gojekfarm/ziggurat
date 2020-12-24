@@ -3,7 +3,7 @@ package ziggurat
 import "context"
 
 type Handler interface {
-	HandleMessage(event Message, ctx context.Context) ProcessStatus
+	HandleMessage(event Event) ProcessStatus
 }
 
 type Streams interface {
@@ -16,4 +16,11 @@ type StructuredLogger interface {
 	Warn(message string, kvs ...map[string]interface{})
 	Error(message string, err error, kvs ...map[string]interface{})
 	Fatal(message string, err error, kvs ...map[string]interface{})
+}
+
+type Event interface {
+	Value() []byte
+	Key() []byte
+	Context() context.Context
+	Header(key string) string
 }

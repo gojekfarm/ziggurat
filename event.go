@@ -1,42 +1,40 @@
 package ziggurat
 
 import (
-	"sync"
+	"context"
 )
 
-type MsgAttributes map[string]interface{}
+const HeaderMessageType = "x-message-type"
+const HeaderTypeRoute = "x-message-route"
 
 type Message struct {
-	Value      []byte
-	Key        []byte
-	Attributes MsgAttributes
-	RoutingKey string
-	attrMutex  *sync.Mutex
-	//exposes Attributes for gob encoding, use Get and Set for thread safety
+	value          []byte
+	key            []byte
+	ctx            context.Context
+	MessageHeaders map[string]string
 }
 
-func (m Message) Attribute(key string) interface{} {
-	m.attrMutex.Lock()
-	defer m.attrMutex.Unlock()
-	return m.Attributes[key]
+func (m Message) Value() []byte {
+	return m.value
 }
 
-func (m *Message) SetAttribute(key string, value interface{}) {
-	m.attrMutex.Lock()
-	defer m.attrMutex.Unlock()
-	m.Attributes[key] = value
+func (m Message) Key() []byte {
+	return m.key
 }
 
-func CreateMessage(key []byte, value []byte, routeName string, attributes map[string]interface{}) Message {
-	m := Message{
-		Value:      value,
-		Key:        key,
-		Attributes: attributes,
-		RoutingKey: routeName,
-		attrMutex:  &sync.Mutex{},
+func (m Message) Context() context.Context {
+	return m.ctx
+}
+
+func (m Message) Header(key string) string {
+	return m.MessageHeaders[key]
+}
+
+func CreateMessageEvent(key []byte, value []byte, headers map[string]string, ctx context.Context) Message {
+	return Message{
+		value:          value,
+		key:            key,
+		ctx:            ctx,
+		MessageHeaders: headers,
 	}
-	if m.Attributes == nil {
-		m.Attributes = map[string]interface{}{}
-	}
-	return m
 }

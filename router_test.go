@@ -1,7 +1,6 @@
 package ziggurat
 
 import (
-	"context"
 	"reflect"
 	"testing"
 )
@@ -9,13 +8,13 @@ import (
 func TestDefaultRouter_HandleMessageError(t *testing.T) {
 	dr := NewRouter()
 	dr.l = NewLogger("disabled")
-	dr.HandleFunc("foo", func(event Message, ctx context.Context) ProcessStatus {
+	dr.HandleFunc("foo", func(event Event) ProcessStatus {
 		return ProcessingSuccess
 	})
 	event := Message{
-		RoutingKey: "bar",
+		MessageHeaders: map[string]string{HeaderTypeRoute: "bar"},
 	}
-	if status := dr.HandleMessage(event, context.Background()); status != SkipMessage {
+	if status := dr.HandleMessage(event); status != SkipMessage {
 		t.Errorf("expected status %d got status %d", SkipMessage, status)
 	}
 
@@ -24,14 +23,15 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := NewRouter()
 	expectedEvent := Message{
-		RoutingKey: "foo",
-		Attributes: MsgAttributes{"bar": "baz"},
+		MessageHeaders: map[string]string{HeaderMessageType: "kafka", HeaderTypeRoute: "foo"},
 	}
-	dr.HandleFunc("foo", func(event Message, ctx context.Context) ProcessStatus {
+	dr.HandleFunc("foo", func(event Event) ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
 		return ProcessingSuccess
 	})
-	dr.HandleMessage(Message{RoutingKey: "foo", Attributes: MsgAttributes{"bar": "baz"}}, context.Background())
+	dr.HandleMessage(Message{
+		MessageHeaders: map[string]string{HeaderTypeRoute: "foo", HeaderMessageType: "kafka"},
+	})
 }

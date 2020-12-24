@@ -1,7 +1,6 @@
 package mw
 
 import (
-	"context"
 	"github.com/gojekfarm/ziggurat"
 )
 
@@ -13,8 +12,8 @@ type (
 	}
 )
 
-func (p *ProcessingStatusLogger) HandleMessage(event ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
-	return p.LogStatus(p.handler).HandleMessage(event, ctx)
+func (p *ProcessingStatusLogger) HandleMessage(event ziggurat.Event) ziggurat.ProcessStatus {
+	return p.LogStatus(p.handler).HandleMessage(event)
 }
 
 func WithLogger(logger ziggurat.StructuredLogger) func(p *ProcessingStatusLogger) {
@@ -41,10 +40,9 @@ func NewProcessingStatusLogger(opts ...Opts) *ProcessingStatusLogger {
 }
 
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
-		status := next.HandleMessage(messageEvent, ctx)
-		topic := messageEvent.Attribute("kafka-topic")
-		args := map[string]interface{}{"route": messageEvent.RoutingKey, "topic": topic, "value": messageEvent.Value}
+	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+		status := next.HandleMessage(messageEvent)
+		args := map[string]interface{}{"route": messageEvent.Header(ziggurat.HeaderTypeRoute), "value": messageEvent.Value()}
 		switch status {
 		case ziggurat.ProcessingSuccess:
 			args["status"] = "success"
