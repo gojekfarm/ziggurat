@@ -25,7 +25,7 @@ var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, con
 		doneCh := ctx.Done()
 		worker := NewWorker(10)
 		sendCh, _ := worker.run(ctx, func(message *kafka.Message) {
-			processor(message, route, consumer, h, l, ctx)
+			kafkaProcessor(message, route, consumer, h, l, ctx)
 		})
 		for {
 			select {

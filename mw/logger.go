@@ -42,7 +42,7 @@ func NewProcessingStatusLogger(opts ...Opts) *ProcessingStatusLogger {
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
 		status := next.HandleMessage(messageEvent)
-		args := map[string]interface{}{"route": messageEvent.Header(ziggurat.HeaderTypeRoute), "value": messageEvent.Value()}
+		args := map[string]interface{}{"route": messageEvent.Header(ziggurat.HeaderMessageRoute), "value": messageEvent.Value()}
 		switch status {
 		case ziggurat.ProcessingSuccess:
 			args["status"] = "success"

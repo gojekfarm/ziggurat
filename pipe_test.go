@@ -8,14 +8,14 @@ import (
 func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next Handler) Handler {
 		return HandlerFunc(func(messageEvent Event, ) ProcessStatus {
-			me := CreateMessageEvent(nil, []byte("foo"), nil, context.Background())
+			me := CreateMessageEvent([]byte("foo"), nil, context.Background())
 			return next.HandleMessage(me)
 		})
 	}
 	mw2 := func(next Handler) Handler {
 		return HandlerFunc(func(messageEvent Event) ProcessStatus {
 			byteValue := append(messageEvent.Value(), []byte("-bar")...)
-			me := CreateMessageEvent(nil, byteValue, nil, context.Background())
+			me := CreateMessageEvent(byteValue, nil, context.Background())
 			return next.HandleMessage(me)
 		})
 	}

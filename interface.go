@@ -7,7 +7,7 @@ type Handler interface {
 }
 
 type Streams interface {
-	Consume(ctx context.Context, handler Handler, ) chan error
+	Consume(ctx context.Context, handler Handler) chan error
 }
 
 type StructuredLogger interface {
@@ -20,7 +20,6 @@ type StructuredLogger interface {
 
 type Event interface {
 	Value() []byte
-	Key() []byte
 	Context() context.Context
 	Header(key string) string
 }

@@ -12,7 +12,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 		return ProcessingSuccess
 	})
 	event := Message{
-		MessageHeaders: map[string]string{HeaderTypeRoute: "bar"},
+		MessageHeaders: map[string]string{HeaderMessageRoute: "bar"},
 	}
 	if status := dr.HandleMessage(event); status != SkipMessage {
 		t.Errorf("expected status %d got status %d", SkipMessage, status)
@@ -23,7 +23,7 @@ func TestDefaultRouter_HandleMessageError(t *testing.T) {
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := NewRouter()
 	expectedEvent := Message{
-		MessageHeaders: map[string]string{HeaderMessageType: "kafka", HeaderTypeRoute: "foo"},
+		MessageHeaders: map[string]string{HeaderMessageType: "kafka", HeaderMessageRoute: "foo"},
 	}
 	dr.HandleFunc("foo", func(event Event) ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
@@ -32,6 +32,6 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		return ProcessingSuccess
 	})
 	dr.HandleMessage(Message{
-		MessageHeaders: map[string]string{HeaderTypeRoute: "foo", HeaderMessageType: "kafka"},
+		MessageHeaders: map[string]string{HeaderMessageRoute: "foo", HeaderMessageType: "kafka"},
 	})
 }
