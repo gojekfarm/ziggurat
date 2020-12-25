@@ -1,5 +1,7 @@
 package ziggurat
 
+import "fmt"
+
 type defaultRouter struct {
 	handlerFunctionMap map[string]HandlerFunc
 	l                  StructuredLogger
@@ -25,8 +27,15 @@ func NewRouter() *defaultRouter {
 }
 
 func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Event) ProcessStatus) {
+	if route == "" {
+		panic(`route cannot be ""`)
+	}
 	if handlerFunc == nil {
 		panic("handler cannot be nil")
+	}
+
+	if _, ok := dr.handlerFunctionMap[route]; ok {
+		panic(fmt.Sprintf("route %s has already been registered", route))
 	}
 	dr.handlerFunctionMap[route] = handlerFunc
 }
