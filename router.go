@@ -38,7 +38,7 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Event) 
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
-func (dr *defaultRouter) Compose(mw ...func(Handler) Handler) Handler {
+func (dr *defaultRouter) Compose(mw ...func(h Handler) Handler) Handler {
 	return PipeHandlers(mw...)(dr)
 }
 
