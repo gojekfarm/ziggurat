@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/server"
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -25,9 +25,11 @@ func main() {
 	handler := router.Compose(statusLogger.LogStatus)
 
 	app.StartFunc(func(ctx context.Context) {
-		if err := <-httpServer.Run(ctx); err != nil {
-			fmt.Println("error starting http server: ", err)
-		}
+		go func() {
+			if err := <-httpServer.Run(ctx); err != nil {
+				log.Err(err)
+			}
+		}()
 	})
 
 	<-app.Run(context.Background(), handler,
