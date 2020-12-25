@@ -1,6 +1,6 @@
 package ziggurat
 
-var PipeHandlers = func(funcs ...Adapter) func(origHandler Handler) Handler {
+var PipeHandlers = func(funcs ...func(handler Handler) Handler) func(origHandler Handler) Handler {
 	return func(next Handler) Handler {
 		return HandlerFunc(func(event Event) ProcessStatus {
 			var handlerResult = next

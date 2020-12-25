@@ -7,8 +7,6 @@ type defaultRouter struct {
 	l                  StructuredLogger
 }
 
-type Adapter func(next Handler) Handler
-
 func (dr *defaultRouter) HandleEvent(event Event, ) ProcessStatus {
 	route := event.Header(HeaderMessageRoute)
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
@@ -40,7 +38,7 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event Event) 
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
-func (dr *defaultRouter) Compose(mw ...Adapter) Handler {
+func (dr *defaultRouter) Compose(mw ...func(Handler) Handler) Handler {
 	return PipeHandlers(mw...)(dr)
 }
 
