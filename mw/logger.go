@@ -12,8 +12,8 @@ type (
 	}
 )
 
-func (p *ProcessingStatusLogger) HandleMessage(event ziggurat.Event) ziggurat.ProcessStatus {
-	return p.LogStatus(p.handler).HandleMessage(event)
+func (p *ProcessingStatusLogger) HandleEvent(event ziggurat.Event) ziggurat.ProcessStatus {
+	return p.LogStatus(p.handler).HandleEvent(event)
 }
 
 func WithLogger(logger ziggurat.StructuredLogger) func(p *ProcessingStatusLogger) {
@@ -41,7 +41,7 @@ func NewProcessingStatusLogger(opts ...Opts) *ProcessingStatusLogger {
 
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
-		status := next.HandleMessage(messageEvent)
+		status := next.HandleEvent(messageEvent)
 		args := map[string]interface{}{"route": messageEvent.Header(ziggurat.HeaderMessageRoute), "value": messageEvent.Value()}
 		switch status {
 		case ziggurat.ProcessingSuccess:

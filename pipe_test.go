@@ -9,14 +9,14 @@ func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next Handler) Handler {
 		return HandlerFunc(func(messageEvent Event, ) ProcessStatus {
 			me := CreateMessageEvent([]byte("foo"), nil, context.Background())
-			return next.HandleMessage(me)
+			return next.HandleEvent(me)
 		})
 	}
 	mw2 := func(next Handler) Handler {
 		return HandlerFunc(func(messageEvent Event) ProcessStatus {
 			byteValue := append(messageEvent.Value(), []byte("-bar")...)
 			me := CreateMessageEvent(byteValue, nil, context.Background())
-			return next.HandleMessage(me)
+			return next.HandleEvent(me)
 		})
 	}
 	actualHandler := HandlerFunc(func(event Event) ProcessStatus {
@@ -26,5 +26,5 @@ func TestPipeHandlers(t *testing.T) {
 		return ProcessingSuccess
 	})
 	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
-	finalHandler.HandleMessage(Message{})
+	finalHandler.HandleEvent(Message{})
 }

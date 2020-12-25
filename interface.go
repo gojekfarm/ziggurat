@@ -3,7 +3,7 @@ package ziggurat
 import "context"
 
 type Handler interface {
-	HandleMessage(event Event) ProcessStatus
+	HandleEvent(event Event) ProcessStatus
 }
 
 type Streams interface {

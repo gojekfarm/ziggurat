@@ -7,13 +7,13 @@ type defaultRouter struct {
 
 type Adapter func(next Handler) Handler
 
-func (dr *defaultRouter) HandleMessage(event Event, ) ProcessStatus {
+func (dr *defaultRouter) HandleEvent(event Event, ) ProcessStatus {
 	route := event.Header(HeaderMessageRoute)
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		dr.l.Warn("handler not found", map[string]interface{}{"routing-key": route})
 		return SkipMessage
 	} else {
-		return handler.HandleMessage(event)
+		return handler.HandleEvent(event)
 	}
 }
 

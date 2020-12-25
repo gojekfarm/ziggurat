@@ -13,7 +13,7 @@ var PipeHandlers = func(funcs ...Adapter) func(origHandler Handler) Handler {
 					handlerResult = f(handlerResult)
 				}
 			}
-			return handlerResult.HandleMessage(event)
+			return handlerResult.HandleEvent(event)
 		})
 	}
 }
