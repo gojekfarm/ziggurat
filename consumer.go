@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-const defaultPollTimeout = 100 * time.Millisecond
-const brokerRetryTimeout = 2 * time.Second
+const defaultPollTimeout = 1 * time.Second
+const brokerRetryTimeout = 3 * time.Second
 
 var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	logChan := consumer.Logs()

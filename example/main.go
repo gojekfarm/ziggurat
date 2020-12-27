@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/mw"
 )
@@ -13,7 +12,6 @@ func main() {
 	statusLogger := mw.NewProcessingStatusLogger()
 
 	router.HandleFunc("json-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
-		fmt.Printf("Recevied message value => %s", event.Value)
 		return ziggurat.ProcessingSuccess
 	})
 
