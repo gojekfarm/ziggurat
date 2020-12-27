@@ -17,3 +17,4 @@ type StructuredLogger interface {
 	Error(message string, err error, kvs ...map[string]interface{})
 	Fatal(message string, err error, kvs ...map[string]interface{})
 }
+
