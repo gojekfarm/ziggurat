@@ -17,9 +17,3 @@ type StructuredLogger interface {
 	Error(message string, err error, kvs ...map[string]interface{})
 	Fatal(message string, err error, kvs ...map[string]interface{})
 }
-
-type Event interface {
-	Value() []byte
-	Context() context.Context
-	Header(key string) string
-}

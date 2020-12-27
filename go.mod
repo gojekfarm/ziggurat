@@ -9,5 +9,4 @@ require (
 	github.com/rs/zerolog v1.19.0
 	github.com/sethvargo/go-signalcontext v0.1.0
 	google.golang.org/protobuf v1.23.0
-
 )

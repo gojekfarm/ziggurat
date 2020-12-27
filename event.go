@@ -2,33 +2,28 @@ package ziggurat
 
 import (
 	"context"
+	"time"
 )
 
 const HeaderMessageType = "x-message-type"
 const HeaderMessageRoute = "x-message-route"
 
-type Message struct {
-	value          []byte
+type Event struct {
+	Value          []byte
 	ctx            context.Context
 	MessageHeaders map[string]string
+	Timestamp      time.Time
 }
 
-func (m Message) Value() []byte {
-	return m.value
-}
-
-func (m Message) Context() context.Context {
+func (m Event) Context() context.Context {
 	return m.ctx
 }
 
-func (m Message) Header(key string) string {
-	return m.MessageHeaders[key]
-}
-
-func CreateMessageEvent(value []byte, headers map[string]string, ctx context.Context) Message {
-	return Message{
-		value:          value,
+func CreateMessageEvent(value []byte, headers map[string]string, timestamp time.Time, ctx context.Context) Event {
+	return Event{
+		Value:          value,
 		ctx:            ctx,
 		MessageHeaders: headers,
+		Timestamp:      timestamp,
 	}
 }

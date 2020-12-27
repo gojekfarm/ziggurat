@@ -8,7 +8,7 @@ type defaultRouter struct {
 }
 
 func (dr *defaultRouter) HandleEvent(event Event, ) ProcessStatus {
-	route := event.Header(HeaderMessageRoute)
+	route := event.MessageHeaders[HeaderMessageRoute]
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		dr.l.Warn("handler not found", map[string]interface{}{"routing-key": route})
 		return SkipMessage

@@ -63,8 +63,8 @@ func TestConsumer_start(t *testing.T) {
 		}, nil
 	}
 	hf := HandlerFunc(func(messageEvent Event, ) ProcessStatus {
-		if bytes.Compare(messageEvent.Value(), expectedBytes) != 0 {
-			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value())
+		if bytes.Compare(messageEvent.Value, expectedBytes) != 0 {
+			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value)
 		}
 		return ProcessingSuccess
 	})
