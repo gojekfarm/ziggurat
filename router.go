@@ -7,8 +7,8 @@ type defaultRouter struct {
 	l                  StructuredLogger
 }
 
-func (dr *defaultRouter) HandleEvent(event Event, ) ProcessStatus {
-	route := event.Headers[HeaderMessageRoute]
+func (dr *defaultRouter) HandleEvent(event Event) ProcessStatus {
+	route := event.Headers()[HeaderMessageRoute]
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		dr.l.Warn("handler not found", map[string]interface{}{"routing-key": route})
 		return SkipMessage
