@@ -16,7 +16,9 @@ var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, con
 
 	go func() {
 		for evt := range logChan {
-			l.Info(evt.Message, map[string]interface{}{"client": evt.Name, "tag": evt.Tag, "kafka_ts": evt.Timestamp, "severity": evt.Level})
+			if evt.Tag != "COMMIT" {
+				l.Info(evt.Message, map[string]interface{}{"client": evt.Name, "tag": evt.Tag, "ts": evt.Timestamp, "severity": evt.Level})
+			}
 		}
 	}()
 
