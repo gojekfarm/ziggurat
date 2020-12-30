@@ -27,13 +27,13 @@ func main() {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "json-log",
 				ConsumerGroupID:  "json_consumer",
-				ConsumerCount:    3,
+				ConsumerCount:    1,
 			},
 			"plain-text-log": {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
-				ConsumerCount:    3,
+				ConsumerCount:    1,
 			},
 		})
 }
