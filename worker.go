@@ -40,9 +40,11 @@ func (w *Worker) run(ctx context.Context, f func(*kafka.Message)) (chan *kafka.M
 			}
 		}()
 	}
+
 	go func() {
 		wg.Wait()
 		close(w.doneCh)
 	}()
+
 	return w.sendCh, w.doneCh
 }
