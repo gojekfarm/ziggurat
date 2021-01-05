@@ -7,7 +7,22 @@ import (
 )
 
 func main() {
-	app := &ziggurat.Ziggurat{}
+	kafkaStreams := &ziggurat.KafkaStreams{
+		KafkaRouteGroup: ziggurat.KafkaRouteGroup{
+			"json-log": {
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "json-log",
+				ConsumerGroupID:  "json_consumer",
+				ConsumerCount:    2,
+			},
+			"plain-text-log": {
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "plain-text-log",
+				ConsumerGroupID:  "plain_text_consumer",
+				ConsumerCount:    1,
+			},
+		},
+	}
 	router := ziggurat.NewRouter()
 	statusLogger := mw.NewProcessingStatusLogger()
 
@@ -21,19 +36,6 @@ func main() {
 
 	handler := router.Compose(statusLogger.LogStatus)
 
-	<-app.Run(context.Background(), handler,
-		ziggurat.StreamRoutes{
-			"json-log": {
-				BootstrapServers: "localhost:9092",
-				OriginTopics:     "json-log",
-				ConsumerGroupID:  "json_consumer",
-				ConsumerCount:    1,
-			},
-			"plain-text-log": {
-				BootstrapServers: "localhost:9092",
-				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "plain_text_consumer",
-				ConsumerCount:    1,
-			},
-		})
+	app := &ziggurat.Ziggurat{}
+	<-app.Run(context.Background(), kafkaStreams, handler)
 }

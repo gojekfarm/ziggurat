@@ -2,7 +2,6 @@ package ziggurat
 
 import (
 	"context"
-	"errors"
 	"github.com/sethvargo/go-signalcontext"
 	"sync/atomic"
 	"syscall"
@@ -28,22 +27,24 @@ func NewApp(opts ...ZigOptions) *Ziggurat {
 	return ziggurat
 }
 
-func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes StreamRoutes) chan error {
+func (z *Ziggurat) Run(ctx context.Context, streams Streams, handler Handler) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		return nil
-	}
-
-	if len(routes) < 1 {
-		z.Logger.Error("error starting streams: ", errors.New("no routes found"))
 	}
 
 	if z.Logger == nil {
 		z.Logger = NewLogger("info")
 	}
 
-	if z.streams == nil {
-		z.streams = &KafkaStreams{Logger: z.Logger, StreamRoutes: routes}
+	if streams == nil {
+		panic("`streams` cannot be nil")
 	}
+
+	if handler == nil {
+		panic("`handler` cannot be nil")
+	}
+
+	z.streams = streams
 
 	doneChan := make(chan error)
 	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
