@@ -1,4 +1,4 @@
-package ziggurat
+package logger
 
 import (
 	"github.com/rs/zerolog"
@@ -16,7 +16,7 @@ var logLevelMapping = map[string]zerolog.Level{
 	"disabled": zerolog.Disabled,
 }
 
-type ZiggLogger struct {
+type JSONLogger struct {
 	errLogger zerolog.Logger
 	logger    zerolog.Logger
 }
@@ -28,35 +28,35 @@ func appendFields(l *zerolog.Event, kvs []map[string]interface{}) *zerolog.Event
 	return l
 }
 
-func (l *ZiggLogger) Info(message string, kvs ...map[string]interface{}) {
+func (l *JSONLogger) Info(message string, kvs ...map[string]interface{}) {
 	appendFields(l.logger.Info(), kvs).Msg(message)
 }
 
-func (l *ZiggLogger) Debug(message string, kvs ...map[string]interface{}) {
+func (l *JSONLogger) Debug(message string, kvs ...map[string]interface{}) {
 	appendFields(l.logger.Debug(), kvs).Msg(message)
 }
 
-func (l *ZiggLogger) Warn(message string, kvs ...map[string]interface{}) {
+func (l *JSONLogger) Warn(message string, kvs ...map[string]interface{}) {
 	appendFields(l.logger.Warn(), kvs).Msg(message)
 }
 
-func (l *ZiggLogger) Error(message string, err error, kvs ...map[string]interface{}) {
+func (l *JSONLogger) Error(message string, err error, kvs ...map[string]interface{}) {
 	if err != nil {
 		appendFields(l.errLogger.Err(err), kvs).Msg(message)
 	}
 }
 
-func (l *ZiggLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
+func (l *JSONLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
 	if err != nil {
 		appendFields(l.errLogger.Fatal(), kvs).Msg(message)
 	}
 }
 
-func NewLogger(level string) *ZiggLogger {
+func NewJSONLogger(level string) *JSONLogger {
 	zerolog.SetGlobalLevel(logLevelMapping[level])
 	loggerInst := zerolog.New(os.Stdout).With().Str("log-type", "ziggurat").Timestamp().Logger()
 	errLoggerInst := zerolog.New(os.Stderr).With().Str("log-type", "ziggurat").Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger()
-	return &ZiggLogger{
+	return &JSONLogger{
 		errLogger: errLoggerInst,
 		logger:    loggerInst,
 	}

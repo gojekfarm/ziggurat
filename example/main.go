@@ -3,12 +3,15 @@ package main
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/kstream"
+	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/router"
 )
 
 func main() {
-	kafkaStreams := &ziggurat.KafkaStreams{
-		KafkaRouteGroup: ziggurat.KafkaRouteGroup{
+	kafkaStreams := &kstream.Streams{
+		KafkaRouteGroup: kstream.KafkaRouteGroup{
 			"json-log": {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "json-log",
@@ -23,19 +26,19 @@ func main() {
 			},
 		},
 	}
-	router := ziggurat.NewRouter()
+	r := router.New()
 	statusLogger := mw.NewProcessingStatusLogger()
 
-	router.HandleFunc("json-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
+	r.HandleFunc("json-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 
-	router.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
+	r.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
 
-	handler := router.Compose(statusLogger.LogStatus)
+	handler := r.Compose(statusLogger.LogStatus)
 
-	app := &ziggurat.Ziggurat{}
-	<-app.Run(context.Background(), kafkaStreams, handler)
+	zig := &ziggurat.Ziggurat{Logger: logger.NewJSONLogger("disabled")}
+	<-zig.Run(context.Background(), kafkaStreams, handler)
 }

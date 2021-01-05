@@ -1,9 +1,11 @@
-package ziggurat
+package kstream
 
 import (
 	"bytes"
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/rs/zerolog"
 	"os"
 	"sync"
@@ -17,10 +19,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestConsumer_create(t *testing.T) {
-	l := NewLogger("disabled")
+	l := logger.NewJSONLogger("disabled")
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := HandlerFunc(func(messageEvent Event) ProcessStatus {
-		return ProcessingSuccess
+	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
 	})
 	oldStartConsumer := startConsumer
 	oldCreateConsumer := createConsumer
@@ -28,10 +30,10 @@ func TestConsumer_create(t *testing.T) {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+	startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 
 	}
-	createConsumer = func(consumerConfig *kafka.ConfigMap, l StructuredLogger, topics []string) *kafka.Consumer {
+	createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.StructuredLogger, topics []string) *kafka.Consumer {
 		return &kafka.Consumer{}
 	}
 
@@ -43,7 +45,7 @@ func TestConsumer_create(t *testing.T) {
 
 func TestConsumer_start(t *testing.T) {
 	expectedBytes := []byte("foo")
-	l := NewLogger("disabled")
+	l := logger.NewJSONLogger("disabled")
 	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
 		t := ""
 		return &kafka.Message{
@@ -62,11 +64,11 @@ func TestConsumer_start(t *testing.T) {
 			Headers:       nil,
 		}, nil
 	}
-	hf := HandlerFunc(func(messageEvent Event) ProcessStatus {
+	hf := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
 		if bytes.Compare(messageEvent.Value(), expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value())
 		}
-		return ProcessingSuccess
+		return ziggurat.ProcessingSuccess
 	})
 	c := &kafka.Consumer{}
 
@@ -87,7 +89,7 @@ func TestConsumer_start(t *testing.T) {
 
 func TestConsumer_AllBrokersDown(t *testing.T) {
 	callCount := 0
-	l := NewLogger("disabled")
+	l := logger.NewJSONLogger("disabled")
 	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
 		callCount++
 		return nil, kafka.NewError(kafka.ErrAllBrokersDown, "", true)
@@ -98,8 +100,8 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	deadlineTime := time.Now().Add(time.Second * 6)
 	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
 	defer cancelFunc()
-	h := HandlerFunc(func(messageEvent Event) ProcessStatus {
-		return ProcessingSuccess
+	h := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
 	})
 	wg.Add(1)
 	startConsumer(ctx, h, l, c, "", "", wg)

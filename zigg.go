@@ -2,13 +2,14 @@ package ziggurat
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/sethvargo/go-signalcontext"
 	"sync/atomic"
 	"syscall"
 )
 
 type Ziggurat struct {
-	Handler   Handler
+	handler   Handler
 	Logger    StructuredLogger
 	startFunc StartFunction
 	stopFunc  StopFunction
@@ -16,13 +17,13 @@ type Ziggurat struct {
 	streams   Streams
 }
 
-func NewApp(opts ...ZigOptions) *Ziggurat {
+func New(opts ...ZigOptions) *Ziggurat {
 	ziggurat := &Ziggurat{}
 	for _, opts := range opts {
 		opts(ziggurat)
 	}
 	if ziggurat.Logger == nil {
-		ziggurat.Logger = NewLogger("info")
+		ziggurat.Logger = logger.NewJSONLogger("info")
 	}
 	return ziggurat
 }
@@ -33,7 +34,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streams, handler Handler) ch
 	}
 
 	if z.Logger == nil {
-		z.Logger = NewLogger("info")
+		z.Logger = logger.NewJSONLogger("info")
 	}
 
 	if streams == nil {
@@ -49,7 +50,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streams, handler Handler) ch
 	doneChan := make(chan error)
 	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
 
-	z.Handler = handler
+	z.handler = handler
 
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
@@ -68,7 +69,7 @@ func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan 
 		startCallback(ctx)
 	}
 
-	streamsStop := z.streams.Consume(ctx, z.Handler)
+	streamsStop := z.streams.Consume(ctx, z.handler)
 	return streamsStop
 }
 

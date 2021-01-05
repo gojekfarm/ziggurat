@@ -1,4 +1,4 @@
-package ziggurat
+package kstream
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"

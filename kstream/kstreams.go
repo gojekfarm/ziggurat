@@ -1,8 +1,10 @@
-package ziggurat
+package kstream
 
 import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
 	"strings"
 	"sync"
 )
@@ -16,15 +18,15 @@ type RouteGroup struct {
 
 type KafkaRouteGroup map[string]RouteGroup
 
-type KafkaStreams struct {
+type Streams struct {
 	routeConsumerMap map[string][]*kafka.Consumer
-	Logger           StructuredLogger
+	Logger           ziggurat.StructuredLogger
 	KafkaRouteGroup
 }
 
-func (k *KafkaStreams) Consume(ctx context.Context, handler Handler) chan error {
+func (k *Streams) Consume(ctx context.Context, handler ziggurat.Handler) chan error {
 	if k.Logger == nil {
-		k.Logger = NewLogger("info")
+		k.Logger = logger.NewJSONLogger("info")
 	}
 	var wg sync.WaitGroup
 	k.routeConsumerMap = map[string][]*kafka.Consumer{}
@@ -44,7 +46,7 @@ func (k *KafkaStreams) Consume(ctx context.Context, handler Handler) chan error 
 	return stopChan
 }
 
-func (k *KafkaStreams) stop() {
+func (k *Streams) stop() {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
 			k.Logger.Error("error stopping consumer %v", consumers[i].Close(), nil)

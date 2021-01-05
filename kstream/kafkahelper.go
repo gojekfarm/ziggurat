@@ -1,11 +1,12 @@
-package ziggurat
+package kstream
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gojekfarm/ziggurat"
 	"time"
 )
 
-var createConsumer = func(consumerConfig *kafka.ConfigMap, l StructuredLogger, topics []string) *kafka.Consumer {
+var createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.StructuredLogger, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
 	if err != nil {
 		panic(err)
@@ -19,7 +20,7 @@ var createConsumer = func(consumerConfig *kafka.ConfigMap, l StructuredLogger, t
 
 var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition) error { // at least once delivery
 	if partition.Error != nil {
-		return ErrOffsetCommit
+		return ziggurat.ErrOffsetCommit
 	}
 	offsets := []kafka.TopicPartition{partition}
 	offsets[0].Offset++
