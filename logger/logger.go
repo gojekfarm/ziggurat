@@ -53,9 +53,8 @@ func (l *JSONLogger) Fatal(message string, err error, kvs ...map[string]interfac
 }
 
 func NewJSONLogger(level string) *JSONLogger {
-	zerolog.SetGlobalLevel(logLevelMapping[level])
-	loggerInst := zerolog.New(os.Stdout).With().Str("log-type", "ziggurat").Timestamp().Logger()
-	errLoggerInst := zerolog.New(os.Stderr).With().Str("log-type", "ziggurat").Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger()
+	loggerInst := zerolog.New(os.Stdout).With().Str("log-type", "ziggurat").Timestamp().Logger().Level(logLevelMapping[level])
+	errLoggerInst := zerolog.New(os.Stderr).With().Str("log-type", "ziggurat").Timestamp().CallerWithSkipFrameCount(callerFrameSkipCount).Logger().Level(logLevelMapping[level])
 	return &JSONLogger{
 		errLogger: errLoggerInst,
 		logger:    loggerInst,

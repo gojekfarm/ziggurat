@@ -25,6 +25,7 @@ func main() {
 				ConsumerCount:    1,
 			},
 		},
+		Logger: logger.NewJSONLogger("info"),
 	}
 	r := router.New()
 	statusLogger := mw.NewProcessingStatusLogger()
@@ -39,6 +40,6 @@ func main() {
 
 	handler := r.Compose(statusLogger.LogStatus)
 
-	zig := &ziggurat.Ziggurat{Logger: logger.NewJSONLogger("disabled")}
+	zig := &ziggurat.Ziggurat{}
 	<-zig.Run(context.Background(), kafkaStreams, handler)
 }

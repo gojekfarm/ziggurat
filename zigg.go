@@ -59,13 +59,14 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streams, handler Handler) ch
 		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)
-		doneChan <- parentCtx.Err()
+		doneChan <- err
 	}()
 	return doneChan
 }
 
 func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan error {
 	if startCallback != nil {
+		z.Logger.Info("invoking start function")
 		startCallback(ctx)
 	}
 
@@ -75,6 +76,7 @@ func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan 
 
 func (z *Ziggurat) stop(stopFunc StopFunction) {
 	if stopFunc != nil {
+		z.Logger.Info("invoking stop function")
 		stopFunc()
 	}
 }

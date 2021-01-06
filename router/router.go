@@ -3,7 +3,6 @@ package router
 import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
 )
 
 type defaultRouter struct {
@@ -14,7 +13,6 @@ type defaultRouter struct {
 func (dr *defaultRouter) HandleEvent(event ziggurat.Event) ziggurat.ProcessStatus {
 	route := event.Headers()[ziggurat.HeaderMessageRoute]
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
-		dr.l.Warn("handler not found", map[string]interface{}{"routing-key": route})
 		return ziggurat.SkipMessage
 	} else {
 		return handler.HandleEvent(event)
@@ -24,7 +22,6 @@ func (dr *defaultRouter) HandleEvent(event ziggurat.Event) ziggurat.ProcessStatu
 func New() *defaultRouter {
 	return &defaultRouter{
 		handlerFunctionMap: map[string]ziggurat.HandlerFunc{},
-		l:                  logger.NewJSONLogger("info"),
 	}
 }
 
