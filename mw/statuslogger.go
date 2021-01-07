@@ -15,12 +15,6 @@ func (p *ProcessingStatusLogger) HandleEvent(event ziggurat.Event) ziggurat.Proc
 	return p.LogStatus(p.Handler).HandleEvent(event)
 }
 
-func WithLogger(logger ziggurat.StructuredLogger) func(p *ProcessingStatusLogger) {
-	return func(p *ProcessingStatusLogger) {
-		p.Logger = logger
-	}
-}
-
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
 		status := next.HandleEvent(messageEvent)

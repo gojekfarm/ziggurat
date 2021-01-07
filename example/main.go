@@ -10,7 +10,8 @@ import (
 )
 
 func main() {
-	jsonLogger := logger.NewJSONLogger("disabled")
+	jsonLogger := logger.NewJSONLogger("info")
+
 	kafkaStreams := &kafka.Streams{
 		RouteGroup: kafka.RouteGroup{
 			"json-log": {
@@ -38,7 +39,9 @@ func main() {
 		return ziggurat.ProcessingSuccess
 	})
 
-	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
+	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
+
+	handler := r.Compose(processingLogger.LogStatus)
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
 	<-zig.Run(context.Background(), kafkaStreams, handler)
