@@ -70,7 +70,7 @@ func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan 
 		startCallback(ctx)
 	}
 
-	streamsStop := z.streams.Consume(ctx, z.handler)
+	streamsStop := z.streams.Stream(ctx, z.handler)
 	return streamsStop
 }
 
