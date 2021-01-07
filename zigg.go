@@ -2,14 +2,14 @@ package ziggurat
 
 import (
 	"context"
-	"errors"
+	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/sethvargo/go-signalcontext"
 	"sync/atomic"
 	"syscall"
 )
 
 type Ziggurat struct {
-	Handler   Handler
+	handler   Handler
 	Logger    StructuredLogger
 	startFunc StartFunction
 	stopFunc  StopFunction
@@ -17,38 +17,40 @@ type Ziggurat struct {
 	streams   Streams
 }
 
-func NewApp(opts ...ZigOptions) *Ziggurat {
+func New(opts ...ZigOptions) *Ziggurat {
 	ziggurat := &Ziggurat{}
 	for _, opts := range opts {
 		opts(ziggurat)
 	}
 	if ziggurat.Logger == nil {
-		ziggurat.Logger = NewLogger("info")
+		ziggurat.Logger = logger.NewJSONLogger("info")
 	}
 	return ziggurat
 }
 
-func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes StreamRoutes) chan error {
+func (z *Ziggurat) Run(ctx context.Context, streams Streams, handler Handler) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		return nil
 	}
 
-	if len(routes) < 1 {
-		z.Logger.Error("error starting streams: ", errors.New("no routes found"))
-	}
-
 	if z.Logger == nil {
-		z.Logger = NewLogger("info")
+		z.Logger = logger.NewJSONLogger("info")
 	}
 
-	if z.streams == nil {
-		z.streams = &KafkaStreams{Logger: z.Logger, StreamRoutes: routes}
+	if streams == nil {
+		panic("`streams` cannot be nil")
 	}
+
+	if handler == nil {
+		panic("`handler` cannot be nil")
+	}
+
+	z.streams = streams
 
 	doneChan := make(chan error)
 	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
 
-	z.Handler = handler
+	z.handler = handler
 
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
@@ -57,22 +59,24 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, routes StreamRoutes
 		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)
-		doneChan <- parentCtx.Err()
+		doneChan <- err
 	}()
 	return doneChan
 }
 
 func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan error {
 	if startCallback != nil {
+		z.Logger.Info("invoking start function")
 		startCallback(ctx)
 	}
 
-	streamsStop := z.streams.Consume(ctx, z.Handler)
+	streamsStop := z.streams.Consume(ctx, z.handler)
 	return streamsStop
 }
 
 func (z *Ziggurat) stop(stopFunc StopFunction) {
 	if stopFunc != nil {
+		z.Logger.Info("invoking stop function")
 		stopFunc()
 	}
 }

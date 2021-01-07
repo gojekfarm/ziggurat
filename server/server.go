@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat"
+	logger2 "github.com/gojekfarm/ziggurat/logger"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
@@ -22,7 +22,7 @@ func WithPort(port string) func(s *DefaultHttpServer) {
 
 func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	router := httprouter.New()
-	logger := ziggurat.NewLogger("info")
+	logger := logger2.NewJSONLogger("info")
 	httpRequestLogger := HTTPRequestLogger(logger)
 	server := &http.Server{Handler: httpRequestLogger(router)}
 	s := &DefaultHttpServer{

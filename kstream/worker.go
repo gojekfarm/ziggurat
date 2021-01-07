@@ -1,7 +1,6 @@
-package ziggurat
+package kstream
 
 import (
-	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"sync"
 )
@@ -20,23 +19,14 @@ func NewWorker(concurrency int) *Worker {
 	}
 }
 
-func (w *Worker) run(ctx context.Context, f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
+func (w *Worker) run(f func(*kafka.Message)) (chan *kafka.Message, chan struct{}) {
 	wg := &sync.WaitGroup{}
 	for i := 0; i < w.concurrency; i++ {
 		wg.Add(1)
 		go func() {
-			done := ctx.Done()
 			defer wg.Done()
-			for {
-				select {
-				case <-done:
-					return
-				case msg, ok := <-w.sendCh:
-					if !ok {
-						return
-					}
-					f(msg)
-				}
+			for msg := range w.sendCh {
+				f(msg)
 			}
 		}()
 	}

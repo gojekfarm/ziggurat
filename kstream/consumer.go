@@ -1,9 +1,10 @@
-package ziggurat
+package kstream
 
 import (
 	"context"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gojekfarm/ziggurat"
 	"sync"
 	"time"
 )
@@ -11,7 +12,7 @@ import (
 const defaultPollTimeout = 1 * time.Second
 const brokerRetryTimeout = 3 * time.Second
 
-var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+var startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
 	logChan := consumer.Logs()
 
 	go func() {
@@ -23,23 +24,22 @@ var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, con
 	}()
 
 	go func(instanceID string) {
-		defer wg.Done()
+		run := true
 		doneCh := ctx.Done()
 		worker := NewWorker(10)
-		sendCh, _ := worker.run(ctx, func(message *kafka.Message) {
+		sendCh, workerDoneChan := worker.run(func(message *kafka.Message) {
 			kafkaProcessor(message, route, consumer, h, l, ctx)
 		})
-		for {
+
+		for run {
 			select {
 			case <-doneCh:
-				close(sendCh)
-				return
+				run = false
 			default:
 				msg, err := readMessage(consumer, defaultPollTimeout)
 				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
 					continue
 				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					l.Error("retrying broker", nil, nil)
 					time.Sleep(brokerRetryTimeout)
 					continue
 				}
@@ -48,10 +48,14 @@ var startConsumer = func(ctx context.Context, h Handler, l StructuredLogger, con
 				}
 			}
 		}
+		close(sendCh)
+		l.Error("stopping consumer", ctx.Err(), map[string]interface{}{"CONSUMER-ID": instanceID})
+		<-workerDoneChan
+		wg.Done()
 	}(instanceID)
 }
 
-var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h Handler, l StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
+var StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h ziggurat.Handler, l ziggurat.StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, l, topics)

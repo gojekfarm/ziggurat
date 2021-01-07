@@ -2,6 +2,7 @@ package mw
 
 import (
 	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 type (
@@ -34,7 +35,7 @@ func NewProcessingStatusLogger(opts ...Opts) *ProcessingStatusLogger {
 		opt(p)
 	}
 	if p.l == nil {
-		p.l = ziggurat.NewLogger("info")
+		p.l = logger.NewJSONLogger("info")
 	}
 	return p
 }
