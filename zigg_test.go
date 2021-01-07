@@ -20,7 +20,7 @@ func TestZigguratStartStop(t *testing.T) {
 		isStopCalled = true
 	})
 
-	z.streams = MockKStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
+	streams := MockKStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
 		done := make(chan error)
 		go func() {
 			<-ctx.Done()
@@ -29,7 +29,7 @@ func TestZigguratStartStop(t *testing.T) {
 		return done
 	}}
 
-	<-z.Run(ctx, HandlerFunc(func(messageEvent Event) ProcessStatus { return ProcessingSuccess }), StreamRoutes{"foo": {}})
+	<-z.Run(ctx, streams, HandlerFunc(func(messageEvent Event) ProcessStatus { return ProcessingSuccess }))
 
 	if !isStartCalled {
 		t.Error("expected start callback to be called")
@@ -57,5 +57,5 @@ func TestZigguratRun(t *testing.T) {
 		return done
 	}}
 	z.streams = streams
-	<-z.Run(ctx, HandlerFunc(func(messageEvent Event) ProcessStatus { return ProcessingSuccess }), StreamRoutes{"foo": {}})
+	<-z.Run(ctx, streams, HandlerFunc(func(messageEvent Event) ProcessStatus { return ProcessingSuccess }))
 }

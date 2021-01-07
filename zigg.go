@@ -8,6 +8,9 @@ import (
 	"syscall"
 )
 
+type StartFunction func(ctx context.Context)
+type StopFunction func()
+
 type Ziggurat struct {
 	handler   Handler
 	Logger    StructuredLogger
