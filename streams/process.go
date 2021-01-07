@@ -1,4 +1,4 @@
-package kstream
+package streams
 
 import (
 	"context"

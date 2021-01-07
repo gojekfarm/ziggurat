@@ -14,7 +14,7 @@ type Ziggurat struct {
 	startFunc StartFunction
 	stopFunc  StopFunction
 	isRunning int32
-	streams   Streams
+	streams   Streamer
 }
 
 func New(opts ...ZigOptions) *Ziggurat {
@@ -28,7 +28,7 @@ func New(opts ...ZigOptions) *Ziggurat {
 	return ziggurat
 }
 
-func (z *Ziggurat) Run(ctx context.Context, streams Streams, handler Handler) chan error {
+func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		return nil
 	}

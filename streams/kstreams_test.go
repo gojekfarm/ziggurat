@@ -1,4 +1,4 @@
-package kstream
+package streams
 
 import (
 	"context"
@@ -19,12 +19,12 @@ func TestKafkaStreams_Consume(t *testing.T) {
 	StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h ziggurat.Handler, l ziggurat.StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 		return []*kafka.Consumer{}
 	}
-	kstreams := Streams{
+	kstreams := Kafka{
 		routeConsumerMap: nil,
 		Logger:           logger.NewJSONLogger("disabled"),
 		KafkaRouteGroup:  KafkaRouteGroup{"foo": {}},
 	}
-	kstreams.Consume(context.Background(), ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+	kstreams.Stream(context.Background(), ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	}))
 	if len(kstreams.routeConsumerMap) < len(routes) {

@@ -1,4 +1,4 @@
-package kstream
+package streams
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"

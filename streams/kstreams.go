@@ -1,4 +1,4 @@
-package kstream
+package streams
 
 import (
 	"context"
@@ -18,13 +18,13 @@ type RouteGroup struct {
 
 type KafkaRouteGroup map[string]RouteGroup
 
-type Streams struct {
+type Kafka struct {
 	routeConsumerMap map[string][]*kafka.Consumer
 	Logger           ziggurat.StructuredLogger
 	KafkaRouteGroup
 }
 
-func (k *Streams) Consume(ctx context.Context, handler ziggurat.Handler) chan error {
+func (k *Kafka) Stream(ctx context.Context, handler ziggurat.Handler) chan error {
 	if k.Logger == nil {
 		k.Logger = logger.NewJSONLogger("info")
 	}
@@ -46,7 +46,7 @@ func (k *Streams) Consume(ctx context.Context, handler ziggurat.Handler) chan er
 	return stopChan
 }
 
-func (k *Streams) stop() {
+func (k *Kafka) stop() {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
 			k.Logger.Error("error stopping consumer %v", consumers[i].Close(), nil)

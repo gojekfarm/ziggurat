@@ -3,15 +3,15 @@ package main
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/kstream"
 	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/router"
+	"github.com/gojekfarm/ziggurat/streams"
 )
 
 func main() {
-	kafkaStreams := &kstream.Streams{
-		KafkaRouteGroup: kstream.KafkaRouteGroup{
+	kafkaStreams := &streams.Kafka{
+		KafkaRouteGroup: streams.KafkaRouteGroup{
 			"json-log": {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "json-log",

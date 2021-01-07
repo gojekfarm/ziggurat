@@ -8,7 +8,7 @@ type MockKStreams struct {
 	ConsumeFunc func(ctx context.Context, handler Handler) chan error
 }
 
-func (m MockKStreams) Consume(ctx context.Context, handler Handler) chan error {
+func (m MockKStreams) Stream(ctx context.Context, handler Handler) chan error {
 	return m.ConsumeFunc(ctx, handler)
 }
 

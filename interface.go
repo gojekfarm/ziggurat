@@ -6,8 +6,8 @@ type Handler interface {
 	HandleEvent(event Event) ProcessStatus
 }
 
-type Streams interface {
-	Consume(ctx context.Context, handler Handler) chan error
+type Streamer interface {
+	Stream(ctx context.Context, handler Handler) chan error
 }
 
 type StructuredLogger interface {
