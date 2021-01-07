@@ -1,4 +1,4 @@
-package streams
+package kafka
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 )
 
 func TestKafkaStreams_Consume(t *testing.T) {
-	routes := KafkaRouteGroup{"foo": {}}
+	routes := RouteGroup{"foo": {}}
 	oldStartConsumers := StartConsumers
 	defer func() {
 		StartConsumers = oldStartConsumers
@@ -19,10 +19,10 @@ func TestKafkaStreams_Consume(t *testing.T) {
 	StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h ziggurat.Handler, l ziggurat.StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 		return []*kafka.Consumer{}
 	}
-	kstreams := Kafka{
+	kstreams := Streams{
 		routeConsumerMap: nil,
 		Logger:           logger.NewJSONLogger("disabled"),
-		KafkaRouteGroup:  KafkaRouteGroup{"foo": {}},
+		RouteGroup:       RouteGroup{"foo": {}},
 	}
 	kstreams.Stream(context.Background(), ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess

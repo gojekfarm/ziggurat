@@ -17,17 +17,6 @@ type Ziggurat struct {
 	streams   Streamer
 }
 
-func New(opts ...ZigOptions) *Ziggurat {
-	ziggurat := &Ziggurat{}
-	for _, opts := range opts {
-		opts(ziggurat)
-	}
-	if ziggurat.Logger == nil {
-		ziggurat.Logger = logger.NewJSONLogger("info")
-	}
-	return ziggurat
-}
-
 func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) chan error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		return nil
@@ -38,7 +27,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) c
 	}
 
 	if streams == nil {
-		panic("`streams` cannot be nil")
+		panic("`kafka` cannot be nil")
 	}
 
 	if handler == nil {
@@ -55,7 +44,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) c
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
 		err := <-z.start(parentCtx, z.startFunc)
-		z.Logger.Error("error starting streams", err)
+		z.Logger.Error("error starting kafka", err)
 		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)

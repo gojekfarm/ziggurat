@@ -1,4 +1,4 @@
-package streams
+package kafka
 
 import (
 	"context"
@@ -9,29 +9,29 @@ import (
 	"sync"
 )
 
-type RouteGroup struct {
+type ConsumerConfig struct {
 	BootstrapServers string
 	OriginTopics     string
 	ConsumerGroupID  string
 	ConsumerCount    int
 }
 
-type KafkaRouteGroup map[string]RouteGroup
+type RouteGroup map[string]ConsumerConfig
 
-type Kafka struct {
+type Streams struct {
 	routeConsumerMap map[string][]*kafka.Consumer
 	Logger           ziggurat.StructuredLogger
-	KafkaRouteGroup
+	RouteGroup
 }
 
-func (k *Kafka) Stream(ctx context.Context, handler ziggurat.Handler) chan error {
+func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) chan error {
 	if k.Logger == nil {
 		k.Logger = logger.NewJSONLogger("info")
 	}
 	var wg sync.WaitGroup
 	k.routeConsumerMap = map[string][]*kafka.Consumer{}
 	stopChan := make(chan error)
-	for routeName, stream := range k.KafkaRouteGroup {
+	for routeName, stream := range k.RouteGroup {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.ConsumerGroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
 		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.ConsumerCount, handler, k.Logger, &wg)
@@ -46,7 +46,7 @@ func (k *Kafka) Stream(ctx context.Context, handler ziggurat.Handler) chan error
 	return stopChan
 }
 
-func (k *Kafka) stop() {
+func (k *Streams) stop() {
 	for _, consumers := range k.routeConsumerMap {
 		for i, _ := range consumers {
 			k.Logger.Error("error stopping consumer %v", consumers[i].Close(), nil)

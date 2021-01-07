@@ -1,4 +1,4 @@
-package streams
+package kafka
 
 import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -20,7 +20,7 @@ var createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.Structured
 
 var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition) error { // at least once delivery
 	if partition.Error != nil {
-		return ziggurat.ErrOffsetCommit
+		return ErrOffsetCommit
 	}
 	offsets := []kafka.TopicPartition{partition}
 	offsets[0].Offset++

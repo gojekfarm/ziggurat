@@ -2,42 +2,23 @@ package mw
 
 import (
 	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
 )
 
 type (
-	Opts                   func(p *ProcessingStatusLogger)
 	ProcessingStatusLogger struct {
-		l       ziggurat.StructuredLogger
-		handler ziggurat.Handler
+		Logger  ziggurat.StructuredLogger
+		Handler ziggurat.Handler
 	}
 )
 
-func (p *ProcessingStatusLogger) HandleEvent(event ziggurat.Message) ziggurat.ProcessStatus {
-	return p.LogStatus(p.handler).HandleEvent(event)
+func (p *ProcessingStatusLogger) HandleEvent(event ziggurat.Event) ziggurat.ProcessStatus {
+	return p.LogStatus(p.Handler).HandleEvent(event)
 }
 
 func WithLogger(logger ziggurat.StructuredLogger) func(p *ProcessingStatusLogger) {
 	return func(p *ProcessingStatusLogger) {
-		p.l = logger
+		p.Logger = logger
 	}
-}
-
-func WithHandler(h ziggurat.Handler) func(p *ProcessingStatusLogger) {
-	return func(p *ProcessingStatusLogger) {
-		p.handler = h
-	}
-}
-
-func NewProcessingStatusLogger(opts ...Opts) *ProcessingStatusLogger {
-	p := &ProcessingStatusLogger{}
-	for _, opt := range opts {
-		opt(p)
-	}
-	if p.l == nil {
-		p.l = logger.NewJSONLogger("info")
-	}
-	return p
 }
 
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
@@ -47,15 +28,15 @@ func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handl
 		switch status {
 		case ziggurat.ProcessingSuccess:
 			args["status"] = "success"
-			p.l.Info("", args)
+			p.Logger.Info("", args)
 			break
 		case ziggurat.RetryMessage:
 			args["status"] = "retry"
-			p.l.Info("", args)
+			p.Logger.Info("", args)
 			break
 		case ziggurat.SkipMessage:
 			args["status"] = "skip"
-			p.l.Info("", args)
+			p.Logger.Info("", args)
 			break
 		}
 		return status

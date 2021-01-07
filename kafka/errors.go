@@ -1,4 +1,4 @@
-package ziggurat
+package kafka
 
 import (
 	"errors"

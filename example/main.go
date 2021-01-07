@@ -3,16 +3,16 @@ package main
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/router"
-	"github.com/gojekfarm/ziggurat/streams"
 )
 
 func main() {
 	jsonLogger := logger.NewJSONLogger("disabled")
-	kafkaStreams := &streams.Kafka{
-		KafkaRouteGroup: streams.KafkaRouteGroup{
+	kafkaStreams := &kafka.Streams{
+		RouteGroup: kafka.RouteGroup{
 			"json-log": {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "json-log",
@@ -29,7 +29,6 @@ func main() {
 		Logger: jsonLogger,
 	}
 	r := router.New()
-	statusLogger := mw.NewProcessingStatusLogger(mw.WithLogger(jsonLogger))
 
 	r.HandleFunc("json-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
@@ -39,7 +38,7 @@ func main() {
 		return ziggurat.ProcessingSuccess
 	})
 
-	handler := r.Compose(statusLogger.LogStatus)
+	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
 	<-zig.Run(context.Background(), kafkaStreams, handler)
