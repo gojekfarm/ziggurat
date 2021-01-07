@@ -12,14 +12,6 @@ func (m MockKStreams) Stream(ctx context.Context, handler Handler) chan error {
 	return m.ConsumeFunc(ctx, handler)
 }
 
-func NewMockKafkaStreams() *MockKStreams {
-	return &MockKStreams{
-		ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
-			return make(chan error)
-		},
-	}
-}
-
 type MockStructureLogger struct {
 	InfoFunc  func(m string, kv ...map[string]interface{})
 	WarnFunc  func(m string, kv ...map[string]interface{})

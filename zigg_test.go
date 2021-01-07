@@ -40,7 +40,7 @@ func TestZigguratStartStop(t *testing.T) {
 }
 
 func TestZigguratRun(t *testing.T) {
-	z := &Ziggurat{}
+	z := &Ziggurat{Logger: logger.NewJSONLogger("disabled")}
 	ctx, cfn := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cfn()
 	z.StartFunc(func(ctx context.Context) {
