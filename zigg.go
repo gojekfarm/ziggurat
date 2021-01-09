@@ -30,7 +30,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) c
 	}
 
 	if streams == nil {
-		panic("`kafka` cannot be nil")
+		panic("`streams` cannot be nil")
 	}
 
 	if handler == nil {
