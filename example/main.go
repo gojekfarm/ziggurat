@@ -14,12 +14,6 @@ func main() {
 
 	kafkaStreams := &kafka.Streams{
 		RouteGroup: kafka.RouteGroup{
-			"json-log": {
-				BootstrapServers: "localhost:9092",
-				OriginTopics:     "json-log",
-				ConsumerGroupID:  "json_consumer",
-				ConsumerCount:    2,
-			},
 			"plain-text-log": {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
@@ -30,10 +24,6 @@ func main() {
 		Logger: jsonLogger,
 	}
 	r := router.New()
-
-	r.HandleFunc("json-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
-	})
 
 	r.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
