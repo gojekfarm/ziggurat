@@ -1,7 +1,5 @@
 package ziggurat
 
-import "context"
-
 type ProcessStatus int
 
 const ProcessingSuccess ProcessStatus = 0
@@ -16,10 +14,4 @@ func (h HandlerFunc) HandleEvent(event Event) ProcessStatus {
 
 type Handler interface {
 	HandleEvent(event Event) ProcessStatus
-}
-
-type Event interface {
-	Value() []byte
-	Headers() map[string]string
-	Context() context.Context
 }
