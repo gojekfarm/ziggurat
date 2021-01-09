@@ -7,28 +7,32 @@ import (
 	"testing"
 )
 
-func TestDefaultRouter_HandleMessageError(t *testing.T) {
-	dr := New()
-	dr.HandleFunc("foo", func(event ziggurat.Event) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
-	})
-	event := ziggurat.CreateMessageEvent(nil, map[string]string{ziggurat.HeaderMessageRoute: "bar"}, context.Background())
-	if status := dr.HandleEvent(event); status != ziggurat.SkipMessage {
-		t.Errorf("expected status %d got status %d", ziggurat.SkipMessage, status)
-	}
-
-}
-
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := New()
-	expectedEvent := ziggurat.CreateMessageEvent(nil, map[string]string{ziggurat.HeaderMessageRoute: "foo"}, context.Background())
+	expectedEvent := ziggurat.CreateMockEvent()
+	expectedEvent.ValueFunc = func() []byte {
+		return nil
+	}
+	expectedEvent.HeadersFunc = func() map[string]string {
+		return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
+	}
 	dr.HandleFunc("foo", func(event ziggurat.Event) ziggurat.ProcessStatus {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
 		return ziggurat.ProcessingSuccess
 	})
-	dr.HandleEvent(ziggurat.CreateMessageEvent(nil, map[string]string{ziggurat.HeaderMessageRoute: "bar"}, context.Background()))
+	dr.HandleEvent(ziggurat.MockEvent{
+		ValueFunc: func() []byte {
+			return nil
+		},
+		HeadersFunc: func() map[string]string {
+			return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
+		},
+		ContextFunc: func() context.Context {
+			return context.Background()
+		},
+	})
 }
 
 func TestDefaultRouter_NotFoundHandler(t *testing.T) {
@@ -42,7 +46,17 @@ func TestDefaultRouter_NotFoundHandler(t *testing.T) {
 		return ziggurat.ProcessingSuccess
 	})
 
-	dr.HandleEvent(ziggurat.CreateMessageEvent(nil, map[string]string{ziggurat.HeaderMessageRoute: "baz"}, context.Background()))
+	dr.HandleEvent(ziggurat.MockEvent{
+		ValueFunc: func() []byte {
+			return []byte{}
+		},
+		HeadersFunc: func() map[string]string {
+			return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
+		},
+		ContextFunc: func() context.Context {
+			return context.Background()
+		},
+	})
 
 	if !notFoundHandlerCalled {
 		t.Errorf("expected %v got %v", true, notFoundHandlerCalled)
