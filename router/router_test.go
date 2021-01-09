@@ -3,14 +3,12 @@ package router
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
 	"reflect"
 	"testing"
 )
 
 func TestDefaultRouter_HandleMessageError(t *testing.T) {
 	dr := New()
-	dr.l = logger.NewJSONLogger("disabled")
 	dr.HandleFunc("foo", func(event ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
 	})
@@ -31,4 +29,23 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		return ziggurat.ProcessingSuccess
 	})
 	dr.HandleEvent(ziggurat.CreateMessageEvent(nil, map[string]string{ziggurat.HeaderMessageRoute: "bar"}, context.Background()))
+}
+
+func TestDefaultRouter_NotFoundHandler(t *testing.T) {
+	notFoundHandlerCalled := false
+	dr := New(WithNotFoundHandler(func(event ziggurat.Event) ziggurat.ProcessStatus {
+		notFoundHandlerCalled = true
+		return ziggurat.ProcessingSuccess
+	}))
+
+	dr.HandleFunc("foo", func(event ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
+	})
+
+	dr.HandleEvent(ziggurat.CreateMessageEvent(nil, map[string]string{ziggurat.HeaderMessageRoute: "baz"}, context.Background()))
+
+	if !notFoundHandlerCalled {
+		t.Errorf("expected %v got %v", true, notFoundHandlerCalled)
+	}
+
 }
