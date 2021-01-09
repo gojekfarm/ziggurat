@@ -17,6 +17,9 @@ func (p *ProcessingStatusLogger) HandleEvent(event ziggurat.Event) ziggurat.Proc
 
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+		if p.Logger == nil {
+			return next.HandleEvent(messageEvent)
+		}
 		status := next.HandleEvent(messageEvent)
 		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute], "value": messageEvent.Value()}
 		switch status {
