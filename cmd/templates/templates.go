@@ -1,25 +1,5 @@
 package templates
 
-var YamlConfig = `service-name: "{{.AppName}}"
-stream-router:
-  {{.TopicEntity}}:
-    bootstrap-servers: "localhost:9092"
-    instance-count: 2
-    origin-topics: "{{.OriginTopics}}"
-    group-id: "{{.ConsumerGroup}}"
-log-level: "info"
-retry:
-  enabled: true
-  count: 5
-rabbitmq:
-  hosts: "amqp://user:bitnami@localhost:5672/"
-  delay-queue-expiration: "1000" 
-  dial-timeout-seconds: 30
-statsd:
-  host: "localhost:8125"
-http-server:
-  port: 8080`
-
 var DockerComposeKafka = `version: '3.3'
 
 services:
@@ -284,35 +264,38 @@ var Main = `package main
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/kafka"
+	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/router"
 )
 
-const RoutePlainTextLog = "plain-text-log"
-
 func main() {
-	app := &ziggurat.Ziggurat{}
-	router := ziggurat.NewRouter()
-	statusLogger := mw.NewProcessingStatusLogger()
+	jsonLogger := logger.NewJSONLogger("info")
 
-	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
-	})
-
-	handler := router.Compose(statusLogger.LogStatus)
-
-	app.StartFunc(func(ctx context.Context) {
-		
-	})
-
-	<-app.Run(context.Background(), handler,
-		ziggurat.StreamRoutes{
-			RoutePlainTextLog: {
+	kafkaStreams := &kafka.Streams{
+		RouteGroup: kafka.RouteGroup{
+			"plain-text-log": {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
-				ConsumerCount:    2,
+				ConsumerCount:    1,
 			},
-		})
+		},
+		Logger: jsonLogger,
+	}
+	r := router.New()
+
+	r.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
+	})
+
+	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
+
+	handler := r.Compose(processingLogger.LogStatus)
+
+	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
+	<-zig.Run(context.Background(), kafkaStreams, handler)
 }`
 
 var Makefile = `.PHONY: all
