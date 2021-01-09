@@ -30,34 +30,47 @@ package main
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/kafka"
+	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/router"
 )
 
-const RoutePlainTextLog = "plain-text-log"
-
 func main() {
-	app := &ziggurat.Ziggurat{}
-	router := ziggurat.NewRouter()
-	statusLogger := mw.NewProcessingStatusLogger()
+	jsonLogger := logger.NewJSONLogger("info")
 
-	router.HandleFunc(RoutePlainTextLog, func(event ziggurat.Message, ctx context.Context) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
-	})
-
-	handler := router.Compose(statusLogger.LogStatus)
-
-	app.StartFunc(func(ctx context.Context) {
-
-	})
-
-	<-app.Run(context.Background(), handler,
-		ziggurat.StreamRoutes{
-			RoutePlainTextLog: {
+	kafkaStreams := &kafka.Streams{
+		RouteGroup: kafka.RouteGroup{
+			"json-log": {
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "json-log",
+				ConsumerGroupID:  "json_consumer",
+				ConsumerCount:    2,
+			},
+			"plain-text-log": {
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
-				ConsumerCount:    2,
+				ConsumerCount:    1,
 			},
-		})
+		},
+		Logger: jsonLogger,
+	}
+	r := router.New()
+
+	r.HandleFunc("json-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
+	})
+
+	r.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.ProcessingSuccess
+	})
+
+	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
+
+	handler := r.Compose(processingLogger.LogStatus)
+
+	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
+	<-zig.Run(context.Background(), kafkaStreams, handler)
 }
 ```
