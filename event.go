@@ -42,3 +42,4 @@ func (m MockEvent) Headers() map[string]string {
 func (m MockEvent) Context() context.Context {
 	return m.ContextFunc()
 }
+

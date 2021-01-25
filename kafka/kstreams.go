@@ -30,7 +30,7 @@ func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) chan err
 		k.Logger = logger.NewJSONLogger("info")
 	}
 	var wg sync.WaitGroup
-	k.routeConsumerMap = map[string][]*kafka.Consumer{}
+	k.routeConsumerMap = make(map[string][]*kafka.Consumer, len(k.RouteGroup))
 	stopChan := make(chan error)
 	for _, stream := range k.StreamConfig {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.ConsumerGroupID)
