@@ -14,14 +14,15 @@ type ConsumerConfig struct {
 	OriginTopics     string
 	ConsumerGroupID  string
 	ConsumerCount    int
+	RouteGroup       string
 }
 
-type RouteGroup map[string]ConsumerConfig
+type StreamConfig = []ConsumerConfig
 
 type Streams struct {
 	routeConsumerMap map[string][]*kafka.Consumer
 	Logger           ziggurat.StructuredLogger
-	RouteGroup
+	StreamConfig     StreamConfig
 }
 
 func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) chan error {
@@ -31,9 +32,10 @@ func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) chan err
 	var wg sync.WaitGroup
 	k.routeConsumerMap = map[string][]*kafka.Consumer{}
 	stopChan := make(chan error)
-	for routeName, stream := range k.RouteGroup {
+	for _, stream := range k.StreamConfig {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.ConsumerGroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
+		routeName := stream.RouteGroup
 		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.ConsumerCount, handler, k.Logger, &wg)
 	}
 

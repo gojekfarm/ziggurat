@@ -47,7 +47,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) c
 	atomic.StoreInt32(&z.isRunning, 1)
 	go func() {
 		err := <-z.start(parentCtx, z.startFunc)
-		z.Logger.Error("error starting kafka", err)
+		z.Logger.Error("streams shutdown", err)
 		canceler()
 		atomic.StoreInt32(&z.isRunning, 0)
 		z.stop(z.stopFunc)

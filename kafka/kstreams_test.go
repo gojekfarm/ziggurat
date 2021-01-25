@@ -10,7 +10,7 @@ import (
 )
 
 func TestKafkaStreams_Consume(t *testing.T) {
-	routes := RouteGroup{"foo": {}}
+	routes := StreamConfig{{RouteGroup: "foo"}}
 	oldStartConsumers := StartConsumers
 	defer func() {
 		StartConsumers = oldStartConsumers
@@ -22,7 +22,7 @@ func TestKafkaStreams_Consume(t *testing.T) {
 	kstreams := Streams{
 		routeConsumerMap: nil,
 		Logger:           logger.NewJSONLogger("disabled"),
-		RouteGroup:       RouteGroup{"foo": {}},
+		StreamConfig:     StreamConfig{{RouteGroup: "foo"}},
 	}
 	kstreams.Stream(context.Background(), ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
 		return ziggurat.ProcessingSuccess
