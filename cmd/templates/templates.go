@@ -274,12 +274,13 @@ func main() {
 	jsonLogger := logger.NewJSONLogger("info")
 
 	kafkaStreams := &kafka.Streams{
-		RouteGroup: kafka.RouteGroup{
-			"plain-text-log": {
+		StreamConfig: kafka.StreamConfig{
+			{
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
 				ConsumerCount:    1,
+				RouteGroup:       "plain-text-log",
 			},
 		},
 		Logger: jsonLogger,
