@@ -1,13 +1,12 @@
-
 ### Ziggurat Golang
 
 Stream Processing made easy
 
-### Install the zig CLI
+### Install the ziggurat CLI
 
 ```shell script
-go get -v -u github.com/gojekfarm/ziggurat/cmd/zig
-go install github.com/gojekfarm/ziggurat/cmd/zig                                                                                                                                                       
+go get -v -u github.com/gojekfarm/ziggurat/cmd/...
+go install github.com/gojekfarm/ziggurat/cmd/...                                                                                                                                                     
 ```
 
 #### How to use
@@ -15,15 +14,10 @@ go install github.com/gojekfarm/ziggurat/cmd/zig
 - create a new app using the `new` command
 
 ```shell
-zig new <app_name>
+ziggurat new <app_name>
 ```
 
 - sample `main.go`
-
-### Pass an optional config file path
-
-If you wish to read config from a location other than the default location run the app
-with `--ziggurat-config="your_path/config_file.yaml"` option
 
 ```go
 package main
