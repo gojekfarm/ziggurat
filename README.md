@@ -2,9 +2,7 @@
 
 Stream Processing made easy
 
-### Install the ziggurat
-
-CLI
+### Install the ziggurat CLI
 
 ```shell script
 go get -v -u github.com/gojekfarm/ziggurat/cmd/...
