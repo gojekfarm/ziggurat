@@ -38,7 +38,6 @@ func New(opts ...func(dr *defaultRouter)) *defaultRouter {
 			return ziggurat.SkipMessage
 		}
 	}
-
 	return dr
 
 }
