@@ -28,7 +28,7 @@ var startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.Str
 		doneCh := ctx.Done()
 		worker := NewWorker(10)
 		sendCh, workerDoneChan := worker.run(func(message *kafka.Message) {
-			kafkaProcessor(message, route, consumer, h, l, ctx)
+			kafkaProcessor(message, route, consumer, h, l)
 		})
 
 		for run {

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"context"
 	"github.com/gojekfarm/ziggurat"
 	"reflect"
 	"testing"
@@ -29,9 +28,6 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		HeadersFunc: func() map[string]string {
 			return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
 		},
-		ContextFunc: func() context.Context {
-			return context.Background()
-		},
 	})
 }
 
@@ -52,9 +48,6 @@ func TestDefaultRouter_NotFoundHandler(t *testing.T) {
 		},
 		HeadersFunc: func() map[string]string {
 			return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
-		},
-		ContextFunc: func() context.Context {
-			return context.Background()
 		},
 	})
 

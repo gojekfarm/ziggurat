@@ -8,10 +8,6 @@ type Message struct {
 	headers map[string]string
 }
 
-func (m Message) Context() context.Context {
-	return m.ctx
-}
-
 func (m Message) Value() []byte {
 	return m.value
 }
@@ -20,10 +16,9 @@ func (m Message) Headers() map[string]string {
 	return m.headers
 }
 
-func CreateMessageEvent(value []byte, headers map[string]string, ctx context.Context) Message {
+func CreateMessageEvent(value []byte, headers map[string]string) Message {
 	return Message{
 		value:   value,
-		ctx:     ctx,
 		headers: headers,
 	}
 }
