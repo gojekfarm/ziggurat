@@ -1,1 +1,5 @@
 tags
+/data
+.DS_Store
+.idea
+cp.out
