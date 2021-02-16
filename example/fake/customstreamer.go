@@ -9,7 +9,6 @@ import (
 
 type FakeStreams struct{}
 type FakeEvent struct {
-	c context.Context
 	v []byte
 }
 
@@ -19,10 +18,6 @@ func (f FakeEvent) Value() []byte {
 
 func (f FakeEvent) Headers() map[string]string {
 	return map[string]string{}
-}
-
-func (f FakeEvent) Context() context.Context {
-	return f.c
 }
 
 func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) chan error {
@@ -37,7 +32,6 @@ func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) chan
 				return
 			default:
 				handler.HandleEvent(FakeEvent{
-					c: ctx,
 					v: []byte(fmt.Sprintf("<<< Fake streamer message >>> [%d]", i)),
 				})
 				i++
