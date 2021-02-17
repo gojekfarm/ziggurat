@@ -26,8 +26,8 @@ func main() {
 	}
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
+	r.HandleFunc("plain-text-log", func(event ziggurat.Event) error {
+		return nil
 	})
 
 	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
