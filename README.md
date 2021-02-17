@@ -105,7 +105,6 @@ package ziggurat
 type Event interface {
 	Value() []byte
 	Headers() map[string]string
-	Context() context.Context
 }
 
 // Every stream must produce a series of events to be handled by the handler
