@@ -11,6 +11,7 @@ import (
 
 func main() {
 	jsonLogger := logger.NewJSONLogger("info")
+	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -46,5 +47,5 @@ func main() {
 	handler := r.Compose(processingLogger.LogStatus)
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
-	<-zig.Run(context.Background(), kafkaStreams, handler)
+	<-zig.Run(ctx, kafkaStreams, handler)
 }
