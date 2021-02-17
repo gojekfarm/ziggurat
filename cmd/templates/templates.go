@@ -64,7 +64,7 @@ var GoMod = `module {{.AppName}}
 go 1.14
 
 require (
-	github.com/gojekfarm/ziggurat v1.0.0-alpha.13
+	github.com/gojekfarm/ziggurat v1.0.0-alpha.14
 	github.com/julienschmidt/httprouter v1.2.0
 )`
 
