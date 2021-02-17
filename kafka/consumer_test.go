@@ -21,8 +21,8 @@ func TestMain(m *testing.M) {
 func TestConsumer_create(t *testing.T) {
 	l := logger.NewJSONLogger("disabled")
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
+	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) error {
+		return nil
 	})
 	oldStartConsumer := startConsumer
 	oldCreateConsumer := createConsumer
@@ -64,11 +64,11 @@ func TestConsumer_start(t *testing.T) {
 			Headers:       nil,
 		}, nil
 	}
-	hf := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+	hf := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) error {
 		if bytes.Compare(messageEvent.Value(), expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value())
 		}
-		return ziggurat.ProcessingSuccess
+		return nil
 	})
 	c := &kafka.Consumer{}
 
@@ -100,8 +100,8 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	deadlineTime := time.Now().Add(time.Second * 6)
 	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
 	defer cancelFunc()
-	h := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
+	h := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) error {
+		return nil
 	})
 	wg.Add(1)
 	startConsumer(ctx, h, l, c, "", "", wg)

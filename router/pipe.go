@@ -4,7 +4,7 @@ import "github.com/gojekfarm/ziggurat"
 
 var PipeHandlers = func(funcs ...func(handler ziggurat.Handler) ziggurat.Handler) func(origHandler ziggurat.Handler) ziggurat.Handler {
 	return func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(event ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.HandlerFunc(func(event ziggurat.Event) error {
 			var handlerResult = next
 			lastIdx := len(funcs) - 1
 			for i := lastIdx; i >= 0; i-- {

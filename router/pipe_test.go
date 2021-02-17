@@ -7,7 +7,7 @@ import (
 
 func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) error {
 			me := ziggurat.CreateMockEvent()
 			me.ValueFunc = func() []byte {
 				return []byte("foo")
@@ -16,7 +16,7 @@ func TestPipeHandlers(t *testing.T) {
 		})
 	}
 	mw2 := func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) ziggurat.ProcessStatus {
+		return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event) error {
 			byteValue := append(messageEvent.Value(), []byte("-bar")...)
 			me := ziggurat.CreateMockEvent()
 			me.ValueFunc = func() []byte {
@@ -25,11 +25,11 @@ func TestPipeHandlers(t *testing.T) {
 			return next.HandleEvent(me)
 		})
 	}
-	actualHandler := ziggurat.HandlerFunc(func(event ziggurat.Event) ziggurat.ProcessStatus {
+	actualHandler := ziggurat.HandlerFunc(func(event ziggurat.Event) error {
 		if string(event.Value()) != "foo-bar" {
 			t.Errorf("expected message to be %s,but got %s", "foo-bar", string(event.Value()))
 		}
-		return ziggurat.ProcessingSuccess
+		return nil
 	})
 	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
 	finalHandler.HandleEvent(ziggurat.MockEvent{})
