@@ -272,6 +272,7 @@ import (
 
 func main() {
 	jsonLogger := logger.NewJSONLogger("info")
+	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -287,16 +288,16 @@ func main() {
 	}
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
+	r.HandleFunc("plain-text-log", func(event ziggurat.Event, ctx context.Context) error {
+		return nil
 	})
-
+	
 	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
 
 	handler := r.Compose(processingLogger.LogStatus)
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
-	<-zig.Run(context.Background(), kafkaStreams, handler)
+	<-zig.Run(ctx, kafkaStreams, handler)
 }`
 
 var Makefile = `.PHONY: all

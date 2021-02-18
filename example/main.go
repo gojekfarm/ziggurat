@@ -24,23 +24,12 @@ func main() {
 				ConsumerCount:    1,
 				RouteGroup:       "plain-text-log",
 			},
-			{
-				BootstrapServers: "localhost:9092",
-				OriginTopics:     "json-log",
-				ConsumerGroupID:  "json_log_consumer",
-				ConsumerCount:    2,
-				RouteGroup:       "json-log",
-			},
 		},
 		Logger: jsonLogger,
 	}
 	r := router.New()
 
 	r.HandleFunc("plain-text-log", func(event ziggurat.Event, ctx context.Context) error {
-		return nil
-	})
-
-	r.HandleFunc("json-log", func(event ziggurat.Event, ctx context.Context) error {
 		return nil
 	})
 
