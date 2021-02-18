@@ -29,7 +29,7 @@ func TestZigguratStartStop(t *testing.T) {
 		return done
 	}}
 
-	<-z.Run(ctx, streams, HandlerFunc(func(messageEvent Event) error { return nil }))
+	<-z.Run(ctx, streams, HandlerFunc(func(messageEvent Event, ctx context.Context) error { return nil }))
 
 	if !isStartCalled {
 		t.Error("expected start callback to be called")
@@ -57,5 +57,5 @@ func TestZigguratRun(t *testing.T) {
 		return done
 	}}
 	z.streams = streams
-	<-z.Run(ctx, streams, HandlerFunc(func(messageEvent Event) error { return nil }))
+	<-z.Run(ctx, streams, HandlerFunc(func(messageEvent Event, ctx context.Context) error { return nil }))
 }

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
 )
@@ -18,18 +19,18 @@ type defaultRouter struct {
 	NotFoundHandler    ziggurat.HandlerFunc
 }
 
-func WithNotFoundHandler(nfh func(event ziggurat.Event) error) func(dr *defaultRouter) {
+func WithNotFoundHandler(nfh func(event ziggurat.Event, ctx context.Context) error) func(dr *defaultRouter) {
 	return func(dr *defaultRouter) {
 		dr.NotFoundHandler = nfh
 	}
 }
 
-func (dr *defaultRouter) HandleEvent(event ziggurat.Event) error {
+func (dr *defaultRouter) HandleEvent(event ziggurat.Event, ctx context.Context) error {
 	route := event.Headers()[ziggurat.HeaderMessageRoute]
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
-		return dr.NotFoundHandler.HandleEvent(event)
+		return dr.NotFoundHandler.HandleEvent(event, ctx)
 	} else {
-		return handler.HandleEvent(event)
+		return handler.HandleEvent(event, ctx)
 	}
 }
 
@@ -42,7 +43,7 @@ func New(opts ...func(dr *defaultRouter)) *defaultRouter {
 	}
 
 	if dr.NotFoundHandler == nil {
-		dr.NotFoundHandler = func(event ziggurat.Event) error {
+		dr.NotFoundHandler = func(event ziggurat.Event, ctx context.Context) error {
 			return RouteNotFoundError{routeName: event.Headers()[ziggurat.HeaderMessageRoute]}
 		}
 	}
@@ -50,7 +51,7 @@ func New(opts ...func(dr *defaultRouter)) *defaultRouter {
 
 }
 
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event ziggurat.Event) error) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(event ziggurat.Event, ctx context.Context) error) {
 	if route == "" {
 		panic(`route cannot be ""`)
 	}

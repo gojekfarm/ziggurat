@@ -1,17 +1,15 @@
 package ziggurat
 
+import "context"
+
 type ProcessStatus int
 
-const ProcessingSuccess ProcessStatus = 0
-const RetryMessage ProcessStatus = 1
-const SkipMessage ProcessStatus = 2
+type HandlerFunc func(event Event, ctx context.Context) error
 
-type HandlerFunc func(event Event) error
-
-func (h HandlerFunc) HandleEvent(event Event) error {
-	return h(event)
+func (h HandlerFunc) HandleEvent(event Event, ctx context.Context) error {
+	return h(event, ctx)
 }
 
 type Handler interface {
-	HandleEvent(event Event) error
+	HandleEvent(event Event, ctx context.Context) error
 }
