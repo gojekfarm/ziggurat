@@ -61,10 +61,10 @@ prometheus:
 
 var GoMod = `module {{.AppName}}
 
-go 1.14
+go 1.15
 
 require (
-	github.com/gojekfarm/ziggurat v1.0.0-alpha.14
+	github.com/gojekfarm/ziggurat v1.0.0-alpha.15
 	github.com/julienschmidt/httprouter v1.2.0
 )`
 
