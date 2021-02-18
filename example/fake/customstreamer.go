@@ -45,7 +45,7 @@ func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) chan
 }
 
 func FakeMiddleware(h ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(event ziggurat.Event) ziggurat.ProcessStatus {
+	return ziggurat.HandlerFunc(func(event ziggurat.Event) error {
 		fmt.Println("[FAKE MIDDLEWARE]: ", time.Now())
 		return h.HandleEvent(event)
 	})
@@ -54,9 +54,9 @@ func FakeMiddleware(h ziggurat.Handler) ziggurat.Handler {
 func main() {
 	fs := &FakeStreams{}
 	z := &ziggurat.Ziggurat{}
-	handler := FakeMiddleware(ziggurat.HandlerFunc(func(event ziggurat.Event) ziggurat.ProcessStatus {
+	handler := FakeMiddleware(ziggurat.HandlerFunc(func(event ziggurat.Event) error {
 		fmt.Println("Received message : => ", string(event.Value()))
-		return ziggurat.ProcessingSuccess
+		return nil
 	}))
 	<-z.Run(context.Background(), fs, handler)
 }
