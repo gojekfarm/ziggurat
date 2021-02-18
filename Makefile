@@ -2,7 +2,7 @@
 
 TOPIC_JSON="json-log"
 TOPIC_PLAIN_TEXT="plain-text-log"
-TEST_PACKAGES=$(shell go list ./... | grep -v -E 'cmd|logger|example|mw')
+TEST_PACKAGES=$(shell go list ./... | grep -v -E 'cmd|logger|example')
 EXAMPLE_BUILD_PKG="./example/main.go"
 
 docker.start-kafka:
