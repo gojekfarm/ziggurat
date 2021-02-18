@@ -49,7 +49,7 @@ var startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.Str
 			}
 		}
 		close(sendCh)
-		l.Error("stopping consumer", ctx.Err(), map[string]interface{}{"CONSUMER-ID": instanceID})
+		l.Error("stopping consumer", ctx.Err(), map[string]interface{}{"consumerID": instanceID})
 		<-workerDoneChan
 		wg.Done()
 	}(instanceID)
