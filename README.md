@@ -33,6 +33,7 @@ import (
 
 func main() {
 	jsonLogger := logger.NewJSONLogger("info")
+	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -48,8 +49,8 @@ func main() {
 	}
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(event ziggurat.Event) ziggurat.ProcessStatus {
-		return ziggurat.ProcessingSuccess
+	r.HandleFunc("plain-text-log", func(event ziggurat.Event, ctx context.Context) error {
+		return nil
 	})
 
 	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
@@ -57,7 +58,7 @@ func main() {
 	handler := r.Compose(processingLogger.LogStatus)
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
-	<-zig.Run(context.Background(), kafkaStreams, handler)
+	<-zig.Run(ctx, kafkaStreams, handler)
 }
 ```
 
@@ -84,12 +85,10 @@ type Streamer interface {
 ```go
 package ziggurat
 
-const ProcessingSuccess ProcessStatus = 0
-const RetryMessage ProcessStatus = 1
-const SkipMessage ProcessStatus = 2
+import "context"
 
 type Handler interface {
-	HandleEvent(event Event) ProcessStatus
+	HandleEvent(event Event, ctx context.Context) error
 }
 
 // The Handler interface is very similar to the http.Handler interface
