@@ -21,7 +21,7 @@ var createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.Structured
 var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition) error {
 
 	// at least once delivery
-	// offsets are stored in memmory and are later flushed by the auto-commit timer
+	// offsets are stored in memory and are later flushed by the auto-commit timer
 
 	if partition.Error != nil {
 		return ErrOffsetCommit
