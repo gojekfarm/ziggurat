@@ -38,7 +38,6 @@ func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 
 func (s *DefaultHttpServer) Run(ctx context.Context) chan error {
 	errorChan := make(chan error)
-	s.router.GET("/v1/ping", pingHandler)
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
 			errorChan <- err

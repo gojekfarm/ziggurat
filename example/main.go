@@ -38,6 +38,7 @@ func main() {
 	handler := r.Compose(processingLogger.LogStatus)
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
+
 	<-zig.Run(ctx, kafkaStreams, handler)
-	
+
 }
