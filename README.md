@@ -93,7 +93,6 @@ type Handler interface {
 
 // The Handler interface is very similar to the http.Handler interface
 // The default router shipped with Ziggurat also implements the Handler interface
-// This allows the community to write powerful pluggable behaviour as middleware
 ```
 
 ### Event interface
