@@ -39,4 +39,5 @@ func main() {
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
 	<-zig.Run(ctx, kafkaStreams, handler)
+	
 }
