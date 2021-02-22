@@ -33,9 +33,7 @@ func main() {
 		return nil
 	})
 
-	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
-
-	handler := r.Compose(processingLogger.LogStatus)
+	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
 
