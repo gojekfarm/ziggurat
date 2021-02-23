@@ -26,10 +26,6 @@ var startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.Str
 	go func(instanceID string) {
 		run := true
 		doneCh := ctx.Done()
-		worker := NewWorker(10)
-		sendCh, workerDoneChan := worker.run(func(message *kafka.Message) {
-			kafkaProcessor(message, route, consumer, h, l, ctx)
-		})
 
 		for run {
 			select {
@@ -44,13 +40,15 @@ var startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.Str
 					continue
 				}
 				if msg != nil {
-					sendCh <- msg
+					message := Message{
+						headers: map[string]string{ziggurat.HeaderMessageRoute: route, ziggurat.HeaderMessageType: "kafka"},
+						value:   msg.Value,
+					}
+					h.HandleEvent(message, ctx)
 				}
 			}
 		}
-		close(sendCh)
 		l.Error("stopping consumer", ctx.Err(), map[string]interface{}{"consumerID": instanceID})
-		<-workerDoneChan
 		wg.Done()
 	}(instanceID)
 }
