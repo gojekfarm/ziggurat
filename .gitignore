@@ -4,3 +4,4 @@ tags
 .idea
 cp.out
 ziggurat_example
+*.swp
