@@ -24,6 +24,13 @@ func main() {
 				ConsumerCount:    1,
 				RouteGroup:       "plain-text-log",
 			},
+			{
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "json-log",
+				ConsumerGroupID:  "json_consumer",
+				ConsumerCount:    1,
+				RouteGroup:       "json-log",
+			},
 		},
 		Logger: jsonLogger,
 	}
@@ -31,6 +38,10 @@ func main() {
 
 	r.HandleFunc("plain-text-log", func(event ziggurat.Event, ctx context.Context) error {
 		return nil
+	})
+
+	r.HandleFunc("json-log", func(event ziggurat.Event, ctx context.Context) error {
+		return ziggurat.ErrProcessingFailed{"retry"}
 	})
 
 	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
