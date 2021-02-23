@@ -20,6 +20,8 @@ ziggurat new <app_name>
 ### Main file
 
 ```go
+//+build ignore
+
 package main
 
 import (
@@ -44,6 +46,13 @@ func main() {
 				ConsumerCount:    1,
 				RouteGroup:       "plain-text-log",
 			},
+			{
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "json-log",
+				ConsumerGroupID:  "json_consumer",
+				ConsumerCount:    1,
+				RouteGroup:       "json-log",
+			},
 		},
 		Logger: jsonLogger,
 	}
@@ -53,12 +62,16 @@ func main() {
 		return nil
 	})
 
-	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
+	r.HandleFunc("json-log", func(event ziggurat.Event, ctx context.Context) error {
+		return ziggurat.ErrProcessingFailed{"retry"}
+	})
 
-	handler := r.Compose(processingLogger.LogStatus)
+	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
+
 	<-zig.Run(ctx, kafkaStreams, handler)
+
 }
 ```
 
