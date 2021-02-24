@@ -44,7 +44,7 @@ func NewConsumerConfig(bootstrapServers string, groupID string) *kafka.ConfigMap
 		"group.id":                 groupID,
 		"auto.offset.reset":        "earliest",
 		"enable.auto.commit":       true,
-		"auto.commit.interval.ms":  2000,
+		"auto.commit.interval.ms":  5000,
 		"debug":                    "consumer,broker",
 		"go.logs.channel.enable":   true,
 		"enable.auto.offset.store": false,

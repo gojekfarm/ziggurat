@@ -18,7 +18,12 @@ var startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.Str
 	go func() {
 		for evt := range logChan {
 			if evt.Tag != "COMMIT" {
-				l.Info(evt.Message, map[string]interface{}{"client": evt.Name, "tag": evt.Tag, "ts": evt.Timestamp, "severity": evt.Level})
+				l.Info(evt.Message, map[string]interface{}{
+					"client":   evt.Name,
+					"tag":      evt.Tag,
+					"ts":       evt.Timestamp,
+					"severity": evt.Level,
+				})
 			}
 		}
 	}()
@@ -40,11 +45,7 @@ var startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.Str
 					continue
 				}
 				if msg != nil {
-					message := Message{
-						headers: map[string]string{ziggurat.HeaderMessageRoute: route, ziggurat.HeaderMessageType: "kafka"},
-						value:   msg.Value,
-					}
-					h.HandleEvent(message, ctx)
+					kafkaProcessor(msg, route, consumer, h, l, ctx)
 				}
 			}
 		}
