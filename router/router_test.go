@@ -16,41 +16,41 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 	expectedEvent.HeadersFunc = func() map[string]string {
 		return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
 	}
-	dr.HandleFunc("foo", func(event ziggurat.Event, ctx context.Context) error {
+	dr.HandleFunc("foo", func(ctx context.Context, event ziggurat.Event) error {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
 		return nil
 	})
-	dr.HandleEvent(ziggurat.MockEvent{
+	dr.HandleEvent(context.Background(), ziggurat.MockEvent{
 		ValueFunc: func() []byte {
 			return nil
 		},
 		HeadersFunc: func() map[string]string {
 			return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
 		},
-	}, context.Background())
+	})
 }
 
 func TestDefaultRouter_NotFoundHandler(t *testing.T) {
 	notFoundHandlerCalled := false
-	dr := New(WithNotFoundHandler(func(event ziggurat.Event, ctx context.Context) error {
+	dr := New(WithNotFoundHandler(func(ctx context.Context, event ziggurat.Event) error {
 		notFoundHandlerCalled = true
 		return nil
 	}))
 
-	dr.HandleFunc("foo", func(event ziggurat.Event, ctx context.Context) error {
+	dr.HandleFunc("foo", func(ctx context.Context, event ziggurat.Event) error {
 		return nil
 	})
 
-	dr.HandleEvent(ziggurat.MockEvent{
+	dr.HandleEvent(context.Background(), ziggurat.MockEvent{
 		ValueFunc: func() []byte {
 			return []byte{}
 		},
 		HeadersFunc: func() map[string]string {
 			return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
 		},
-	}, context.Background())
+	})
 
 	if !notFoundHandlerCalled {
 		t.Errorf("expected %v got %v", true, notFoundHandlerCalled)

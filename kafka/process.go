@@ -13,7 +13,7 @@ func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggu
 	}
 	event := NewMessage(msg.Value, headers)
 
-	h.HandleEvent(event, ctx)
+	h.HandleEvent(ctx, event)
 	err := storeOffsets(c, msg.TopicPartition)
 	l.Error("error storing offsets: %v", err, nil)
 }

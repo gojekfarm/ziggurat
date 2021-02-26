@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 func TestConsumer_create(t *testing.T) {
 	l := logger.NewJSONLogger("disabled")
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
-	handler := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event, ctx context.Context) error {
+	handler := ziggurat.HandlerFunc(func(messagectx context.Context, event ziggurat.Event) error {
 		return nil
 	})
 	oldStartConsumer := startConsumer
@@ -64,9 +64,9 @@ func TestConsumer_start(t *testing.T) {
 			Headers:       nil,
 		}, nil
 	}
-	hf := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event, ctx context.Context) error {
-		if bytes.Compare(messageEvent.Value(), expectedBytes) != 0 {
-			t.Errorf("expected %s but got %s", expectedBytes, messageEvent.Value())
+	hf := ziggurat.HandlerFunc(func(messagectx context.Context, event ziggurat.Event) error {
+		if bytes.Compare(event.Value(), expectedBytes) != 0 {
+			t.Errorf("expected %s but got %s", expectedBytes, event.Value())
 		}
 		return nil
 	})
@@ -100,7 +100,7 @@ func TestConsumer_AllBrokersDown(t *testing.T) {
 	deadlineTime := time.Now().Add(time.Second * 6)
 	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
 	defer cancelFunc()
-	h := ziggurat.HandlerFunc(func(messageEvent ziggurat.Event, ctx context.Context) error {
+	h := ziggurat.HandlerFunc(func(messagectx context.Context, event ziggurat.Event) error {
 		return nil
 	})
 	wg.Add(1)

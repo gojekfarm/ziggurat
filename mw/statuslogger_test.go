@@ -45,12 +45,12 @@ func TestProcessingStatusLogger_LogStatus(t *testing.T) {
 			return map[string]string{ziggurat.HeaderMessageRoute: "foo"}
 		},
 	}
-	sl.LogStatus(ziggurat.HandlerFunc(func(event ziggurat.Event, ctx context.Context) error {
+	sl.LogStatus(ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		return nil
-	})).HandleEvent(me, context.Background())
+	})).HandleEvent(context.Background(), me)
 
-	sl.LogStatus(ziggurat.HandlerFunc(func(event ziggurat.Event, ctx context.Context) error {
+	sl.LogStatus(ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		return errors.New("error in handler")
-	})).HandleEvent(me, context.Background())
+	})).HandleEvent(context.Background(), me)
 
 }

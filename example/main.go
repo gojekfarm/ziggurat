@@ -12,6 +12,7 @@ import (
 )
 
 func main() {
+
 	jsonLogger := logger.NewJSONLogger("info")
 	ctx := context.Background()
 
@@ -36,11 +37,11 @@ func main() {
 	}
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(event ziggurat.Event, ctx context.Context) error {
+	r.HandleFunc("plain-text-log", func(ctx context.Context, event ziggurat.Event) error {
 		return nil
 	})
 
-	r.HandleFunc("json-log", func(event ziggurat.Event, ctx context.Context) error {
+	r.HandleFunc("json-log", func(ctx context.Context, event ziggurat.Event) error {
 		return ziggurat.ErrProcessingFailed{"retry"}
 	})
 

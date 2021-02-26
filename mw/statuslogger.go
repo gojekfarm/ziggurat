@@ -12,16 +12,16 @@ type (
 	}
 )
 
-func (p *ProcessingStatusLogger) HandleEvent(event ziggurat.Event, ctx context.Context) error {
-	return p.LogStatus(p.Handler).HandleEvent(event, ctx)
+func (p *ProcessingStatusLogger) HandleEvent(ctx context.Context, event ziggurat.Event) error {
+	return p.LogStatus(p.Handler).HandleEvent(ctx, event)
 }
 
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(messageEvent ziggurat.Event, ctx context.Context) error {
+	return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent ziggurat.Event) error {
 		if p.Logger == nil {
-			return next.HandleEvent(messageEvent, ctx)
+			return next.HandleEvent(ctx, messageEvent)
 		}
-		err := next.HandleEvent(messageEvent, ctx)
+		err := next.HandleEvent(ctx, messageEvent)
 		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute], "value": messageEvent.Value()}
 		if err != nil {
 			p.Logger.Error("message processing failed", err, args)
