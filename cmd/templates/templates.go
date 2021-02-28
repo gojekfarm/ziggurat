@@ -288,7 +288,7 @@ func main() {
 	}
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(event ziggurat.Event, ctx context.Context) error {
+	r.HandleFunc("plain-text-log", func(ctx context.Context,event ziggurat.Event) error {
 		return nil
 	})
 	
