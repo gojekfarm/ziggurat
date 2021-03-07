@@ -35,8 +35,18 @@ func NewProcessStatusLogger(opts ...Opts) *ProcessingStatusLogger {
 	return psl
 }
 
+func (p *ProcessingStatusLogger) HandleEvent(ctx context.Context, event ziggurat.Event) error {
+	if p.handler == nil {
+		panic("handler cannot be nil")
+	}
+	return p.LogStatus(p.handler).HandleEvent(ctx, event)
+}
+
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent ziggurat.Event) error {
+		if p.logger == nil {
+			return next.HandleEvent(ctx, messageEvent)
+		}
 		err := next.HandleEvent(ctx, messageEvent)
 		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute], "value": messageEvent.Value()}
 		if err != nil {
