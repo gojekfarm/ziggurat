@@ -45,9 +45,9 @@ func main() {
 		return ziggurat.ErrProcessingFailed{Action: "retry"}
 	})
 
-	handler := mw.NewProcessStatusLogger(mw.WithHandler(r))
-	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
+	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
 
+	zig := &ziggurat.Ziggurat{}
 	<-zig.Run(ctx, kafkaStreams, handler)
 
 }

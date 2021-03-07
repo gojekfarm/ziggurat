@@ -35,7 +35,7 @@ func TestProcessingStatusLogger_LogStatus(t *testing.T) {
 		},
 	}
 
-	sl := ProcessingStatusLogger{logger: dl}
+	sl := ProcessingStatusLogger{Logger: dl}
 
 	me := ziggurat.MockEvent{
 		ValueFunc: func() []byte {
