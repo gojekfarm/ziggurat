@@ -3,6 +3,7 @@ package mw
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 type (
@@ -32,6 +33,10 @@ func NewProcessStatusLogger(opts ...Opts) *ProcessingStatusLogger {
 		opt(psl)
 	}
 
+	if psl.logger == nil {
+		psl.logger = logger.NewJSONLogger("info")
+	}
+
 	return psl
 }
 
@@ -44,9 +49,6 @@ func (p *ProcessingStatusLogger) HandleEvent(ctx context.Context, event ziggurat
 
 func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent ziggurat.Event) error {
-		if p.logger == nil {
-			return next.HandleEvent(ctx, messageEvent)
-		}
 		err := next.HandleEvent(ctx, messageEvent)
 		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute], "value": messageEvent.Value()}
 		if err != nil {

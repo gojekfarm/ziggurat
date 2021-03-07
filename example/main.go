@@ -42,10 +42,10 @@ func main() {
 	})
 
 	r.HandleFunc("json-log", func(ctx context.Context, event ziggurat.Event) error {
-		return ziggurat.ErrProcessingFailed{"retry"}
+		return ziggurat.ErrProcessingFailed{Action: "retry"}
 	})
 
-	handler := mw.NewProcessStatusLogger(r)
+	handler := mw.NewProcessStatusLogger(mw.WithHandler(r))
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
 
 	<-zig.Run(ctx, kafkaStreams, handler)
