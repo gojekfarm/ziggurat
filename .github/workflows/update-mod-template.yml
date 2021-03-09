@@ -2,10 +2,7 @@ name: update-go-mod-template
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to tag with'
-        required: true
+    
 
 jobs:
   update-template:
