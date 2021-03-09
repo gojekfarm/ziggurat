@@ -1,17 +1,16 @@
 package server
 
 import (
+	"github.com/gojekfarm/ziggurat/logger"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 func TestRequestLoggerMW(t *testing.T) {
 	expectedArgs := []map[string]interface{}{{"path": "/test", "method": http.MethodGet}}
-	mockLogger := ziggurat.MockStructureLogger{}
+	mockLogger := logger.DiscardLogger{}
 	mockLogger.InfoFunc = func(m string, kv ...map[string]interface{}) {
 		if !reflect.DeepEqual(kv, expectedArgs) {
 			t.Errorf("expected %+v got %+v", expectedArgs, kv)

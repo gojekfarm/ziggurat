@@ -21,7 +21,7 @@ func TestZigguratStartStop(t *testing.T) {
 		isStopCalled = true
 	})
 
-	streams := MockKStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
+	streams := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
 		done := make(chan error)
 		go func() {
 			<-ctx.Done()
@@ -45,7 +45,7 @@ func TestZigguratRun(t *testing.T) {
 	ctx, cfn := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cfn()
 
-	streams := MockKStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
+	streams := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) chan error {
 		done := make(chan error)
 		go func() {
 			<-ctx.Done()
