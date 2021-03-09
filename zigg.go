@@ -3,7 +3,7 @@ package ziggurat
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/sethvargo/go-signalcontext"
+	"os/signal"
 	"sync/atomic"
 	"syscall"
 )
@@ -20,7 +20,7 @@ type Ziggurat struct {
 	streams   Streamer
 }
 
-func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) chan error {
+func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) error {
 	if atomic.LoadInt32(&z.isRunning) == 1 {
 		return nil
 	}
@@ -39,21 +39,19 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) c
 
 	z.streams = streams
 
-	doneChan := make(chan error)
-	parentCtx, canceler := signalcontext.Wrap(ctx, syscall.SIGINT, syscall.SIGTERM)
+	parentCtx, canceler := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
 
 	z.handler = handler
 
 	atomic.StoreInt32(&z.isRunning, 1)
-	go func() {
-		err := <-z.start(parentCtx, z.startFunc)
-		z.Logger.Error("streams shutdown", err)
-		canceler()
-		atomic.StoreInt32(&z.isRunning, 0)
-		z.stop(z.stopFunc)
-		doneChan <- err
-	}()
-	return doneChan
+
+	err := <-z.start(parentCtx, z.startFunc)
+	z.Logger.Error("streams shutdown", err)
+	canceler()
+	atomic.StoreInt32(&z.isRunning, 0)
+	z.stop(z.stopFunc)
+
+	return err
 }
 
 func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan error {

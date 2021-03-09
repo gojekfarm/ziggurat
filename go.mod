@@ -6,5 +6,4 @@ require (
 	github.com/confluentinc/confluent-kafka-go v1.5.2
 	github.com/julienschmidt/httprouter v1.2.0
 	github.com/rs/zerolog v1.19.0
-	github.com/sethvargo/go-signalcontext v0.1.0
 )

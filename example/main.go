@@ -48,6 +48,6 @@ func main() {
 	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
 
 	zig := &ziggurat.Ziggurat{}
-	<-zig.Run(ctx, kafkaStreams, handler)
+	zig.Run(ctx, kafkaStreams, handler)
 
 }
