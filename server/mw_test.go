@@ -1,11 +1,12 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat/logger"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 func TestRequestLoggerMW(t *testing.T) {
