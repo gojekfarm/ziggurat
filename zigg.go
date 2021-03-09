@@ -2,10 +2,11 @@ package ziggurat
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/logger"
 	"os/signal"
 	"sync/atomic"
 	"syscall"
+
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 type StartFunction func(ctx context.Context)

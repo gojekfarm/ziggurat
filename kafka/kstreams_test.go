@@ -2,11 +2,12 @@ package kafka
 
 import (
 	"context"
+	"sync"
+	"testing"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/logger"
-	"sync"
-	"testing"
 )
 
 func TestKafkaStreams_Consume(t *testing.T) {

@@ -1,9 +1,10 @@
 package kafka
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"sync/atomic"
 	"testing"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 func TestConsumerWorker_Run(t *testing.T) {

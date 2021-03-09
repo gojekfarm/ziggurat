@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/gojekfarm/ziggurat"
 	"net/http"
+
+	"github.com/gojekfarm/ziggurat"
 )
 
 func HTTPRequestLogger(logger ziggurat.StructuredLogger) func(next http.Handler) http.Handler {

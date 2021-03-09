@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"fmt"
+
 	"github.com/gojekfarm/ziggurat"
 )
 
@@ -19,7 +20,7 @@ type defaultRouter struct {
 	NotFoundHandler    ziggurat.HandlerFunc
 }
 
-func WithNotFoundHandler(nfh func(ctx context.Context, event ziggurat.Event, ) error) func(dr *defaultRouter) {
+func WithNotFoundHandler(nfh func(ctx context.Context, event ziggurat.Event) error) func(dr *defaultRouter) {
 	return func(dr *defaultRouter) {
 		dr.NotFoundHandler = nfh
 	}

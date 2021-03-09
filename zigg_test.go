@@ -2,9 +2,10 @@ package ziggurat
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/logger"
 	"testing"
 	"time"
+
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 func TestZigguratStartStop(t *testing.T) {

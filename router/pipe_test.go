@@ -2,8 +2,9 @@ package router
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat"
 	"testing"
+
+	"github.com/gojekfarm/ziggurat"
 )
 
 func TestPipeHandlers(t *testing.T) {

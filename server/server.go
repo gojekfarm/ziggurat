@@ -2,9 +2,10 @@ package server
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 )
 
 var defaultHTTPPort = "8080"

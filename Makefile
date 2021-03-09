@@ -14,6 +14,9 @@ docker.start-kafka:
 	@echo 'Please run `go run main.go` in a new tab or terminal'
 	sleep 5
 
+format:
+	@goimports -l -w ./
+
 docker.start-metrics:
 	docker-compose -f docker-compose-metrics.yml down
 	docker-compose -f docker-compose-metrics.yml up -d

@@ -1,9 +1,10 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gojekfarm/ziggurat/cmd"
 	"github.com/gojekfarm/ziggurat/cmd/handlers"
-	"os"
 )
 
 func main() {

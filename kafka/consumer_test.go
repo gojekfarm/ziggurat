@@ -3,14 +3,15 @@ package kafka
 import (
 	"bytes"
 	"context"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/rs/zerolog"
 	"os"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/rs/zerolog"
 )
 
 func TestMain(m *testing.M) {

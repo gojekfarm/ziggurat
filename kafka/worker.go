@@ -1,8 +1,9 @@
 package kafka
 
 import (
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"sync"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 type Worker struct {

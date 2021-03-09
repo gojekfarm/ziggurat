@@ -5,8 +5,9 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/ziggurat"
 	"time"
+
+	"github.com/gojekfarm/ziggurat"
 )
 
 type FakeStreams struct{}

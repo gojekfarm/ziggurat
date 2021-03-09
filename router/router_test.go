@@ -2,9 +2,10 @@ package router
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat"
 	"reflect"
 	"testing"
+
+	"github.com/gojekfarm/ziggurat"
 )
 
 func TestDefaultRouter_HandleMessage(t *testing.T) {

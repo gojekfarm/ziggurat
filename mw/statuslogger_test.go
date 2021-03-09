@@ -3,10 +3,11 @@ package mw
 import (
 	"context"
 	"errors"
-	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
 	"reflect"
 	"testing"
+
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 func TestProcessingStatusLogger_LogStatus(t *testing.T) {

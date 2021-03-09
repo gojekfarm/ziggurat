@@ -2,11 +2,12 @@ package server
 
 import (
 	"context"
-	"github.com/julienschmidt/httprouter"
 	"net"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/julienschmidt/httprouter"
 )
 
 const serverAddr = "localhost:8080"

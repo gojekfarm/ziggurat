@@ -2,11 +2,12 @@ package kafka
 
 import (
 	"context"
+	"strings"
+	"sync"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/logger"
-	"strings"
-	"sync"
 )
 
 type ConsumerConfig struct {
