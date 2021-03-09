@@ -13,7 +13,7 @@ func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggu
 		ziggurat.HeaderMessageType:  "kafka",
 	}
 
-	event := NewMessage(msg.Value, headers)
+	event := NewMessage(msg.Value, msg.Key, headers)
 	event.Timestamp = msg.Timestamp
 	event.Topic = *msg.TopicPartition.Topic
 	event.Partition = int(msg.TopicPartition.Partition)
