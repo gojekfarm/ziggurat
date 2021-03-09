@@ -3,7 +3,6 @@ package ziggurat
 import (
 	"context"
 	"os/signal"
-	"sync/atomic"
 	"syscall"
 
 	"github.com/gojekfarm/ziggurat/logger"
@@ -17,14 +16,10 @@ type Ziggurat struct {
 	Logger    StructuredLogger
 	startFunc StartFunction
 	stopFunc  StopFunction
-	isRunning int32
 	streams   Streamer
 }
 
 func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) error {
-	if atomic.LoadInt32(&z.isRunning) == 1 {
-		return nil
-	}
 
 	if z.Logger == nil {
 		z.Logger = logger.NewJSONLogger("info")
@@ -44,12 +39,10 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) e
 
 	z.handler = handler
 
-	atomic.StoreInt32(&z.isRunning, 1)
-
 	err := <-z.start(parentCtx, z.startFunc)
 	z.Logger.Error("streams shutdown", err)
 	canceler()
-	atomic.StoreInt32(&z.isRunning, 0)
+
 	z.stop(z.stopFunc)
 
 	return err
@@ -70,13 +63,6 @@ func (z *Ziggurat) stop(stopFunc StopFunction) {
 		z.Logger.Info("invoking stop function")
 		stopFunc()
 	}
-}
-
-func (z *Ziggurat) IsRunning() bool {
-	if atomic.LoadInt32(&z.isRunning) == 1 {
-		return true
-	}
-	return false
 }
 
 func (z *Ziggurat) StartFunc(function StartFunction) {
