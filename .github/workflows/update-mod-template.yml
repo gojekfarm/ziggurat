@@ -18,3 +18,5 @@ jobs:
           git config --global user.name 'github-actions'
           git commit -am "updates version in go.mod template"
           git push origin master
+          git tag -f $LATEST_TAG $(git rev-parse HEAD)
+          git push --force --tags
