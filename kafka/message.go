@@ -26,6 +26,7 @@ func (m Message) Key() []byte {
 func NewMessage(value []byte, key []byte, headers map[string]string) Message {
 	return Message{
 		value:   value,
+		key:     key,
 		headers: headers,
 	}
 }
