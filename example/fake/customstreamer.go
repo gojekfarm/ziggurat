@@ -15,6 +15,10 @@ type FakeEvent struct {
 	v []byte
 }
 
+func (f FakeEvent) Key() []byte {
+	return nil
+}
+
 func (f FakeEvent) Value() []byte {
 	return f.v
 }
@@ -34,7 +38,7 @@ func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) chan
 				errChan <- ctx.Err()
 				return
 			default:
-				handler.Handle(FakeEvent{
+				handler.Handle(ctx, FakeEvent{
 					v: []byte(fmt.Sprintf("<<< Fake streamer message >>> [%d]", i)),
 				})
 				i++
@@ -46,18 +50,21 @@ func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) chan
 }
 
 func FakeMiddleware(h ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(event ziggurat.Event) error {
+	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		fmt.Println("[FAKE MIDDLEWARE]: ", time.Now())
-		return h.Handle(event)
+		return h.Handle(ctx, event)
 	})
 }
 
 func main() {
 	fs := &FakeStreams{}
 	z := &ziggurat.Ziggurat{}
-	handler := FakeMiddleware(ziggurat.HandlerFunc(func(event ziggurat.Event) error {
+	hf := ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		fmt.Println("Received message : => ", string(event.Value()))
 		return nil
-	}))
-	<-z.Run(context.Background(), fs, handler)
+	})
+	handler := FakeMiddleware(hf)
+	if err := z.Run(context.Background(), fs, handler); err != nil {
+		fmt.Println("error: ", err)
+	}
 }
