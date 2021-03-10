@@ -26,6 +26,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
@@ -70,7 +71,9 @@ func main() {
 
 	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
 
-	<-zig.Run(ctx, kafkaStreams, handler)
+	if runErr := zig.Run(ctx, kafkaStreams, handler); runErr != nil {
+		fmt.Println("error running streams ", runErr)
+	}
 
 }
 ```
