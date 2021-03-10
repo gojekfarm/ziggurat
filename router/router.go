@@ -26,12 +26,12 @@ func WithNotFoundHandler(nfh func(ctx context.Context, event ziggurat.Event) err
 	}
 }
 
-func (dr *defaultRouter) HandleEvent(ctx context.Context, event ziggurat.Event) error {
+func (dr *defaultRouter) Handle(ctx context.Context, event ziggurat.Event) error {
 	route := event.Headers()[ziggurat.HeaderMessageRoute]
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
-		return dr.NotFoundHandler.HandleEvent(ctx, event)
+		return dr.NotFoundHandler.Handle(ctx, event)
 	} else {
-		return handler.HandleEvent(ctx, event)
+		return handler.Handle(ctx, event)
 	}
 }
 

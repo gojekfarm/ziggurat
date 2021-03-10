@@ -18,7 +18,7 @@ func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggu
 	event.Topic = *msg.TopicPartition.Topic
 	event.Partition = int(msg.TopicPartition.Partition)
 
-	h.HandleEvent(ctx, event)
+	h.Handle(ctx, event)
 	err := storeOffsets(c, msg.TopicPartition)
 	l.Error("error storing offsets: %v", err, map[string]interface{}{"topic": event.Topic, "partition": event.Partition})
 }

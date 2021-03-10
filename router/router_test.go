@@ -23,7 +23,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		}
 		return nil
 	})
-	dr.HandleEvent(context.Background(), ziggurat.MockEvent{
+	dr.Handle(context.Background(), ziggurat.MockEvent{
 		ValueFunc: func() []byte {
 			return nil
 		},
@@ -44,7 +44,7 @@ func TestDefaultRouter_NotFoundHandler(t *testing.T) {
 		return nil
 	})
 
-	dr.HandleEvent(context.Background(), ziggurat.MockEvent{
+	dr.Handle(context.Background(), ziggurat.MockEvent{
 		ValueFunc: func() []byte {
 			return []byte{}
 		},

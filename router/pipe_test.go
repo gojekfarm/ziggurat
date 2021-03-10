@@ -14,7 +14,7 @@ func TestPipeHandlers(t *testing.T) {
 			me.ValueFunc = func() []byte {
 				return []byte("foo")
 			}
-			return next.HandleEvent(ctx, me)
+			return next.Handle(ctx, me)
 		})
 	}
 	mw2 := func(next ziggurat.Handler) ziggurat.Handler {
@@ -24,7 +24,7 @@ func TestPipeHandlers(t *testing.T) {
 			me.ValueFunc = func() []byte {
 				return byteValue
 			}
-			return next.HandleEvent(ctx, me)
+			return next.Handle(ctx, me)
 		})
 	}
 	actualHandler := ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
@@ -34,5 +34,5 @@ func TestPipeHandlers(t *testing.T) {
 		return nil
 	})
 	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
-	finalHandler.HandleEvent(context.Background(), ziggurat.MockEvent{})
+	finalHandler.Handle(context.Background(), ziggurat.MockEvent{})
 }

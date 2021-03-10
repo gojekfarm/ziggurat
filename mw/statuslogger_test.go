@@ -48,10 +48,10 @@ func TestProcessingStatusLogger_LogStatus(t *testing.T) {
 	}
 	sl.LogStatus(ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		return nil
-	})).HandleEvent(context.Background(), me)
+	})).Handle(context.Background(), me)
 
 	sl.LogStatus(ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		return errors.New("error in handler")
-	})).HandleEvent(context.Background(), me)
+	})).Handle(context.Background(), me)
 
 }

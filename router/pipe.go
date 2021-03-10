@@ -19,7 +19,7 @@ var PipeHandlers = func(funcs ...func(handler ziggurat.Handler) ziggurat.Handler
 					handlerResult = f(handlerResult)
 				}
 			}
-			return handlerResult.HandleEvent(ctx, event)
+			return handlerResult.Handle(ctx, event)
 		})
 	}
 }
