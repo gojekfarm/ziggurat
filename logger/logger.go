@@ -8,6 +8,13 @@ import (
 
 const callerFrameSkipCount = 3
 
+const LevelInfo = "info"
+const Disabled = "disabled"
+const LevelWarn = "warn"
+const LevelDebug = "debug"
+const LevelFatal = "fatal"
+const LevelError = "error"
+
 var logLevelMapping = map[string]zerolog.Level{
 	"debug":    zerolog.DebugLevel,
 	"info":     zerolog.InfoLevel,
