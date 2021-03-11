@@ -5,10 +5,10 @@ import (
 )
 
 type mockStreams struct {
-	ConsumeFunc func(ctx context.Context, handler Handler) chan error
+	ConsumeFunc func(ctx context.Context, handler Handler) error
 }
 
-func (m mockStreams) Stream(ctx context.Context, handler Handler) chan error {
+func (m mockStreams) Stream(ctx context.Context, handler Handler) error {
 	return m.ConsumeFunc(ctx, handler)
 }
 

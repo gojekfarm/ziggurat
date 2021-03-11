@@ -39,7 +39,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) e
 
 	z.handler = handler
 
-	err := <-z.start(parentCtx, z.startFunc)
+	err := z.start(parentCtx, z.startFunc)
 	z.Logger.Error("streams shutdown", err)
 	canceler()
 
@@ -48,7 +48,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) e
 	return err
 }
 
-func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) chan error {
+func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) error {
 	if startCallback != nil {
 		z.Logger.Info("invoking start function")
 		startCallback(ctx)

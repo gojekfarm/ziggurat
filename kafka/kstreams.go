@@ -26,13 +26,12 @@ type Streams struct {
 	StreamConfig     StreamConfig
 }
 
-func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) chan error {
+func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 	if k.Logger == nil {
 		k.Logger = logger.NewJSONLogger("info")
 	}
 	var wg sync.WaitGroup
 	k.routeConsumerMap = make(map[string][]*kafka.Consumer, len(k.StreamConfig))
-	stopChan := make(chan error)
 	for _, stream := range k.StreamConfig {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.ConsumerGroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
@@ -40,13 +39,10 @@ func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) chan err
 		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.ConsumerCount, handler, k.Logger, &wg)
 	}
 
-	go func() {
-		wg.Wait()
-		k.stop()
-		stopChan <- nil
-	}()
+	wg.Wait()
+	k.stop()
 
-	return stopChan
+	return nil
 }
 
 func (k *Streams) stop() {
