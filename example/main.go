@@ -14,7 +14,7 @@ import (
 
 func main() {
 
-	jsonLogger := logger.NewJSONLogger("info")
+	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
