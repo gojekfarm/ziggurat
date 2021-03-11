@@ -20,7 +20,6 @@ ziggurat new <app_name>
 ### Main file
 
 ```go
-//+build ignore
 
 package main
 
