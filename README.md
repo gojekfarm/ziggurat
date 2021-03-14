@@ -88,7 +88,7 @@ package ziggurat
 import "context"
 
 type Streamer interface {
-	Stream(ctx context.Context, handler Handler) chan error
+	Stream(ctx context.Context, handler Handler) error
 }
 
 // Any type can implement the Streamer interface to stream data from any source
