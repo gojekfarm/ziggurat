@@ -62,7 +62,7 @@ func main() {
 	})
 
 	r.HandleFunc("json-log", func(event ziggurat.Event, ctx context.Context) error {
-		return ziggurat.ErrProcessingFailed{"retry"}
+		return ziggurat.ErrProcessingFailed{}
 	})
 
 	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
