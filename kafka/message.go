@@ -7,8 +7,8 @@ type Message struct {
 	key       []byte
 	headers   map[string]string
 	Timestamp time.Time
-	Partition int
 	Topic     string
+	Partition int
 }
 
 func (m Message) Value() []byte {

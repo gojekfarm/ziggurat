@@ -1,20 +1,21 @@
-//+build ignore
-
 package main
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/mw/statsd"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/router"
 )
 
 func main() {
 
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
+	statsdPublisher := statsd.NewPublisher()
+	psLogger := mw.ProcessingStatusLogger{Logger: jsonLogger}
 	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
@@ -46,9 +47,13 @@ func main() {
 		return ziggurat.ErrProcessingFailed{}
 	})
 
-	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
+	handler := r.Compose(psLogger.LogStatus, statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics)
 
 	zig := &ziggurat.Ziggurat{}
+
+	zig.StartFunc(func(ctx context.Context) {
+		statsdPublisher.Run(ctx)
+	})
 	zig.Run(ctx, kafkaStreams, handler)
 
 }
