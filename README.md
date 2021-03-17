@@ -102,7 +102,7 @@ package ziggurat
 import "context"
 
 type Handler interface {
-	HandleEvent(event Event, ctx context.Context) error
+	Handle(event Event, ctx context.Context) error
 }
 
 // The Handler interface is very similar to the http.Handler interface
@@ -116,6 +116,7 @@ package ziggurat
 
 type Event interface {
 	Value() []byte
+	Key() 	[]byte
 	Headers() map[string]string
 }
 
