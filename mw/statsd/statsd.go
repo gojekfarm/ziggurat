@@ -2,9 +2,10 @@ package statsd
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/kafka"
 	"strconv"
 	"time"
+
+	"github.com/gojekfarm/ziggurat/kafka"
 
 	"github.com/cactus/go-statsd-client/v5/statsd"
 	"github.com/gojekfarm/ziggurat"

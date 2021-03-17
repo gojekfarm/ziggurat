@@ -1,7 +1,10 @@
+//+build ignore
+
 package main
 
 import (
 	"context"
+
 	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
