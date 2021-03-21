@@ -79,6 +79,7 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 			"route": event.Headers()[ziggurat.HeaderMessageRoute],
 		}
 		s.Gauge("handler_execution_time", t2.Sub(t1).Milliseconds(), args)
+		s.IncCounter("message_count", 1, args)
 		if err != nil {
 			s.IncCounter("processing_failure_count", 1, args)
 			return err
