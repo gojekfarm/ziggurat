@@ -3,7 +3,6 @@ package mw
 import (
 	"context"
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/gojekfarm/ziggurat"
@@ -18,14 +17,18 @@ func TestProcessingStatusLogger_LogStatus(t *testing.T) {
 			if message != expectedMessage {
 				t.Errorf("expected message %s got %s", expectedMessage, message)
 			}
-			if !reflect.DeepEqual(kvs[0], expectedKVS) {
-				t.Errorf("expected kvs %v got %v", expectedKVS, kvs)
+			for k, _ := range kvs[0] {
+				if _, ok := expectedKVS[k]; !ok {
+					t.Errorf("expected key %s not found", k)
+				}
 			}
 		},
 		ErrorFunc: func(message string, err error, kvs ...map[string]interface{}) {
 			expectedMessage := "message processing failed"
-			if !reflect.DeepEqual(kvs[0], expectedKVS) {
-				t.Errorf("expected kvs %v got %v", expectedKVS, kvs)
+			for k, _ := range kvs[0] {
+				if _, ok := expectedKVS[k]; !ok {
+					t.Errorf("expected key %s not found", k)
+				}
 			}
 			if message != expectedMessage {
 				t.Errorf("expected message %s got %s", expectedMessage, message)
