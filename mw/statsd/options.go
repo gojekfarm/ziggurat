@@ -1,23 +1,21 @@
 package statsd
 
-import (
-	"github.com/gojekfarm/ziggurat"
-)
+import "github.com/gojekfarm/ziggurat"
 
-func WithPrefix(prefix string) func(s *Client) {
-	return func(s *Client) {
-		s.prefix = prefix
+func WithPrefix(prefix string) func(c *Client) {
+	return func(c *Client) {
+		c.prefix = prefix
 	}
 }
 
-func WithHost(host string) func(s *Client) {
-	return func(s *Client) {
-		s.host = host
+func WithHost(host string) func(c *Client) {
+	return func(c *Client) {
+		c.host = host
 	}
 }
 
-func WithHandler(handler ziggurat.Handler) func(s *Client) {
-	return func(s *Client) {
-		s.handler = handler
+func WithLogger(l ziggurat.StructuredLogger) func(c *Client) {
+	return func(c *Client) {
+		c.Logger = l
 	}
 }

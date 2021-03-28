@@ -17,7 +17,7 @@ import (
 func main() {
 
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
-	statsdPublisher := statsd.NewPublisher()
+	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
 	psLogger := mw.ProcessingStatusLogger{Logger: jsonLogger}
 	ctx := context.Background()
 

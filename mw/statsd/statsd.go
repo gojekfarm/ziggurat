@@ -12,10 +12,10 @@ import (
 )
 
 type Client struct {
-	client  statsd.Statter
-	host    string
-	prefix  string
-	handler ziggurat.Handler
+	client statsd.Statter
+	host   string
+	prefix string
+	Logger ziggurat.StructuredLogger
 }
 
 func NewPublisher(opts ...func(c *Client)) *Client {
@@ -29,6 +29,11 @@ func NewPublisher(opts ...func(c *Client)) *Client {
 	if c.host == "" {
 		c.host = "localhost:8125"
 	}
+
+	if c.Logger == nil {
+		c.Logger = noopLogger(func() {})
+	}
+
 	return c
 }
 
@@ -42,11 +47,12 @@ func (s *Client) Run(ctx context.Context) error {
 		return clientErr
 	}
 	s.client = client
+	s.Logger.Info("starting go-routine publisher", map[string]interface{}{"publish-interval": "10s"})
 	go func() {
 		done := ctx.Done()
 		<-done
 		if s.client != nil {
-			s.client.Close()
+			s.Logger.Error("error closing statsd client", s.client.Close())
 		}
 	}()
 	go GoRoutinePublisher(ctx, 10*time.Second, s)
@@ -78,13 +84,13 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		args := map[string]string{
 			"route": event.Headers()[ziggurat.HeaderMessageRoute],
 		}
-		s.Gauge("handler_execution_time", t2.Sub(t1).Milliseconds(), args)
-		s.IncCounter("message_count", 1, args)
+		s.Logger.Error("", s.Gauge("handler_execution_time", t2.Sub(t1).Milliseconds(), args))
+		s.Logger.Error("", s.IncCounter("message_count", 1, args))
 		if err != nil {
-			s.IncCounter("processing_failure_count", 1, args)
+			s.Logger.Error("", s.IncCounter("processing_failure_count", 1, args))
 			return err
 		}
-		s.IncCounter("processing_success_count", 1, args)
+		s.Logger.Error("", s.IncCounter("processing_success_count", 1, args))
 		return err
 	})
 }
@@ -95,7 +101,7 @@ func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 			return handler.Handle(ctx, event)
 		} else {
 			diff := time.Now().Sub(kafkaMsg.Timestamp).Milliseconds()
-			s.Gauge("kafka_lag", diff, map[string]string{"topic": kafkaMsg.Topic, "partition": strconv.Itoa(kafkaMsg.Partition)})
+			s.Logger.Error("", s.Gauge("kafka_lag", diff, map[string]string{"topic": kafkaMsg.Topic, "partition": strconv.Itoa(kafkaMsg.Partition)}))
 		}
 		return handler.Handle(ctx, event)
 	})
