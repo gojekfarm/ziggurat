@@ -17,4 +17,5 @@ jobs:
           git fetch --tags
           LATEST_TAG=$(git tag --sort=committerdate | tail -n1)
           GOPROXY=https://proxy.golang.org GO111MODULE=on
+          cd ~/
           go get github.com/gojekfarm/ziggurat@$LATEST_TAG
