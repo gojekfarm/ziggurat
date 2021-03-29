@@ -61,7 +61,7 @@ prometheus:
 
 var GoMod = `module {{.AppName}}
 
-go 1.15
+go 1.16
 
 require (
 	github.com/gojekfarm/ziggurat v1.0.0-rc.1
