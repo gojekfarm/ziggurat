@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/mock"
 	"testing"
 
 	"github.com/gojekfarm/ziggurat"
@@ -10,7 +11,7 @@ import (
 func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next ziggurat.Handler) ziggurat.Handler {
 		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent ziggurat.Event) error {
-			me := ziggurat.CreateMockEvent()
+			me := mock.CreateMockEvent()
 			me.ValueFunc = func() []byte {
 				return []byte("foo")
 			}
@@ -20,7 +21,7 @@ func TestPipeHandlers(t *testing.T) {
 	mw2 := func(next ziggurat.Handler) ziggurat.Handler {
 		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent ziggurat.Event) error {
 			byteValue := append(messageEvent.Value(), []byte("-bar")...)
-			me := ziggurat.CreateMockEvent()
+			me := mock.CreateMockEvent()
 			me.ValueFunc = func() []byte {
 				return byteValue
 			}
@@ -34,5 +35,5 @@ func TestPipeHandlers(t *testing.T) {
 		return nil
 	})
 	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
-	finalHandler.Handle(context.Background(), ziggurat.MockEvent{})
+	finalHandler.Handle(context.Background(), mock.Event{})
 }

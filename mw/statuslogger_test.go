@@ -3,6 +3,7 @@ package mw
 import (
 	"context"
 	"errors"
+	"github.com/gojekfarm/ziggurat/mock"
 	"testing"
 
 	"github.com/gojekfarm/ziggurat"
@@ -41,7 +42,7 @@ func TestProcessingStatusLogger_LogStatus(t *testing.T) {
 
 	sl := ProcessingStatusLogger{Logger: dl}
 
-	me := ziggurat.MockEvent{
+	me := mock.Event{
 		ValueFunc: func() []byte {
 			return []byte("bar")
 		},

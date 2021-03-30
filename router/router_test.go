@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/mock"
 	"reflect"
 	"testing"
 
@@ -10,7 +11,7 @@ import (
 
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := New()
-	expectedEvent := ziggurat.CreateMockEvent()
+	expectedEvent := mock.CreateMockEvent()
 	expectedEvent.ValueFunc = func() []byte {
 		return nil
 	}
@@ -23,7 +24,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 		}
 		return nil
 	})
-	dr.Handle(context.Background(), ziggurat.MockEvent{
+	dr.Handle(context.Background(), mock.Event{
 		ValueFunc: func() []byte {
 			return nil
 		},
@@ -44,7 +45,7 @@ func TestDefaultRouter_NotFoundHandler(t *testing.T) {
 		return nil
 	})
 
-	dr.Handle(context.Background(), ziggurat.MockEvent{
+	dr.Handle(context.Background(), mock.Event{
 		ValueFunc: func() []byte {
 			return []byte{}
 		},
