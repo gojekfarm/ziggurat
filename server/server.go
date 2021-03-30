@@ -37,7 +37,7 @@ func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	return s
 }
 
-func (s *DefaultHttpServer) Run(ctx context.Context) chan error {
+func (s *DefaultHttpServer) Run(ctx context.Context) error {
 	errorChan := make(chan error)
 	go func(server *http.Server) {
 		if err := server.ListenAndServe(); err != nil {
@@ -53,7 +53,7 @@ func (s *DefaultHttpServer) Run(ctx context.Context) chan error {
 		}
 	}()
 
-	return errorChan
+	return <-errorChan
 }
 
 func (s *DefaultHttpServer) ConfigureHTTPEndpoints(f func(r *httprouter.Router)) {

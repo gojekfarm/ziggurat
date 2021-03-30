@@ -16,21 +16,21 @@ func TestDefaultHttpServer_Start(t *testing.T) {
 	ds := NewHTTPServer()
 	ctx, cfn := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cfn()
-	errChan := ds.Run(ctx)
-	time.Sleep(1 * time.Second)
+	go func() { ds.Run(ctx) }()
 	_, err := net.Dial("tcp", serverAddr)
 	if err != nil {
 		t.Errorf("error connection to server %s", err)
 	}
-	<-errChan
+
 }
 
 func TestDefaultHttpServer_Stop(t *testing.T) {
-	ctx, cfn := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cfn()
+	ctx, cfn := context.WithCancel(context.Background())
+
 	ds := NewHTTPServer()
-	errChan := ds.Run(ctx)
-	<-errChan
+	go func() { ds.Run(ctx) }()
+	time.Sleep(500 * time.Millisecond)
+	cfn()
 	if _, err := net.Dial("tcp", serverAddr); err == nil {
 		t.Errorf("expected error but got nil")
 	}
