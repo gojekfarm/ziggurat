@@ -18,6 +18,8 @@ type Client struct {
 	Logger ziggurat.StructuredLogger
 }
 
+const publishErrMsg = "error publishing metric"
+
 func NewPublisher(opts ...func(c *Client)) *Client {
 	c := &Client{}
 	for _, opt := range opts {
@@ -55,7 +57,7 @@ func (s *Client) Run(ctx context.Context) error {
 			s.Logger.Error("error closing statsd client", s.client.Close())
 		}
 	}()
-	go GoRoutinePublisher(ctx, 10*time.Second, s)
+	go goRoutinePublisher(ctx, 10*time.Second, s)
 	return nil
 }
 
@@ -84,13 +86,13 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		args := map[string]string{
 			"route": event.Headers()[ziggurat.HeaderMessageRoute],
 		}
-		s.Logger.Error("", s.Gauge("handler_execution_time", t2.Sub(t1).Milliseconds(), args))
-		s.Logger.Error("", s.IncCounter("message_count", 1, args))
+		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", t2.Sub(t1).Milliseconds(), args))
+		s.Logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
 		if err != nil {
-			s.Logger.Error("", s.IncCounter("processing_failure_count", 1, args))
+			s.Logger.Error(publishErrMsg, s.IncCounter("processing_failure_count", 1, args))
 			return err
 		}
-		s.Logger.Error("", s.IncCounter("processing_success_count", 1, args))
+		s.Logger.Error(publishErrMsg, s.IncCounter("processing_success_count", 1, args))
 		return err
 	})
 }
@@ -101,7 +103,7 @@ func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 			return handler.Handle(ctx, event)
 		} else {
 			diff := time.Now().Sub(kafkaMsg.Timestamp).Milliseconds()
-			s.Logger.Error("", s.Gauge("kafka_lag", diff, map[string]string{"topic": kafkaMsg.Topic, "partition": strconv.Itoa(kafkaMsg.Partition)}))
+			s.Logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, map[string]string{"topic": kafkaMsg.Topic, "partition": strconv.Itoa(kafkaMsg.Partition)}))
 		}
 		return handler.Handle(ctx, event)
 	})
