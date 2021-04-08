@@ -2,9 +2,10 @@ package router
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/mock"
 	"reflect"
 	"testing"
+
+	"github.com/gojekfarm/ziggurat/mock"
 
 	"github.com/gojekfarm/ziggurat"
 )
