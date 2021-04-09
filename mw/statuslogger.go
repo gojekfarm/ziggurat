@@ -27,7 +27,7 @@ func (p *ProcessingStatusLogger) LogStatus(next ziggurat.Handler) ziggurat.Handl
 		}
 
 		err := next.Handle(ctx, messageEvent)
-		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute], "value": messageEvent.Value()}
+		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute]}
 		if err != nil {
 			p.Logger.Error("message processing failed", err, args)
 		} else {
