@@ -1,11 +1,8 @@
-//+build ignore
-
 package main
 
 import (
 	"context"
 
-	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/mw/prometheus"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
@@ -18,7 +15,6 @@ import (
 func main() {
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
-	psLogger := mw.ProcessingStatusLogger{Logger: jsonLogger}
 	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
@@ -51,7 +47,7 @@ func main() {
 		return ziggurat.ErrProcessingFailed{}
 	})
 
-	handler := r.Compose(psLogger.LogStatus, statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics, prometheus.PublishHandlerMetrics)
+	handler := r.Compose(statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics, prometheus.PublishHandlerMetrics)
 
 	go func() {
 		err := prometheus.StartMonitoringServer(ctx)

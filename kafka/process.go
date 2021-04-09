@@ -9,14 +9,14 @@ import (
 )
 
 func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggurat.Handler, l ziggurat.StructuredLogger, ctx context.Context) {
-	timestamp := msg.Timestamp.String()
+	timestamp := msg.Timestamp.Unix()
 	topic := *msg.TopicPartition.Topic
 	partition := int(msg.TopicPartition.Partition)
 
 	headers := map[string]string{
 		ziggurat.HeaderMessageRoute: route,
 		ziggurat.HeaderMessageType:  "kafka",
-		"x-kafka-timestamp":         timestamp,
+		"x-kafka-timestamp":         strconv.FormatInt(timestamp, 10),
 		"x-kafka-topic":             topic,
 		"x-kafka-partition":         strconv.Itoa(partition),
 	}

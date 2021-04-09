@@ -1,14 +1,9 @@
 package kafka
 
-import "time"
-
 type Message struct {
-	value     []byte
-	key       []byte
-	headers   map[string]string
-	Timestamp time.Time
-	Topic     string
-	Partition int
+	value   []byte
+	key     []byte
+	headers map[string]string
 }
 
 func (m Message) Value() []byte {

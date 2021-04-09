@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gojekfarm/ziggurat/kafka"
-
 	"github.com/cactus/go-statsd-client/v5/statsd"
 	"github.com/gojekfarm/ziggurat"
 )
@@ -99,12 +97,19 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 
 func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
-		if kafkaMsg, ok := event.(kafka.Message); !ok {
+		headers := event.Headers()
+		topic := headers["x-kafka-topic"]
+		partition := headers["x-kafka-partition"]
+		timestampInt, parseErr := strconv.ParseInt(headers["x-kafka-timestamp"], 10, 64)
+		if parseErr != nil {
+			s.Logger.Error("error parsing timestamp", parseErr)
 			return handler.Handle(ctx, event)
-		} else {
-			diff := time.Now().Sub(kafkaMsg.Timestamp).Milliseconds()
-			s.Logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, map[string]string{"topic": kafkaMsg.Topic, "partition": strconv.Itoa(kafkaMsg.Partition)}))
 		}
+
+		timestamp := time.Unix(timestampInt, 0)
+		diff := time.Now().Sub(timestamp).Milliseconds()
+		s.Logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, map[string]string{"topic": topic, "partition": partition}))
 		return handler.Handle(ctx, event)
+
 	})
 }
