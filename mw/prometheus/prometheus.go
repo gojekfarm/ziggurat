@@ -84,18 +84,17 @@ func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		t1 := time.Now()
 		err := next.Handle(ctx, event)
-		t2 := time.Now()
 
 		labels := prometheus.Labels{
 			RouteLabel: event.Headers()[ziggurat.HeaderMessageRoute],
 		}
 
+		HandlerDurationHistogram.With(labels).Observe(time.Since(t1).Seconds())
+
 		HandlerEventsCounter.With(labels).Inc()
 		if err != nil {
 			HandlerFailuresCounter.With(labels).Inc()
 		}
-
-		HandlerDurationHistogram.With(labels).Observe(t2.Sub(t1).Seconds())
 
 		return err
 	})
