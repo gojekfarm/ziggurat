@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func GoRoutinePublisher(ctx context.Context, interval time.Duration, s *Client) {
+func goRoutinePublisher(ctx context.Context, interval time.Duration, s *Client) {
 	done := ctx.Done()
 	t := time.NewTicker(interval)
 	tickerChan := t.C

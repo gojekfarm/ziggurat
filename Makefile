@@ -22,6 +22,9 @@ docker.start-metrics:
 	docker-compose -f docker-compose-metrics.yml up -d
 	sleep 10
 
+lib.build:
+	go build .
+
 app.start:
 	go build -o ziggurat_example $(EXAMPLE_BUILD_PKG)
 	./ziggurat_example
