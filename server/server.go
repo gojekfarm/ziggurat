@@ -30,10 +30,10 @@ func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 		server: server,
 		router: router,
 	}
+	s.server.Addr = "localhost:" + defaultHTTPPort
 	for _, opt := range opts {
 		opt(s)
 	}
-	s.server.Addr = "localhost:" + defaultHTTPPort
 	return s
 }
 

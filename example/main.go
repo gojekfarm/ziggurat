@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/gojekfarm/ziggurat/mw"
+	"github.com/gojekfarm/ziggurat/mw/prometheus"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
 	"github.com/gojekfarm/ziggurat"
@@ -15,7 +16,6 @@ import (
 )
 
 func main() {
-
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
 	psLogger := mw.ProcessingStatusLogger{Logger: jsonLogger}
@@ -40,6 +40,7 @@ func main() {
 		},
 		Logger: jsonLogger,
 	}
+
 	r := router.New()
 
 	r.HandleFunc("plain-text-log", func(ctx context.Context, event ziggurat.Event) error {
@@ -50,12 +51,20 @@ func main() {
 		return ziggurat.ErrProcessingFailed{}
 	})
 
-	handler := r.Compose(psLogger.LogStatus, statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics)
+	handler := r.Compose(psLogger.LogStatus, statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics, prometheus.PublishHandlerMetrics)
+
+	go func() {
+		err := prometheus.StartMonitoringServer(ctx)
+		if err != nil {
+			jsonLogger.Error("Failed to start monitoring server.", err)
+		}
+	}()
 
 	zig := &ziggurat.Ziggurat{}
 
 	zig.StartFunc(func(ctx context.Context) {
 		statsdPublisher.Run(ctx)
+		prometheus.Register()
 	})
 	zig.Run(ctx, kafkaStreams, handler)
 
