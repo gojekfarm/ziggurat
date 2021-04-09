@@ -8,6 +8,12 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
+const (
+	HeaderTimestamp = "x-kafka-timestamp"
+	HeaderTopic     = "x-kafka-topic"
+	HeaderPartition = "x-kafka-partition"
+)
+
 func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggurat.Handler, l ziggurat.StructuredLogger, ctx context.Context) {
 	timestamp := msg.Timestamp.Unix()
 	topic := *msg.TopicPartition.Topic
@@ -16,9 +22,9 @@ func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggu
 	headers := map[string]string{
 		ziggurat.HeaderMessageRoute: route,
 		ziggurat.HeaderMessageType:  "kafka",
-		"x-kafka-timestamp":         strconv.FormatInt(timestamp, 10),
-		"x-kafka-topic":             topic,
-		"x-kafka-partition":         strconv.Itoa(partition),
+		HeaderTimestamp:             strconv.FormatInt(timestamp, 10),
+		HeaderTopic:                 topic,
+		HeaderPartition:             strconv.Itoa(partition),
 	}
 
 	event := NewMessage(msg.Value, msg.Key, headers)
