@@ -2,6 +2,7 @@ package statsd
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/logger"
 	"strconv"
 	"time"
 
@@ -31,7 +32,7 @@ func NewPublisher(opts ...func(c *Client)) *Client {
 	}
 
 	if c.Logger == nil {
-		c.Logger = noopLogger(func() {})
+		c.Logger = logger.NewJSONLogger(logger.Disabled)
 	}
 
 	return c
