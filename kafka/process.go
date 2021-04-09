@@ -23,16 +23,7 @@ func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggu
 
 	event := NewMessage(msg.Value, msg.Key, headers)
 
-	kvs := map[string]interface{}{
-		"kafka-topic": topic,
-		"partition":   partition,
-		"route":       route,
-	}
-	if handlerError := h.Handle(ctx, event); handlerError != nil {
-		l.Error("error processing message", handlerError, kvs)
-	} else {
-		l.Info("processed message successfully", kvs)
-	}
+	h.Handle(ctx, event)
 	err := storeOffsets(c, msg.TopicPartition)
 	l.Error("error storing offsets: %v", err)
 }
