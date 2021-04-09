@@ -16,7 +16,7 @@ type Client struct {
 	Logger ziggurat.StructuredLogger
 }
 
-const publishErrMsg = "error publishing metric"
+const publishErrMsg = "statsd client: error publishing metric"
 
 func NewPublisher(opts ...func(c *Client)) *Client {
 	c := &Client{}
