@@ -50,8 +50,8 @@ var HandlerDurationHistogram = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
 		Namespace: namespace,
 		Subsystem: handlerSubsystem,
-		Name:      "duration_ms",
-		Help:      "Duration(in ms) spent processing events, partitioned by route",
+		Name:      "duration_seconds",
+		Help:      "time spent processing events, partitioned by route",
 	},
 	[]string{"route"},
 )
@@ -95,7 +95,7 @@ func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
 			HandlerFailuresCounter.With(labels).Inc()
 		}
 
-		HandlerDurationHistogram.With(labels).Observe(float64(t2.Sub(t1).Milliseconds()))
+		HandlerDurationHistogram.With(labels).Observe(t2.Sub(t1).Seconds())
 
 		return err
 	})
