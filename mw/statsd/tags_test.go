@@ -1,12 +1,16 @@
 package statsd
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func Test_constructTags(t *testing.T) {
 	tagMap := map[string]string{"tag-one": "first-tag", "tag-two": "second_tag"}
-	expectedTagString := "tag-one=first-tag,tag-two=second_tag"
+	expectedTagStrings := "tag-one=first-tag,tag-two=second_tag"
+
 	actualTagString := constructTags(tagMap)
-	if expectedTagString != actualTagString {
-		t.Errorf("expected %s, got %s", expectedTagString, actualTagString)
+	if !strings.Contains(actualTagString, expectedTagStrings) {
+		t.Errorf("ecpected %s got %s", actualTagString, expectedTagStrings)
 	}
 }
