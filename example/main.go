@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/mw/proclog"
 
 	"github.com/gojekfarm/ziggurat/mw/prometheus"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
@@ -15,6 +16,7 @@ import (
 func main() {
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
+	procl := proclog.ProcLogger{Logger: jsonLogger}
 	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
@@ -47,7 +49,7 @@ func main() {
 		return ziggurat.ErrProcessingFailed{}
 	})
 
-	handler := r.Compose(statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics, prometheus.PublishHandlerMetrics)
+	handler := r.Compose(procl.LogStatus, statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics, prometheus.PublishHandlerMetrics)
 
 	go func() {
 		err := prometheus.StartMonitoringServer(ctx)
