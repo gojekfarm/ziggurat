@@ -1,5 +1,7 @@
 package kafka
 
+//kafka.Message is an implementation of the ziggurat.Event interface
+
 type Message struct {
 	value   []byte
 	key     []byte

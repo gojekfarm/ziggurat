@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	var zig ziggurat.Ziggurat
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
 	procl := proclog.ProcLogger{Logger: jsonLogger}
@@ -49,21 +50,28 @@ func main() {
 		return ziggurat.ErrProcessingFailed{}
 	})
 
-	handler := r.Compose(procl.LogStatus, statsdPublisher.PublishKafkaLag, statsdPublisher.PublishHandlerMetrics, prometheus.PublishHandlerMetrics)
+	handler := r.Compose(
+		procl.LogStatus,
+		statsdPublisher.PublishKafkaLag,
+		statsdPublisher.PublishHandlerMetrics,
+		prometheus.PublishHandlerMetrics,
+	)
 
-	go func() {
-		err := prometheus.StartMonitoringServer(ctx)
-		if err != nil {
-			jsonLogger.Error("Failed to start monitoring server.", err)
-		}
-	}()
-
-	zig := &ziggurat.Ziggurat{}
+	promStop := make(chan struct{}, 1)
 
 	zig.StartFunc(func(ctx context.Context) {
-		statsdPublisher.Run(ctx)
+		go func() {
+			jsonLogger.Error("could not start prometheus monitoring server", prometheus.StartMonitoringServer(ctx))
+			promStop <- struct{}{}
+		}()
+
+		jsonLogger.Error("could not start statsd publisher", statsdPublisher.Run(ctx))
 		prometheus.Register()
 	})
-	zig.Run(ctx, kafkaStreams, handler)
 
+	if runErr := zig.Run(ctx, kafkaStreams, handler); runErr != nil {
+		jsonLogger.Error("could not start streams", runErr)
+	}
+
+	<-promStop
 }
