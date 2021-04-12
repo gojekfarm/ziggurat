@@ -1,5 +1,3 @@
-//+build ignore
-
 package main
 
 import (
@@ -27,7 +25,7 @@ func (f FakeEvent) Headers() map[string]string {
 	return map[string]string{}
 }
 
-func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) chan error {
+func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 	errChan := make(chan error)
 	done := ctx.Done()
 	i := 0
@@ -46,7 +44,7 @@ func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) chan
 			}
 		}
 	}()
-	return errChan
+	return <-errChan
 }
 
 func FakeMiddleware(h ziggurat.Handler) ziggurat.Handler {
@@ -57,14 +55,14 @@ func FakeMiddleware(h ziggurat.Handler) ziggurat.Handler {
 }
 
 func main() {
-	fs := &FakeStreams{}
-	z := &ziggurat.Ziggurat{}
+	fs := FakeStreams{}
+	z := ziggurat.Ziggurat{}
 	hf := ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		fmt.Println("Received message : => ", string(event.Value()))
 		return nil
 	})
 	handler := FakeMiddleware(hf)
-	if err := z.Run(context.Background(), fs, handler); err != nil {
+	if err := z.Run(context.Background(), &fs, handler); err != nil {
 		fmt.Println("error: ", err)
 	}
 }
