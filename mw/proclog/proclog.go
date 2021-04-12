@@ -2,6 +2,7 @@ package proclog
 
 import (
 	"context"
+
 	"github.com/gojekfarm/ziggurat"
 )
 

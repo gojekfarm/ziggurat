@@ -3,8 +3,9 @@ package proclog
 import (
 	"context"
 	"errors"
-	"github.com/gojekfarm/ziggurat/mock"
 	"testing"
+
+	"github.com/gojekfarm/ziggurat/mock"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/logger"
