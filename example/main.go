@@ -1,3 +1,5 @@
+//+build ignore
+
 package main
 
 import (
@@ -62,7 +64,7 @@ func main() {
 
 	zig.StartFunc(func(ctx context.Context) {
 		go func() {
-			jsonLogger.Error("could not start prometheus monitoring server", prometheus.StartMonitoringServer(ctx))
+			jsonLogger.Error("", prometheus.StartMonitoringServer(ctx))
 			promStop <- struct{}{}
 		}()
 
