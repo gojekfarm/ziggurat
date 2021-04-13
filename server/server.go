@@ -21,6 +21,9 @@ func WithPort(port string) func(s *DefaultHttpServer) {
 	}
 }
 
+// NewHTTPServer creates a new HTTPServer
+// server.WithPort can be used to configure the port number
+// returns a ready to use http server with an embedded router
 func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	router := httprouter.New()
 	requestLogger := logger.NewJSONLogger("info")
@@ -56,10 +59,15 @@ func (s *DefaultHttpServer) Run(ctx context.Context) error {
 	return <-errorChan
 }
 
+// ConfigureHTTPEndpoints lets you configure your http endpoints
+// a configuration function must be passed which will receive the
+// router instance as an argument
 func (s *DefaultHttpServer) ConfigureHTTPEndpoints(f func(r *httprouter.Router)) {
 	f(s.router)
 }
 
+// ConfigureHandler lets you configure the embedded handler/router
+// use this to add common middle on the http router
 func (s *DefaultHttpServer) ConfigureHandler(f func(r *httprouter.Router) http.Handler) {
 	s.server.Handler = f(s.router)
 }
