@@ -11,7 +11,7 @@ import (
 )
 
 /*ConsumerConfig takes in the kafka consumer config
-ConsumerConfig{
+ConsumerConfig {
 	BootstrapServers "localhost:9092,localhost:9093"
 	OriginTopics     "song-likes"
 	ConsumerGroupID  "song_likes_consumer"
