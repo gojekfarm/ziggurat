@@ -82,11 +82,10 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		t1 := time.Now()
 		err := handler.Handle(ctx, event)
-		t2 := time.Now()
 		args := map[string]string{
 			"route": event.Headers()[ziggurat.HeaderMessageRoute],
 		}
-		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", t2.Sub(t1).Milliseconds(), args))
+		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
 		s.Logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
 		if err != nil {
 			s.Logger.Error(publishErrMsg, s.IncCounter("processing_failure_count", 1, args))
@@ -109,7 +108,7 @@ func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 		}
 
 		timestamp := time.Unix(timestampInt, 0)
-		diff := time.Now().Sub(timestamp).Milliseconds()
+		diff := time.Since(timestamp).Milliseconds()
 		s.Logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, map[string]string{"topic": topic, "partition": partition}))
 		return handler.Handle(ctx, event)
 
