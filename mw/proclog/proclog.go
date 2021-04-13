@@ -8,16 +8,16 @@ import (
 
 type (
 	ProcLogger struct {
-		Logger  ziggurat.StructuredLogger
-		Handler ziggurat.Handler
+		Logger ziggurat.StructuredLogger
+		Next   ziggurat.Handler
 	}
 )
 
 func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) error {
-	if p.Handler == nil {
+	if p.Next == nil {
 		panic("[process status logger] handler cannot be nil")
 	}
-	return p.LogStatus(p.Handler).Handle(ctx, event)
+	return p.LogStatus(p.Next).Handle(ctx, event)
 }
 
 func (p *ProcLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
