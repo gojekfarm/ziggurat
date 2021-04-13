@@ -21,7 +21,7 @@ func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) error {
 }
 
 func (p *ProcLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent ziggurat.Event) error {
+	f := func(ctx context.Context, messageEvent ziggurat.Event) error {
 		if p.Logger == nil {
 			return next.Handle(ctx, messageEvent)
 		}
@@ -34,5 +34,6 @@ func (p *ProcLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 			p.Logger.Info("message processing succeeded", args)
 		}
 		return err
-	})
+	}
+	return ziggurat.HandlerFunc(f)
 }
