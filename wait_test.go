@@ -1,12 +1,14 @@
 package ziggurat
 
 import (
+	"context"
 	"testing"
 	"time"
 )
 
 func TestWaitAll(t *testing.T) {
 	var chans []chan struct{}
+	ctx, cfn := context.WithCancel(context.Background())
 
 	for i := 0; i < 5; i++ {
 		chans = append(chans, make(chan struct{}))
@@ -20,9 +22,16 @@ func TestWaitAll(t *testing.T) {
 	}
 
 	go func() {
-		time.Sleep(250 * time.Millisecond)
-		t.Errorf("wait time exceeded, expected to completed by %dms", 200)
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(250 * time.Millisecond):
+			t.Error("expected to complete in 200ms but completed in 250ms")
+
+		}
 	}()
 
 	WaitAll(chans...)
+	cfn()
+
 }
