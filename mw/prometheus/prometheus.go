@@ -81,7 +81,7 @@ func Register() {
 
 // PublishHandlerMetrics - middleware to update registered handler metrics
 func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
+	f := func(ctx context.Context, event ziggurat.Event) error {
 		t1 := time.Now()
 		err := next.Handle(ctx, event)
 
@@ -97,5 +97,6 @@ func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
 		}
 
 		return err
-	})
+	}
+	return ziggurat.HandlerFunc(f)
 }
