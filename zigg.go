@@ -11,6 +11,10 @@ import (
 type StartFunction func(ctx context.Context)
 type StopFunction func()
 
+// Ziggurat serves as a container for streams to run in
+// can be used without initialization
+// var z ziggurat.Ziggurat
+// z.Run(ctx context.Context,s ziggurat.Streamer,h ziggurat.Handler)
 type Ziggurat struct {
 	handler   Handler
 	Logger    StructuredLogger
@@ -19,6 +23,9 @@ type Ziggurat struct {
 	streams   Streamer
 }
 
+// Run method runs the provided streams and blocks on it until an error is encountered
+// run multiple streams concurrently by wrapping the Run method in a go-routine
+// the context provided is notified on SIGINT and SIGTERM
 func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) error {
 
 	if z.Logger == nil {
@@ -65,10 +72,15 @@ func (z *Ziggurat) stop(stopFunc StopFunction) {
 	}
 }
 
+//StartFunc is used to start additional application states
+// advantage of using the StartFunc is that the context remains consistent between
+// your streams and other additional application states like database(s) REST API client(s)
 func (z *Ziggurat) StartFunc(function StartFunction) {
 	z.startFunc = function
 }
 
+//StopFunc is immediately called after streams are shutdown
+// is used to perform cleanup operations
 func (z *Ziggurat) StopFunc(function StopFunction) {
 	z.stopFunc = function
 }
