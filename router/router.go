@@ -35,6 +35,10 @@ func (dr *defaultRouter) Handle(ctx context.Context, event ziggurat.Event) error
 	}
 }
 
+// New created a new router
+// router stores handlers in a map[string]ziggurat.Handler
+// the route received in the event header is matched against the entries in the map
+// and the corresponding handler is executed
 func New(opts ...func(dr *defaultRouter)) *defaultRouter {
 	dr := &defaultRouter{
 		handlerFunctionMap: map[string]ziggurat.HandlerFunc{},
@@ -52,6 +56,7 @@ func New(opts ...func(dr *defaultRouter)) *defaultRouter {
 
 }
 
+// HandleFunc registers a new handler function for the given route
 func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(ctx context.Context, event ziggurat.Event) error) {
 	if route == "" {
 		panic(`route cannot be ""`)
@@ -66,10 +71,20 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(ctx context.C
 	dr.handlerFunctionMap[route] = handlerFunc
 }
 
+// Compose takes in a set of middleware functions
+// builds a chain of executing from left to right and returns a new handler
+// router := New()
+// router.HandleFunc("my-route",func(c context.Context,e ziggurat.Event) error{
+//		return nil
+//})
+// h := router.Compose(middlewareOne,middlewareTwo,middlewareThree)
+// order of execution: middlewareOne -> middlewareTwo -> middlewareThree -> handlerFunc
 func (dr *defaultRouter) Compose(mw ...func(h ziggurat.Handler) ziggurat.Handler) ziggurat.Handler {
 	return PipeHandlers(mw...)(dr)
 }
 
+// Lookup looks up and returns a handlerFunc if found
+// it returns a second bool value `true` if found `false` if not found
 func (dr *defaultRouter) Lookup(route string) (ziggurat.Handler, bool) {
 	h, ok := dr.handlerFunctionMap[route]
 	return h, ok

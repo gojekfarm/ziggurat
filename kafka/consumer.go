@@ -53,7 +53,7 @@ var startConsumer = func(
 					continue
 				}
 				if msg != nil {
-					kafkaProcessor(msg, route, consumer, h, l, ctx)
+					processMessage(msg, route, consumer, h, l, ctx)
 				}
 			}
 		}

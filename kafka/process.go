@@ -14,7 +14,9 @@ const (
 	HeaderPartition = "x-kafka-partition"
 )
 
-func kafkaProcessor(msg *kafka.Message, route string, c *kafka.Consumer, h ziggurat.Handler, l ziggurat.StructuredLogger, ctx context.Context) {
+// processMessage executed the handler for every message that is received
+// all metadata is serialized to strings and set in headers
+func processMessage(msg *kafka.Message, route string, c *kafka.Consumer, h ziggurat.Handler, l ziggurat.StructuredLogger, ctx context.Context) {
 	timestamp := msg.Timestamp.Unix()
 	topic := *msg.TopicPartition.Topic
 	partition := int(msg.TopicPartition.Partition)

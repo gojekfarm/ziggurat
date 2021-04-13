@@ -19,10 +19,9 @@ var createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.Structured
 	return consumer
 }
 
+// storeOffsets ensures at least once delivery
+// offsets are stored in memory and are later flushed by the auto-commit timer
 var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition) error {
-
-	// at least once delivery
-	// offsets are stored in memory and are later flushed by the auto-commit timer
 
 	if partition.Error != nil {
 		return ErrOffsetCommit
@@ -39,6 +38,7 @@ var readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Mes
 	return c.ReadMessage(pollTimeout)
 }
 
+// NewConsumerConfig returns a new kafka consumer config map
 func NewConsumerConfig(bootstrapServers string, groupID string) *kafka.ConfigMap {
 	return &kafka.ConfigMap{
 		"bootstrap.servers":        bootstrapServers,

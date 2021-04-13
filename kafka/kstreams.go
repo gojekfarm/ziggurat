@@ -10,6 +10,14 @@ import (
 	"github.com/gojekfarm/ziggurat/logger"
 )
 
+/*ConsumerConfig takes in the kafka consumer config
+ConsumerConfig{
+	BootstrapServers "localhost:9092,localhost:9093"
+	OriginTopics     "song-likes"
+	ConsumerGroupID  "song_likes_consumer"
+	ConsumerCount    4
+	RouteGroup       "song-likes"
+}*/
 type ConsumerConfig struct {
 	BootstrapServers string
 	OriginTopics     string
@@ -26,6 +34,8 @@ type Streams struct {
 	StreamConfig     StreamConfig
 }
 
+// Stream implements the ziggurat.Streamer interface
+// blocks until an error is received or context is cancelled
 func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 	if k.Logger == nil {
 		k.Logger = logger.NewJSONLogger("info")

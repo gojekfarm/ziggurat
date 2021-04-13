@@ -13,6 +13,7 @@ type (
 	}
 )
 
+// Handle implements the ziggurat.Handler interface
 func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) error {
 	if p.Next == nil {
 		panic("[process status logger] handler cannot be nil")
@@ -20,6 +21,7 @@ func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) error {
 	return p.LogStatus(p.Next).Handle(ctx, event)
 }
 
+// LogStatus logs the processing status of the handler
 func (p *ProcLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 	f := func(ctx context.Context, messageEvent ziggurat.Event) error {
 		if p.Logger == nil {

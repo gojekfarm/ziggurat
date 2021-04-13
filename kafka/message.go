@@ -1,7 +1,7 @@
 package kafka
 
-//kafka.Message is an implementation of the ziggurat.Event interface
-
+// Message is an implementation of the ziggurat.Event interface
+// Message is immutable and cannot be changed
 type Message struct {
 	value   []byte
 	key     []byte
