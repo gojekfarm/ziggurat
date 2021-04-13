@@ -1,5 +1,6 @@
 package ziggurat
 
+// StructuredLogger defines an interface for structured logging
 type StructuredLogger interface {
 	Info(message string, kvs ...map[string]interface{})
 	Debug(message string, kvs ...map[string]interface{})
