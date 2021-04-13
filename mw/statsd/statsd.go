@@ -20,6 +20,10 @@ type Client struct {
 
 const publishErrMsg = "statsd client: error publishing metric"
 
+// NewPublisher creates a new publisher with an embedded statsd client
+// use statsd.WithPrefix to specify a prefix which will be sent as a common label with all metrics
+// defaults to "ziggurat_statsd"
+// use statsd.WithHost to specify a custom host:port string, defaults to localhost:8125
 func NewPublisher(opts ...func(c *Client)) *Client {
 	c := &Client{}
 	for _, opt := range opts {
@@ -39,6 +43,8 @@ func NewPublisher(opts ...func(c *Client)) *Client {
 	return c
 }
 
+// Run methods runs the publisher and starts up the go-routine publisher in the background
+// the go-routine publisher publishes the go-routine count every 10 seconds
 func (s *Client) Run(ctx context.Context) error {
 	config := &statsd.ClientConfig{
 		Prefix:  s.prefix,
@@ -65,6 +71,8 @@ func (s *Client) constructFullMetricStr(metricName, tags string) string {
 	return metricName + "," + tags + "," + "app_name=" + s.prefix
 }
 
+// IncCounter increments a counter "metric_name|c"
+// returns a publish err on failure
 func (s *Client) IncCounter(metricName string, value int64, arguments map[string]string) error {
 	tags := constructTags(arguments)
 	finalMetricName := s.constructFullMetricStr(metricName, tags)
@@ -72,12 +80,19 @@ func (s *Client) IncCounter(metricName string, value int64, arguments map[string
 	return s.client.Inc(finalMetricName, value, 1.0)
 }
 
+// Gauge publishes a metric of type gauge "metric_name|g"
+// returns a publish error on failure
 func (s *Client) Gauge(metricName string, value int64, arguments map[string]string) error {
 	tags := constructTags(arguments)
 	finalMetricName := s.constructFullMetricStr(metricName, tags)
 	return s.client.Gauge(finalMetricName, value, 1.0)
 }
 
+// PublishHandlerMetrics is a ziggurat middleware which publishes the
+// handler_execution_time - time taken for the handler func to execute in milliseconds
+// processing_failure_count - count of errors returned by the handler func
+// processing_success_count - count of nil errors returned by handler
+// message_count - count of all messages encountered by the handler
 func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		t1 := time.Now()
@@ -96,6 +111,8 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 	})
 }
 
+// PublishKafkaLag publishes the kafka lag per topic in milliseconds
+// kafka_lag - time difference in milliseconds between the kafka event timestamp and the current time
 func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		headers := event.Headers()
