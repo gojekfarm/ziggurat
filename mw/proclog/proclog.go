@@ -23,21 +23,25 @@ func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) interface
 
 // LogStatus logs the processing status of the handler
 func (p *ProcLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
-	f := func(ctx context.Context, messageEvent ziggurat.Event) error {
+	f := func(ctx context.Context, messageEvent ziggurat.Event) interface{} {
 		if p.Logger == nil {
 			return next.Handle(ctx, messageEvent)
 		}
-
-		err := next.Handle(ctx, messageEvent)
+		retVal := next.Handle(ctx, messageEvent)
 		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute]}
-		if err != nil {
-			args["status"] = "SUCCESS"
-			p.Logger.Error("proc logger", err, args)
-		} else {
-			args["status"] = "FAILED"
-			p.Logger.Info("proc logger", args)
+
+		switch retVal.(type) {
+		case error:
+			args["status"] = "PROCESSING_FAILED"
+			p.Logger.Error("process status logger", retVal.(error), args)
+			return retVal
+		default:
+			args["status"] = "PROCESSING_SUCCEEDED"
+			args["return-value"] = retVal
+			p.Logger.Info("process status logger", args)
+			return retVal
 		}
-		return err
+
 	}
 	return ziggurat.HandlerFunc(f)
 }

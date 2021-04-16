@@ -94,20 +94,22 @@ func (s *Client) Gauge(metricName string, value int64, arguments map[string]stri
 // processing_success_count - count of nil errors returned by handler
 // message_count - count of all messages encountered by the handler
 func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handler {
-	f := func(ctx context.Context, event ziggurat.Event) error {
+	f := func(ctx context.Context, event ziggurat.Event) interface{} {
 		t1 := time.Now()
-		err := handler.Handle(ctx, event)
+		retVal := handler.Handle(ctx, event)
 		args := map[string]string{
 			"route": event.Headers()[ziggurat.HeaderMessageRoute],
 		}
 		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
 		s.Logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
-		if err != nil {
+		switch retVal.(type) {
+		case error:
 			s.Logger.Error(publishErrMsg, s.IncCounter("processing_failure_count", 1, args))
-			return err
+			return retVal
+		default:
+			s.Logger.Error(publishErrMsg, s.IncCounter("processing_success_count", 1, args))
+			return retVal
 		}
-		s.Logger.Error(publishErrMsg, s.IncCounter("processing_success_count", 1, args))
-		return err
 	}
 	return ziggurat.HandlerFunc(f)
 }
@@ -115,7 +117,7 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 // PublishKafkaLag publishes the kafka lag per topic in milliseconds
 // kafka_lag - time difference in milliseconds between the kafka event timestamp and the current time
 func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
-	f := func(ctx context.Context, event ziggurat.Event) error {
+	f := func(ctx context.Context, event ziggurat.Event) interface{} {
 		headers := event.Headers()
 		topic := headers["x-kafka-topic"]
 		partition := headers["x-kafka-partition"]
