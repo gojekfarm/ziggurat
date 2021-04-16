@@ -25,9 +25,10 @@ func TestKafkaStreams_Consume(t *testing.T) {
 		Logger:           logger.NewJSONLogger("disabled"),
 		StreamConfig:     StreamConfig{{RouteGroup: "foo"}},
 	}
-	kstreams.Stream(context.Background(), ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
+	f := func(ctx context.Context, event ziggurat.Event) interface{} {
 		return nil
-	}))
+	}
+	kstreams.Stream(context.Background(), ziggurat.HandlerFunc(f))
 	if len(kstreams.routeConsumerMap) < len(routes) {
 		t.Errorf("expected count %d but got %d", len(kstreams.routeConsumerMap), len(routes))
 	}

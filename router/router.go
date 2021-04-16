@@ -20,13 +20,13 @@ type defaultRouter struct {
 	NotFoundHandler    ziggurat.HandlerFunc
 }
 
-func WithNotFoundHandler(nfh func(ctx context.Context, event ziggurat.Event) error) func(dr *defaultRouter) {
+func WithNotFoundHandler(nfh func(ctx context.Context, event ziggurat.Event) interface{}) func(dr *defaultRouter) {
 	return func(dr *defaultRouter) {
 		dr.NotFoundHandler = nfh
 	}
 }
 
-func (dr *defaultRouter) Handle(ctx context.Context, event ziggurat.Event) error {
+func (dr *defaultRouter) Handle(ctx context.Context, event ziggurat.Event) interface{} {
 	route := event.Headers()[ziggurat.HeaderMessageRoute]
 	if handler, ok := dr.handlerFunctionMap[route]; !ok {
 		return dr.NotFoundHandler.Handle(ctx, event)
@@ -48,7 +48,7 @@ func New(opts ...func(dr *defaultRouter)) *defaultRouter {
 	}
 
 	if dr.NotFoundHandler == nil {
-		dr.NotFoundHandler = func(ctx context.Context, event ziggurat.Event) error {
+		dr.NotFoundHandler = func(ctx context.Context, event ziggurat.Event) interface{} {
 			return RouteNotFoundError{routeName: event.Headers()[ziggurat.HeaderMessageRoute]}
 		}
 	}
@@ -57,7 +57,7 @@ func New(opts ...func(dr *defaultRouter)) *defaultRouter {
 }
 
 // HandleFunc registers a new handler function for the given route
-func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(ctx context.Context, event ziggurat.Event) error) {
+func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(ctx context.Context, event ziggurat.Event) interface{}) {
 	if route == "" {
 		panic(`route cannot be ""`)
 	}

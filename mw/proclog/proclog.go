@@ -14,7 +14,7 @@ type (
 )
 
 // Handle implements the ziggurat.Handler interface
-func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) error {
+func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) interface{} {
 	if p.Next == nil {
 		panic("[process status logger] handler cannot be nil")
 	}
@@ -31,9 +31,11 @@ func (p *ProcLogger) LogStatus(next ziggurat.Handler) ziggurat.Handler {
 		err := next.Handle(ctx, messageEvent)
 		args := map[string]interface{}{"route": messageEvent.Headers()[ziggurat.HeaderMessageRoute]}
 		if err != nil {
-			p.Logger.Error("message processing failed", err, args)
+			args["status"] = "SUCCESS"
+			p.Logger.Error("proc logger", err, args)
 		} else {
-			p.Logger.Info("message processing succeeded", args)
+			args["status"] = "FAILED"
+			p.Logger.Info("proc logger", args)
 		}
 		return err
 	}

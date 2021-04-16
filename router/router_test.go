@@ -19,7 +19,7 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 	expectedEvent.HeadersFunc = func() map[string]string {
 		return map[string]string{ziggurat.HeaderMessageRoute: "bar"}
 	}
-	dr.HandleFunc("foo", func(ctx context.Context, event ziggurat.Event) error {
+	dr.HandleFunc("foo", func(ctx context.Context, event ziggurat.Event) interface{} {
 		if !reflect.DeepEqual(event, expectedEvent) {
 			t.Errorf("expected event %+v, got %+v", expectedEvent, event)
 		}
@@ -37,12 +37,12 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 
 func TestDefaultRouter_NotFoundHandler(t *testing.T) {
 	notFoundHandlerCalled := false
-	dr := New(WithNotFoundHandler(func(ctx context.Context, event ziggurat.Event) error {
+	dr := New(WithNotFoundHandler(func(ctx context.Context, event ziggurat.Event) interface{} {
 		notFoundHandlerCalled = true
 		return nil
 	}))
 
-	dr.HandleFunc("foo", func(ctx context.Context, event ziggurat.Event) error {
+	dr.HandleFunc("foo", func(ctx context.Context, event ziggurat.Event) interface{} {
 		return nil
 	})
 

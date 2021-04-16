@@ -5,9 +5,9 @@ import "context"
 // HandlerFunc serves as an adapter to convert
 // regular functions of the signature f(context.Context,ziggurat.Event)
 // to implement the ziggurat.Handler interface
-type HandlerFunc func(ctx context.Context, event Event) error
+type HandlerFunc func(ctx context.Context, event Event) interface{}
 
-func (h HandlerFunc) Handle(ctx context.Context, event Event) error {
+func (h HandlerFunc) Handle(ctx context.Context, event Event) interface{} {
 	return h(ctx, event)
 }
 
@@ -15,5 +15,5 @@ func (h HandlerFunc) Handle(ctx context.Context, event Event) error {
 // to handle messages produced by a stream source
 // the router package implements this interface
 type Handler interface {
-	Handle(ctx context.Context, event Event) error
+	Handle(ctx context.Context, event Event) interface{}
 }
