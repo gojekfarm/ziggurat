@@ -45,11 +45,11 @@ func main() {
 
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(ctx context.Context, event ziggurat.Event) error {
+	r.HandleFunc("plain-text-log", func(ctx context.Context, event ziggurat.Event) interface{} {
 		return nil
 	})
 
-	r.HandleFunc("json-log", func(ctx context.Context, event ziggurat.Event) error {
+	r.HandleFunc("json-log", func(ctx context.Context, event ziggurat.Event) interface{} {
 		return ziggurat.ErrProcessingFailed{}
 	})
 
