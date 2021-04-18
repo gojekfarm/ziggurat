@@ -1,9 +1,9 @@
+//+build ignore
+
 package main
 
 import (
 	"context"
-	"errors"
-
 	"github.com/gojekfarm/ziggurat/mw/event"
 
 	"github.com/gojekfarm/ziggurat/mw/prometheus"
@@ -48,7 +48,7 @@ func main() {
 	})
 
 	r.HandleFunc("json-log", func(ctx context.Context, event *ziggurat.Event) error {
-		return errors.New("could not process message")
+		return ziggurat.Retry
 	})
 
 	handler := r.Compose(
