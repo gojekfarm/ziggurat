@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/gojekfarm/ziggurat/mw/event"
 
 	"github.com/gojekfarm/ziggurat/mw/prometheus"
