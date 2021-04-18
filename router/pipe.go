@@ -8,7 +8,7 @@ import (
 
 var PipeHandlers = func(funcs ...func(handler ziggurat.Handler) ziggurat.Handler) func(origHandler ziggurat.Handler) ziggurat.Handler {
 	return func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) interface{} {
+		return ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) interface{} {
 			var handlerResult = next
 			lastIdx := len(funcs) - 1
 			for i := lastIdx; i >= 0; i-- {

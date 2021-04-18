@@ -1,15 +1,33 @@
 package ziggurat
 
-// HeaderMessageType is an event header which specifies the type of message being received
-const HeaderMessageType = "x-message-type"
+import (
+	"bytes"
+	"io"
+	"time"
+)
 
-// HeaderMessageRoute is an event header which can be used by third-party handlers to route messages
-const HeaderMessageRoute = "x-message-route"
+// Event is a generic event
+// ReceivedTimestamp holds the timestamp of the message when it was received
+// ProducerTimestamp holds the timestamp of the message as given by the producer
+// Path is the message path and can be used by routers to route message to the correct handler
+// EventType is the type of event eg:- kafka,rabbitmq,redis
+// Headers can contain additional metadata about the message
+type Event struct {
+	Headers           map[string]interface{}
+	Value             []byte
+	Key               []byte
+	Path              string
+	ProducerTimestamp time.Time
+	ReceivedTimestamp time.Time
+	EventType         string
+}
 
-// Event is used to represent a generic event produced by streams
-// Messages produced by your streams must implement this interface
-type Event interface {
-	Value() []byte
-	Key() []byte
-	Headers() map[string]string
+// ValueReader can be used as a byte reader to read the message value
+func ValueReader(e Event) io.Reader {
+	return bytes.NewReader(e.Value)
+}
+
+// KeyReader can be used as a byte reader to read the message key
+func KeyReader(e Event) io.Reader {
+	return bytes.NewReader(e.Key)
 }

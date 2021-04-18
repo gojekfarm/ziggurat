@@ -14,7 +14,7 @@ type (
 )
 
 // Handle implements the ziggurat.Handler interface
-func (p *ProcLogger) Handle(ctx context.Context, event ziggurat.Event) interface{} {
+func (p *ProcLogger) Handle(ctx context.Context, event *ziggurat.Event) interface{} {
 	if p.Next == nil {
 		panic("[process status logger] handler cannot be nil")
 	}
