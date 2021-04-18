@@ -34,7 +34,7 @@ func TestZigguratStartStop(t *testing.T) {
 		return ctx.Err()
 	}}
 
-	z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event Event) interface{} { return nil }))
+	z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event *Event) interface{} { return nil }))
 
 	if !isStartCalled {
 		t.Error("expected start callback to be called")
@@ -54,7 +54,7 @@ func TestZigguratRun(t *testing.T) {
 		return nil
 	}}
 	z.streams = streams
-	err := z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event Event) interface{} { return nil }))
+	err := z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event *Event) interface{} { return nil }))
 	if err != nil {
 		t.Errorf("expected error to be nil")
 	}

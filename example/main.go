@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/gojekfarm/ziggurat/mw/proclog"
+	"github.com/gojekfarm/ziggurat/mw/event"
 
 	"github.com/gojekfarm/ziggurat/mw/prometheus"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
@@ -19,7 +19,6 @@ func main() {
 	var zig ziggurat.Ziggurat
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
-	procl := proclog.ProcLogger{Logger: jsonLogger}
 	ctx := context.Background()
 
 	kafkaStreams := &kafka.Streams{
@@ -44,16 +43,17 @@ func main() {
 
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(ctx context.Context, event ziggurat.Event) interface{} {
+	r.HandleFunc("plain-text-log", func(ctx context.Context, event *ziggurat.Event) interface{} {
 		return nil
 	})
 
-	r.HandleFunc("json-log", func(ctx context.Context, event ziggurat.Event) interface{} {
+	r.HandleFunc("json-log", func(ctx context.Context, event *ziggurat.Event) interface{} {
+
 		return errors.New("could not process message")
 	})
 
 	handler := r.Compose(
-		procl.LogStatus,
+		event.Logger(jsonLogger),
 		statsdPublisher.PublishKafkaLag,
 		statsdPublisher.PublishHandlerMetrics,
 		prometheus.PublishHandlerMetrics,
