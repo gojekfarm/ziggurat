@@ -97,7 +97,7 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		t1 := time.Now()
 		retVal := handler.Handle(ctx, event)
 		args := map[string]string{
-			"path": event.Path,
+			"route": event.Path,
 		}
 		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
 		s.Logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
