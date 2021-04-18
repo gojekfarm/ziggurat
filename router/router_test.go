@@ -10,12 +10,12 @@ import (
 func TestDefaultRouter_HandleMessage(t *testing.T) {
 	dr := New()
 	called := false
-	dr.HandleFunc("foo", func(ctx context.Context, event *ziggurat.Event) interface{} {
+	dr.HandleFunc("foo", func(ctx context.Context, event *ziggurat.Event) error {
 		called = true
 		return nil
 	})
 
-	dr.HandleFunc("bar", func(ctx context.Context, event *ziggurat.Event) interface{} {
+	dr.HandleFunc("bar", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 
@@ -29,12 +29,12 @@ func TestDefaultRouter_HandleMessage(t *testing.T) {
 
 func TestDefaultRouter_NotFoundHandler(t *testing.T) {
 	notFoundHandlerCalled := false
-	dr := New(WithNotFoundHandler(func(ctx context.Context, event *ziggurat.Event) interface{} {
+	dr := New(WithNotFoundHandler(func(ctx context.Context, event *ziggurat.Event) error {
 		notFoundHandlerCalled = true
 		return nil
 	}))
 
-	dr.HandleFunc("foo", func(ctx context.Context, event *ziggurat.Event) interface{} {
+	dr.HandleFunc("foo", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 

@@ -10,7 +10,7 @@ import (
 
 func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent *ziggurat.Event) interface{} {
+		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent *ziggurat.Event) error {
 			me := ziggurat.Event{
 				Headers:           nil,
 				Value:             []byte("foo"),
@@ -25,7 +25,7 @@ func TestPipeHandlers(t *testing.T) {
 		})
 	}
 	mw2 := func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent *ziggurat.Event) interface{} {
+		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent *ziggurat.Event) error {
 			byteValue := append(messageEvent.Value, []byte("-bar")...)
 			me := ziggurat.Event{
 				Headers:           nil,
@@ -40,7 +40,7 @@ func TestPipeHandlers(t *testing.T) {
 			return next.Handle(ctx, &me)
 		})
 	}
-	actualHandler := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) interface{} {
+	actualHandler := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
 		if string(event.Value) != "foo-bar" {
 			t.Errorf("expected message to be %s,but got %s", "foo-bar", string(event.Value))
 		}

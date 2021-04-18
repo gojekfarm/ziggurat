@@ -8,7 +8,7 @@ import (
 
 func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat.Handler {
 	return func(handler ziggurat.Handler) ziggurat.Handler {
-		f := func(ctx context.Context, event *ziggurat.Event) interface{} {
+		f := func(ctx context.Context, event *ziggurat.Event) error {
 			l.Info("received message", map[string]interface{}{
 				"path":               event.Path,
 				"producer-timestamp": event.ProducerTimestamp,

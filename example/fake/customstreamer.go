@@ -50,7 +50,7 @@ func (f *FakeStreams) Stream(ctx context.Context, handler ziggurat.Handler) erro
 }
 
 func FakeMiddleware(h ziggurat.Handler) ziggurat.Handler {
-	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) interface{} {
+	return ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		fmt.Println("[FAKE MIDDLEWARE]: ", time.Now())
 		return h.Handle(ctx, event)
 	})
@@ -59,7 +59,7 @@ func FakeMiddleware(h ziggurat.Handler) ziggurat.Handler {
 func main() {
 	fs := FakeStreams{}
 	z := ziggurat.Ziggurat{}
-	hf := ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) interface{} {
+	hf := ziggurat.HandlerFunc(func(ctx context.Context, event ziggurat.Event) error {
 		fmt.Println("Received message : => ", string(event.Value()))
 		return nil
 	})
