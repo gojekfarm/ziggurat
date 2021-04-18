@@ -48,7 +48,6 @@ func main() {
 	})
 
 	r.HandleFunc("json-log", func(ctx context.Context, event *ziggurat.Event) error {
-
 		return errors.New("could not process message")
 	})
 
