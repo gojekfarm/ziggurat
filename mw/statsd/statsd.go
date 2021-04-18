@@ -2,7 +2,6 @@ package statsd
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/gojekfarm/ziggurat/logger"
@@ -94,11 +93,11 @@ func (s *Client) Gauge(metricName string, value int64, arguments map[string]stri
 // processing_success_count - count of nil errors returned by handler
 // message_count - count of all messages encountered by the handler
 func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handler {
-	f := func(ctx context.Context, event ziggurat.Event) interface{} {
+	f := func(ctx context.Context, event *ziggurat.Event) interface{} {
 		t1 := time.Now()
 		retVal := handler.Handle(ctx, event)
 		args := map[string]string{
-			"route": event.Headers()[ziggurat.HeaderMessageRoute],
+			"path": event.Path,
 		}
 		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
 		s.Logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
@@ -117,19 +116,15 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 // PublishKafkaLag publishes the kafka lag per topic in milliseconds
 // kafka_lag - time difference in milliseconds between the kafka event timestamp and the current time
 func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
-	f := func(ctx context.Context, event ziggurat.Event) interface{} {
-		headers := event.Headers()
-		topic := headers["x-kafka-topic"]
-		partition := headers["x-kafka-partition"]
-		timestampInt, parseErr := strconv.ParseInt(headers["x-kafka-timestamp"], 10, 64)
-		if parseErr != nil {
-			s.Logger.Error("error parsing timestamp", parseErr)
-			return handler.Handle(ctx, event)
-		}
+	f := func(ctx context.Context, event *ziggurat.Event) interface{} {
+		headers := event.Headers
+		args := map[string]string{}
 
-		timestamp := time.Unix(timestampInt, 0)
-		diff := time.Since(timestamp).Milliseconds()
-		s.Logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, map[string]string{"topic": topic, "partition": partition}))
+		args["topic"] = headers["x-kafka-topic"]
+		args["partition"] = headers["x-kafka-partition"]
+
+		diff := event.ReceivedTimestamp.Sub(event.ProducerTimestamp).Milliseconds()
+		s.Logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, args))
 		return handler.Handle(ctx, event)
 
 	}

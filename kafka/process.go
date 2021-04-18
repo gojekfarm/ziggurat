@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
+	"strconv"
 	"time"
 )
 
@@ -17,8 +18,8 @@ const (
 func processMessage(msg *kafka.Message, route string, c *kafka.Consumer, h ziggurat.Handler, l ziggurat.StructuredLogger, ctx context.Context) {
 
 	event := ziggurat.Event{
-		Headers: map[string]interface{}{
-			HeaderPartition: msg.TopicPartition.Partition,
+		Headers: map[string]string{
+			HeaderPartition: strconv.Itoa(int(msg.TopicPartition.Partition)),
 			HeaderTopic:     *msg.TopicPartition.Topic,
 		},
 		Value:             msg.Value,

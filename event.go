@@ -13,7 +13,7 @@ import (
 // EventType is the type of event eg:- kafka,rabbitmq,redis
 // Headers can contain additional metadata about the message
 type Event struct {
-	Headers           map[string]interface{}
+	Headers           map[string]string
 	Value             []byte
 	Key               []byte
 	Path              string
