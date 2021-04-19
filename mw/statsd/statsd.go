@@ -101,6 +101,11 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		}
 		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
 		s.Logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
+
+		if err != nil && err == ziggurat.Retry {
+			s.Logger.Error(publishErrMsg, s.IncCounter("event_retry_count", 1, args))
+		}
+
 		if err != nil {
 			s.Logger.Error(publishErrMsg, s.IncCounter("processing_failure_count", 1, args))
 		}
