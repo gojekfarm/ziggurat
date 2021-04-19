@@ -22,7 +22,7 @@ func main() {
 	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
 	ctx := context.Background()
 
-	kafkaStreams := &kafka.Streams{
+	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
 				BootstrapServers: "localhost:9092",
@@ -71,7 +71,7 @@ func main() {
 		prometheus.Register()
 	})
 
-	if runErr := zig.Run(ctx, kafkaStreams, handler); runErr != nil {
+	if runErr := zig.Run(ctx, &kafkaStreams, handler); runErr != nil {
 		jsonLogger.Error("could not start streams", runErr)
 	}
 
