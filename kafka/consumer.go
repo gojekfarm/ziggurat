@@ -12,14 +12,15 @@ import (
 
 const defaultPollTimeout = 1 * time.Second
 const brokerRetryTimeout = 3 * time.Second
+const defaultPollTimeoutInMS = 1000
 
 var startConsumer = func(
-	ctx context.Context,
-	h ziggurat.Handler,
-	l ziggurat.StructuredLogger,
-	consumer *kafka.Consumer,
-	route string, instanceID string,
-	wg *sync.WaitGroup,
+				ctx context.Context,
+				h ziggurat.Handler,
+				l ziggurat.StructuredLogger,
+				consumer *kafka.Consumer,
+				route string, instanceID string,
+				wg *sync.WaitGroup,
 ) {
 	logChan := consumer.Logs()
 
@@ -45,15 +46,27 @@ var startConsumer = func(
 			case <-doneCh:
 				run = false
 			default:
-				msg, err := readMessage(consumer, defaultPollTimeout)
-				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
-					continue
-				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					time.Sleep(brokerRetryTimeout)
+				//msg, err := readMessage(consumer, defaultPollTimeout)
+				//if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
+				//	continue
+				//} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
+				//	time.Sleep(brokerRetryTimeout)
+				//	continue
+				//}
+				//if msg != nil {
+				//	processMessage(msg, route, consumer, h, l, ctx)
+				//}
+				ev := consumer.Poll(defaultPollTimeoutInMS)
+				if ev == nil {
 					continue
 				}
-				if msg != nil {
-					processMessage(msg, route, consumer, h, l, ctx)
+				switch e := ev.(type) {
+				case *kafka.Message:
+					processMessage(e, route, consumer, h, l, ctx)
+				case kafka.Error:
+					l.Error("kafka event poll error", e)
+				case kafka.Stats:
+					l.Info("received stats %s", map[string]interface{}{"value": e})
 				}
 			}
 		}
@@ -63,14 +76,14 @@ var startConsumer = func(
 }
 
 var StartConsumers = func(
-	ctx context.Context,
-	consumerConfig *kafka.ConfigMap,
-	route string,
-	topics []string,
-	instances int,
-	h ziggurat.Handler,
-	l ziggurat.StructuredLogger,
-	wg *sync.WaitGroup,
+				ctx context.Context,
+				consumerConfig *kafka.ConfigMap,
+				route string,
+				topics []string,
+				instances int,
+				h ziggurat.Handler,
+				l ziggurat.StructuredLogger,
+				wg *sync.WaitGroup,
 ) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
