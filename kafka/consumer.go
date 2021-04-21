@@ -4,14 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 )
 
-const defaultPollTimeout = 1 * time.Second
-const brokerRetryTimeout = 3 * time.Second
+const defaultPollTimeoutInMS = 1000
 
 var startConsumer = func(
 	ctx context.Context,
@@ -45,15 +43,16 @@ var startConsumer = func(
 			case <-doneCh:
 				run = false
 			default:
-				msg, err := readMessage(consumer, defaultPollTimeout)
-				if err != nil && err.(kafka.Error).Code() == kafka.ErrTimedOut {
-					continue
-				} else if err != nil && err.(kafka.Error).Code() == kafka.ErrAllBrokersDown {
-					time.Sleep(brokerRetryTimeout)
-					continue
-				}
-				if msg != nil {
-					processMessage(msg, route, consumer, h, l, ctx)
+				ev := pollEvent(consumer, defaultPollTimeoutInMS)
+				switch e := ev.(type) {
+				case *kafka.Message:
+					if e != nil {
+						processMessage(e, route, consumer, h, l, ctx)
+					}
+				case kafka.Error:
+					l.Error("kafka poll error", e)
+				default:
+					//Do nothing
 				}
 			}
 		}

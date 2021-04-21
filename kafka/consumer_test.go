@@ -47,7 +47,7 @@ func TestConsumer_create(t *testing.T) {
 func TestConsumer_start(t *testing.T) {
 	expectedBytes := []byte("foo")
 	l := logger.NewJSONLogger("disabled")
-	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
+	pollEvent = func(c *kafka.Consumer, pollTimeout int) kafka.Event {
 		t := ""
 		return &kafka.Message{
 			TopicPartition: kafka.TopicPartition{
@@ -63,9 +63,9 @@ func TestConsumer_start(t *testing.T) {
 			TimestampType: 0,
 			Opaque:        nil,
 			Headers:       nil,
-		}, nil
+		}
 	}
-	hf := ziggurat.HandlerFunc(func(messagectx context.Context, event *ziggurat.Event) error {
+	hf := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
 		if bytes.Compare(event.Value, expectedBytes) != 0 {
 			t.Errorf("expected %s but got %s", expectedBytes, event.Value)
 		}
@@ -86,28 +86,4 @@ func TestConsumer_start(t *testing.T) {
 	}()
 	startConsumer(ctx, hf, l, c, "", "", wg)
 	wg.Wait()
-}
-
-func TestConsumer_AllBrokersDown(t *testing.T) {
-	callCount := 0
-	l := logger.NewJSONLogger("disabled")
-	readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
-		callCount++
-		return nil, kafka.NewError(kafka.ErrAllBrokersDown, "", true)
-	}
-
-	wg := &sync.WaitGroup{}
-	c := &kafka.Consumer{}
-	deadlineTime := time.Now().Add(time.Second * 6)
-	ctx, cancelFunc := context.WithDeadline(context.Background(), deadlineTime)
-	defer cancelFunc()
-	h := ziggurat.HandlerFunc(func(messagectx context.Context, event *ziggurat.Event) error {
-		return nil
-	})
-	wg.Add(1)
-	startConsumer(ctx, h, l, c, "", "", wg)
-	wg.Wait()
-	if callCount < 1 {
-		t.Errorf("expected call count to be atleast 2")
-	}
 }

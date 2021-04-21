@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/dsl"
 	"github.com/gojekfarm/ziggurat/kafka"

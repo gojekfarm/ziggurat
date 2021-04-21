@@ -1,8 +1,6 @@
 package kafka
 
 import (
-	"time"
-
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 )
@@ -34,8 +32,8 @@ var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition
 	return nil
 }
 
-var readMessage = func(c *kafka.Consumer, pollTimeout time.Duration) (*kafka.Message, error) {
-	return c.ReadMessage(pollTimeout)
+var pollEvent = func(c *kafka.Consumer, pollTimeout int) kafka.Event {
+	return c.Poll(pollTimeout)
 }
 
 // NewConsumerConfig returns a new kafka consumer config map
