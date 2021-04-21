@@ -14,7 +14,7 @@ type Client struct {
 	client statsd.Statter
 	host   string
 	prefix string
-	Logger ziggurat.StructuredLogger
+	logger ziggurat.StructuredLogger
 }
 
 const publishErrMsg = "statsd client: error publishing metric"
@@ -25,18 +25,13 @@ const publishErrMsg = "statsd client: error publishing metric"
 // use statsd.WithHost to specify a custom host:port string, defaults to localhost:8125
 func NewPublisher(opts ...func(c *Client)) *Client {
 	c := &Client{}
+
+	c.prefix = "ziggurat_statsd"
+	c.host = "localhost:8125"
+	c.logger = logger.NewDiscardLogger()
+
 	for _, opt := range opts {
 		opt(c)
-	}
-	if c.prefix == "" {
-		c.prefix = "ziggurat_statsd"
-	}
-	if c.host == "" {
-		c.host = "localhost:8125"
-	}
-
-	if c.Logger == nil {
-		c.Logger = logger.NewJSONLogger(logger.Disabled)
 	}
 
 	return c
@@ -54,12 +49,12 @@ func (s *Client) Run(ctx context.Context) error {
 		return clientErr
 	}
 	s.client = client
-	s.Logger.Info("starting go-routine publisher", map[string]interface{}{"publish-interval": "10s"})
+	s.logger.Info("starting go-routine publisher", map[string]interface{}{"publish-interval": "10s"})
 	go func() {
 		done := ctx.Done()
 		<-done
 		if s.client != nil {
-			s.Logger.Error("error closing statsd client", s.client.Close())
+			s.logger.Error("error closing statsd client", s.client.Close())
 		}
 	}()
 	go goRoutinePublisher(ctx, 10*time.Second, s)
@@ -99,20 +94,20 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		args := map[string]string{
 			"route": event.Path,
 		}
-		s.Logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
-		s.Logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
+		s.logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
+		s.logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
 
 		if err == ziggurat.Retry {
-			s.Logger.Error(publishErrMsg, s.IncCounter("event_retry_count", 1, args))
+			s.logger.Error(publishErrMsg, s.IncCounter("event_retry_count", 1, args))
 			return err
 		}
 
 		if err != nil {
-			s.Logger.Error(publishErrMsg, s.IncCounter("processing_failure_count", 1, args))
+			s.logger.Error(publishErrMsg, s.IncCounter("processing_failure_count", 1, args))
 			return err
 		}
 
-		s.Logger.Error(publishErrMsg, s.IncCounter("processing_success_count", 1, args))
+		s.logger.Error(publishErrMsg, s.IncCounter("processing_success_count", 1, args))
 		return err
 	}
 	return ziggurat.HandlerFunc(f)
@@ -129,7 +124,7 @@ func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 		args["partition"] = headers["x-kafka-partition"]
 
 		diff := event.ReceivedTimestamp.Sub(event.ProducerTimestamp).Milliseconds()
-		s.Logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, args))
+		s.logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, args))
 		return handler.Handle(ctx, event)
 
 	}

@@ -285,7 +285,7 @@ func main() {
 				RouteGroup:       "plain-text-log",
 			},
 		},
-		Logger: jsonLogger,
+		logger: jsonLogger,
 	}
 	r := router.New()
 
@@ -293,11 +293,11 @@ func main() {
 		return nil
 	})
 	
-	processingLogger := &mw.ProcessingStatusLogger{Logger: jsonLogger}
+	processingLogger := &mw.ProcessingStatusLogger{logger: jsonLogger}
 
 	handler := r.Compose(processingLogger.LogStatus)
 
-	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
+	zig := &ziggurat.Ziggurat{logger: jsonLogger}
 	if runErr := zig.Run(ctx, kafkaStreams, handler); runErr!=nil {
 		fmt.Println("error running streams: ",runErr)
 	}

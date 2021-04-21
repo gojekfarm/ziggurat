@@ -16,6 +16,6 @@ func WithHost(host string) func(c *Client) {
 
 func WithLogger(l ziggurat.StructuredLogger) func(c *Client) {
 	return func(c *Client) {
-		c.Logger = l
+		c.logger = l
 	}
 }

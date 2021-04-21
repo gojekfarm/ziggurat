@@ -8,32 +8,32 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var defaultHTTPPort = "8080"
+var defaultAddr = "localhost:8080"
 
 type DefaultHttpServer struct {
 	server *http.Server
 	router *httprouter.Router
 }
 
-func WithPort(port string) func(s *DefaultHttpServer) {
+func WithAddr(addr string) func(s *DefaultHttpServer) {
 	return func(s *DefaultHttpServer) {
-		s.server.Addr = "localhost:" + port
+		s.server.Addr = addr
 	}
 }
 
 // NewHTTPServer creates a new HTTPServer
-// server.WithPort can be used to configure the port number
+// server.WithAddr can be used to configure the port number
 // returns a ready to use http server with an embedded router
 func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	router := httprouter.New()
-	requestLogger := logger.NewJSONLogger("info")
+	requestLogger := logger.NewJSONLogger(logger.LevelInfo)
 	httpRequestLogger := HTTPRequestLogger(requestLogger)
 	server := &http.Server{Handler: httpRequestLogger(router)}
 	s := &DefaultHttpServer{
 		server: server,
 		router: router,
 	}
-	s.server.Addr = "localhost:" + defaultHTTPPort
+	s.server.Addr = defaultAddr
 	for _, opt := range opts {
 		opt(s)
 	}
