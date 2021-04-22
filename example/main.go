@@ -7,9 +7,6 @@ import (
 
 	"github.com/gojekfarm/ziggurat/mw/event"
 
-	"github.com/gojekfarm/ziggurat/mw/prometheus"
-	"github.com/gojekfarm/ziggurat/mw/statsd"
-
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
@@ -19,7 +16,6 @@ import (
 func main() {
 	var zig ziggurat.Ziggurat
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
-	statsdPublisher := statsd.NewPublisher(statsd.WithLogger(jsonLogger))
 	ctx := context.Background()
 
 	kafkaStreams := kafka.Streams{
@@ -31,13 +27,6 @@ func main() {
 				ConsumerCount:    1,
 				RouteGroup:       "plain-text-log",
 			},
-			{
-				BootstrapServers: "localhost:9092",
-				OriginTopics:     "json-log",
-				ConsumerGroupID:  "json_consumer",
-				ConsumerCount:    1,
-				RouteGroup:       "json-log",
-			},
 		},
 		Logger: jsonLogger,
 	}
@@ -48,32 +37,10 @@ func main() {
 		return nil
 	})
 
-	r.HandleFunc("json-log", func(ctx context.Context, event *ziggurat.Event) error {
-		return ziggurat.Retry
-	})
-
-	handler := r.Compose(
-		event.Logger(jsonLogger),
-		statsdPublisher.PublishKafkaLag,
-		statsdPublisher.PublishHandlerMetrics,
-		prometheus.PublishHandlerMetrics,
-	)
-
-	promStop := make(chan struct{}, 1)
-
-	zig.StartFunc(func(ctx context.Context) {
-		go func() {
-			jsonLogger.Error("", prometheus.StartMonitoringServer(ctx))
-			promStop <- struct{}{}
-		}()
-
-		jsonLogger.Error("could not start statsd publisher", statsdPublisher.Run(ctx))
-		prometheus.Register()
-	})
+	handler := r.Compose(event.Logger(jsonLogger))
 
 	if runErr := zig.Run(ctx, &kafkaStreams, handler); runErr != nil {
 		jsonLogger.Error("could not start streams", runErr)
 	}
 
-	<-promStop
 }

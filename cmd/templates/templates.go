@@ -263,19 +263,21 @@ var Main = `package main
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/gojekfarm/ziggurat/mw/event"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/router"
 )
 
 func main() {
-	jsonLogger := logger.NewJSONLogger("info")
+	var zig ziggurat.Ziggurat
+	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	ctx := context.Background()
 
-	kafkaStreams := &kafka.Streams{
+	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
 				BootstrapServers: "localhost:9092",
@@ -285,22 +287,21 @@ func main() {
 				RouteGroup:       "plain-text-log",
 			},
 		},
-		logger: jsonLogger,
+		Logger: jsonLogger,
 	}
+
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(ctx context.Context,event ziggurat.Event) error {
+	r.HandleFunc("plain-text-log", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
-	
-	processingLogger := &mw.ProcessingStatusLogger{logger: jsonLogger}
 
-	handler := r.Compose(processingLogger.LogStatus)
+	handler := r.Compose(event.Logger(jsonLogger))
 
-	zig := &ziggurat.Ziggurat{logger: jsonLogger}
-	if runErr := zig.Run(ctx, kafkaStreams, handler); runErr!=nil {
-		fmt.Println("error running streams: ",runErr)
+	if runErr := zig.Run(ctx, &kafkaStreams, handler); runErr != nil {
+		jsonLogger.Error("could not start streams", runErr)
 	}
+
 }`
 
 var Makefile = `.PHONY: all
