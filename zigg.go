@@ -3,7 +3,6 @@ package ziggurat
 import (
 	"context"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/gojekfarm/ziggurat/logger"
@@ -96,32 +95,4 @@ func (z *Ziggurat) StartFunc(function StartFunction) {
 // is used to perform cleanup operations
 func (z *Ziggurat) StopFunc(function StopFunction) {
 	z.stopFunc = function
-}
-
-// RunAll runs multiple streamers concurrently and applies
-// the handler on each streamer
-// returns a combined error on failure
-func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
-	errs := make(chan error, len(streams))
-	var wg sync.WaitGroup
-	for i, _ := range streams {
-		wg.Add(1)
-		j := i
-		go func() {
-			err := z.Run(ctx, streams[j], handler)
-			errs <- err
-			wg.Done()
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(errs)
-	}()
-
-	err := ErrRunAll{}
-	for e := range errs {
-		err.errors = append(err.errors, e)
-	}
-	return err
 }
