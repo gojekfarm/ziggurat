@@ -24,19 +24,24 @@ package main
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/gojekfarm/ziggurat/mw/event"
+
+	"github.com/gojekfarm/ziggurat/mw/prometheus"
+	"github.com/gojekfarm/ziggurat/mw/statsd"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/gojekfarm/ziggurat/mw"
 	"github.com/gojekfarm/ziggurat/router"
 )
 
 func main() {
-	jsonLogger := logger.NewJSONLogger("info")
+	var zig ziggurat.Ziggurat
+	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	ctx := context.Background()
 
-	kafkaStreams := &kafka.Streams{
+	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
 				BootstrapServers: "localhost:9092",
@@ -55,22 +60,21 @@ func main() {
 		},
 		Logger: jsonLogger,
 	}
+
 	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(event ziggurat.Event, ctx context.Context) error {
+	r.HandleFunc("plain-text-log", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 
-	r.HandleFunc("json-log", func(event ziggurat.Event, ctx context.Context) error {
-		return ziggurat.ErrProcessingFailed{}
+	r.HandleFunc("json-log", func(ctx context.Context, event *ziggurat.Event) error {
+		return ziggurat.Retry
 	})
 
-	handler := &mw.ProcessingStatusLogger{Logger: jsonLogger, Handler: r}
+	handler := r.Compose(event.Logger(jsonLogger))
 
-	zig := &ziggurat.Ziggurat{Logger: jsonLogger}
-
-	if runErr := zig.Run(ctx, kafkaStreams, handler); runErr != nil {
-		fmt.Println("error running streams ", runErr)
+	if runErr := zig.Run(ctx, &kafkaStreams, handler); runErr != nil {
+		jsonLogger.Error("could not start streams", runErr)
 	}
 
 }
@@ -78,7 +82,7 @@ func main() {
 
 ### Concepts
 
-- There are 3 main interfaces that your structs can implement to plug into the Ziggurat library
+- There are 2 main interfaces that your structs can implement to plug into the Ziggurat library
 
 ### Streamer interface
 
@@ -102,24 +106,12 @@ package ziggurat
 import "context"
 
 type Handler interface {
-	Handle(event Event, ctx context.Context) error
+	Handle(ctx context.Context, event *Event) error
 }
 
 // The Handler interface is very similar to the http.Handler interface
 // The default router shipped with Ziggurat also implements the Handler interface
 ```
 
-### Event interface
 
-```go
-package ziggurat
 
-type Event interface {
-	Value() []byte
-	Key() 	[]byte
-	Headers() map[string]string
-}
-
-// Every stream must produce a series of events to be handled by the handler
-// An event typically returns a byte value, headers which can contain additional metadata
-```
