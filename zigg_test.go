@@ -62,7 +62,7 @@ func TestZiggurat_Run(t *testing.T) {
 
 func TestZiggurat_RunAll(t *testing.T) {
 	var z Ziggurat
-	z.Logger = logger.DiscardLogger{}
+	z.Logger = logger.NewDiscardLogger()
 	c, cfn := context.WithTimeout(context.Background(), 200*time.Millisecond)
 	defer cfn()
 	ms := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
@@ -89,6 +89,7 @@ func TestZiggurat_RunAll(t *testing.T) {
 
 func TestErrRunAll_HandlerExec(t *testing.T) {
 	var z Ziggurat
+	z.Logger = logger.NewDiscardLogger()
 	callCount := 0
 	streamOne := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
 		for {
