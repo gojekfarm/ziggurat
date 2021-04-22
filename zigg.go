@@ -3,6 +3,7 @@ package ziggurat
 import (
 	"context"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/gojekfarm/ziggurat/logger"
@@ -10,6 +11,18 @@ import (
 
 type StartFunction func(ctx context.Context)
 type StopFunction func()
+
+type ErrRunAll struct {
+	errors []error
+}
+
+func (e ErrRunAll) Error() string {
+	return "one of the streams errored out, use the Inspect method to know more"
+}
+
+func (e ErrRunAll) Inspect() []error {
+	return e.errors
+}
 
 // Ziggurat serves as a container for streams to run in
 // can be used without initialization
@@ -72,15 +85,43 @@ func (z *Ziggurat) stop(stopFunc StopFunction) {
 	}
 }
 
-//StartFunc is used to start additional application states
+// StartFunc is used to start additional application states
 // advantage of using the StartFunc is that the context remains consistent between
 // your streams and other additional application states like database(s) REST API client(s)
 func (z *Ziggurat) StartFunc(function StartFunction) {
 	z.startFunc = function
 }
 
-//StopFunc is immediately called after streams are shutdown
+// StopFunc is immediately called after streams are shutdown
 // is used to perform cleanup operations
 func (z *Ziggurat) StopFunc(function StopFunction) {
 	z.stopFunc = function
+}
+
+// RunAll runs multiple streamers concurrently and applies
+// the handler on each streamer
+// returns a combined error on failure
+func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
+	errs := make(chan error, len(streams))
+	var wg sync.WaitGroup
+	for i, _ := range streams {
+		wg.Add(1)
+		j := i
+		go func() {
+			err := z.Run(ctx, streams[j], handler)
+			errs <- err
+			wg.Done()
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(errs)
+	}()
+
+	err := ErrRunAll{}
+	for e := range errs {
+		err.errors = append(err.errors, e)
+	}
+	return err
 }
