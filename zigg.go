@@ -2,7 +2,10 @@ package ziggurat
 
 import (
 	"context"
+	"fmt"
 	"os/signal"
+	"strings"
+	"sync"
 	"syscall"
 
 	"github.com/gojekfarm/ziggurat/logger"
@@ -11,28 +14,17 @@ import (
 type StartFunction func(ctx context.Context)
 type StopFunction func()
 
-type ErrRunAll struct {
-	errors []error
-}
-
-func (e ErrRunAll) Error() string {
-	return "one of the streams errored out, use the Inspect method to know more"
-}
-
-func (e ErrRunAll) Inspect() []error {
-	return e.errors
-}
-
 // Ziggurat serves as a container for streams to run in
 // can be used without initialization
 // var z ziggurat.Ziggurat
 // z.Run(ctx context.Context,s ziggurat.Streamer,h ziggurat.Handler)
 type Ziggurat struct {
-	handler   Handler
-	Logger    StructuredLogger
-	startFunc StartFunction
-	stopFunc  StopFunction
-	streams   Streamer
+	handler      Handler
+	Logger       StructuredLogger
+	startFunc    StartFunction
+	stopFunc     StopFunction
+	streams      Streamer
+	multiStreams []Streamer
 }
 
 // Run method runs the provided streams and blocks on it until an error is encountered
@@ -53,10 +45,9 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) e
 	}
 
 	z.streams = streams
+	z.handler = handler
 
 	parentCtx, canceler := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
-
-	z.handler = handler
 
 	err := z.start(parentCtx, z.startFunc)
 	z.Logger.Error("streams shutdown", err)
@@ -84,9 +75,9 @@ func (z *Ziggurat) stop(stopFunc StopFunction) {
 	}
 }
 
-// StartFunc is used to start additional application states
-// advantage of using the StartFunc is that the context remains consistent between
-// your streams and other additional application states like database(s) REST API client(s)
+// StartFunc is used to start additional application states the
+// context remains consistent between
+// your streams and other additional application states like database(s) and REST API client(s)
 func (z *Ziggurat) StartFunc(function StartFunction) {
 	z.startFunc = function
 }
@@ -95,4 +86,54 @@ func (z *Ziggurat) StartFunc(function StartFunction) {
 // is used to perform cleanup operations
 func (z *Ziggurat) StopFunc(function StopFunction) {
 	z.stopFunc = function
+}
+
+func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
+	if z.Logger == nil {
+		z.Logger = logger.NewJSONLogger(logger.LevelInfo)
+	}
+	if len(streams) < 1 {
+		panic("error: at least one streamer implementation should be provided")
+	}
+
+	if handler == nil {
+		panic("error: handler cannot be nil")
+	}
+
+	if z.startFunc != nil {
+		z.startFunc(ctx)
+	}
+
+	parentCtx, cancelFunc := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
+	defer cancelFunc()
+
+	var wg sync.WaitGroup
+	wg.Add(len(streams))
+	errChan := make(chan error, len(streams))
+	for i, _ := range streams {
+		j := i
+		go func() {
+			err := streams[j].Stream(parentCtx, handler)
+			errChan <- err
+			wg.Done()
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	errors := make([]string, len(streams))
+	for err := range errChan {
+		if err != nil {
+			errors = append(errors, err.Error())
+		}
+	}
+
+	if z.stopFunc != nil {
+		z.stopFunc()
+	}
+	return fmt.Errorf("stream run error: %s\n", strings.Join(errors, "\n"))
+
 }

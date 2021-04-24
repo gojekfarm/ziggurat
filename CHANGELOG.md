@@ -8,13 +8,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [1.0.0-alpha.18] 2020-02-26
 
 # Changed
+
 - handler signature
 
 ## [1.0.0-alpha.16] 2020-02-23
 
 # Added
-- an error for processing failed
 
+- an error for processing failed
 
 ## [1.0.0-alpha.15] 2020-02-19
 

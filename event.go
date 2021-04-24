@@ -1,8 +1,6 @@
 package ziggurat
 
 import (
-	"bytes"
-	"io"
 	"time"
 )
 
@@ -20,14 +18,4 @@ type Event struct {
 	ProducerTimestamp time.Time
 	ReceivedTimestamp time.Time
 	EventType         string
-}
-
-// ValueReader can be used as a byte reader to read the message value
-func ValueReader(e Event) io.Reader {
-	return bytes.NewReader(e.Value)
-}
-
-// KeyReader can be used as a byte reader to read the message key
-func KeyReader(e Event) io.Reader {
-	return bytes.NewReader(e.Key)
 }
