@@ -88,6 +88,9 @@ func (z *Ziggurat) StopFunc(function StopFunction) {
 	z.stopFunc = function
 }
 
+// RunAll takes in a handler and multiple streams.
+// The streams are started concurrently and the handler is executed for
+// all the streams.
 func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
 	if z.Logger == nil {
 		z.Logger = logger.NewJSONLogger(logger.LevelInfo)
