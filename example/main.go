@@ -5,6 +5,8 @@ package main
 import (
 	"context"
 
+	"github.com/gojekfarm/ziggurat/mw/statsd"
+
 	"github.com/gojekfarm/ziggurat/mw/event"
 
 	"github.com/gojekfarm/ziggurat"
@@ -17,6 +19,10 @@ func main() {
 	var zig ziggurat.Ziggurat
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	ctx := context.Background()
+	statsdPub := statsd.NewPublisher(
+		statsd.WithLogger(jsonLogger),
+		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_app"}),
+	)
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -37,7 +43,11 @@ func main() {
 		return nil
 	})
 
-	handler := r.Compose(event.Logger(jsonLogger))
+	handler := r.Compose(event.Logger(jsonLogger), statsdPub.PublishHandlerMetrics)
+
+	zig.StartFunc(func(ctx context.Context) {
+		jsonLogger.Error("error running statsd publisher", statsdPub.Run(ctx))
+	})
 
 	if runErr := zig.Run(ctx, &kafkaStreams, handler); runErr != nil {
 		jsonLogger.Error("could not start streams", runErr)

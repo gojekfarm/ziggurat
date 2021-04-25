@@ -11,10 +11,11 @@ import (
 )
 
 type Client struct {
-	client statsd.Statter
-	host   string
-	prefix string
-	logger ziggurat.StructuredLogger
+	client      statsd.Statter
+	host        string
+	prefix      string
+	logger      ziggurat.StructuredLogger
+	defaultTags map[string]string
 }
 
 const publishErrMsg = "statsd client: error publishing metric"
@@ -29,6 +30,7 @@ func NewPublisher(opts ...func(c *Client)) *Client {
 	c.prefix = "ziggurat_statsd"
 	c.host = "localhost:8125"
 	c.logger = logger.NewDiscardLogger()
+	c.defaultTags = map[string]string{}
 
 	for _, opt := range opts {
 		opt(c)
@@ -62,7 +64,8 @@ func (s *Client) Run(ctx context.Context) error {
 }
 
 func (s *Client) constructFullMetricStr(metricName, tags string) string {
-	return metricName + "," + tags + "," + "app_name=" + s.prefix
+	defaultTags := constructTags(s.defaultTags)
+	return metricName + "," + tags + "," + defaultTags
 }
 
 // IncCounter increments a counter "metric_name|c"
