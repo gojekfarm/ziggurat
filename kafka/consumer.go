@@ -9,6 +9,7 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
+const logTagToSkip = "COMMIT"
 const defaultPollTimeoutInMS = 1000
 
 var startConsumer = func(
@@ -23,7 +24,7 @@ var startConsumer = func(
 
 	go func() {
 		for evt := range logChan {
-			if evt.Tag != "COMMIT" {
+			if evt.Tag != logTagToSkip {
 				l.Info(evt.Message, map[string]interface{}{
 					"client":   evt.Name,
 					"tag":      evt.Tag,
