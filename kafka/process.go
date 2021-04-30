@@ -17,7 +17,7 @@ const (
 
 // processMessage executes the handler for every message that is received
 // all metadata is serialized to strings and set in headers
-func processMessage(msg *kafka.Message, route string, c *kafka.Consumer, h ziggurat.Handler, l ziggurat.StructuredLogger, ctx context.Context) {
+func processMessage(ctx context.Context, msg *kafka.Message, c *kafka.Consumer, h ziggurat.Handler, l ziggurat.StructuredLogger, route string) {
 
 	event := ziggurat.Event{
 		Headers: map[string]string{
