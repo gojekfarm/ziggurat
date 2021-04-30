@@ -5,11 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0-alpha.18] 2020-02-26
+## [1.0.4] 2020-04-24
+# Changes
 
-# Changed
+- Handler signature now uses the `*Event` as the second arg 
+- Includes a `RunAll` method to run multiple streams
+- The Run methods returns an error and blocks, leaving concurrency to the caller
+- Kafka polling uses the `Poll` method instead of the  `readMessage` method
 
-- handler signature
+# Added
+- statsD middleware
+- Prometheus middleware
+- logging middleware
+
 
 ## [1.0.0-alpha.16] 2020-02-23
 
