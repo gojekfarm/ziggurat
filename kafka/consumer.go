@@ -13,12 +13,12 @@ const logTagToSkip = "COMMIT"
 const defaultPollTimeoutInMS = 1000
 
 var startConsumer = func(
-				ctx context.Context,
-				h ziggurat.Handler,
-				l ziggurat.StructuredLogger,
-				consumer *kafka.Consumer,
-				route string, instanceID string,
-				wg *sync.WaitGroup,
+	ctx context.Context,
+	h ziggurat.Handler,
+	l ziggurat.StructuredLogger,
+	consumer *kafka.Consumer,
+	route string, instanceID string,
+	wg *sync.WaitGroup,
 ) {
 	logChan := consumer.Logs()
 
@@ -62,14 +62,14 @@ var startConsumer = func(
 }
 
 var StartConsumers = func(
-				ctx context.Context,
-				consumerConfig *kafka.ConfigMap,
-				route string,
-				topics []string,
-				instances int,
-				h ziggurat.Handler,
-				l ziggurat.StructuredLogger,
-				wg *sync.WaitGroup,
+	ctx context.Context,
+	consumerConfig *kafka.ConfigMap,
+	route string,
+	topics []string,
+	instances int,
+	h ziggurat.Handler,
+	l ziggurat.StructuredLogger,
+	wg *sync.WaitGroup,
 ) []*kafka.Consumer {
 	consumers := make([]*kafka.Consumer, 0, instances)
 	for i := 0; i < instances; i++ {
