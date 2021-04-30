@@ -118,7 +118,7 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 }
 
 // PublishKafkaLag publishes the kafka lag per topic in milliseconds
-// kafka_lag - time difference in milliseconds between the kafka event timestamp and the current time
+// kafka_delay - time difference in milliseconds between the kafka event timestamp and the current time
 func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 	f := func(ctx context.Context, event *ziggurat.Event) error {
 		headers := event.Headers
@@ -128,7 +128,7 @@ func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 		args["partition"] = headers["x-kafka-partition"]
 
 		diff := event.ReceivedTimestamp.Sub(event.ProducerTimestamp).Milliseconds()
-		s.logger.Error(publishErrMsg, s.Gauge("kafka_lag", diff, args))
+		s.logger.Error(publishErrMsg, s.Gauge("kafka_delay", diff, args))
 		return handler.Handle(ctx, event)
 
 	}
