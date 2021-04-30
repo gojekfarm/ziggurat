@@ -94,10 +94,11 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 	f := func(ctx context.Context, event *ziggurat.Event) error {
 		t1 := time.Now()
 		err := handler.Handle(ctx, event)
+		diff := time.Since(t1)
 		args := map[string]string{
 			"route": event.Path,
 		}
-		s.logger.Error(publishErrMsg, s.Gauge("handler_execution_time", time.Since(t1).Milliseconds(), args))
+		s.logger.Error(publishErrMsg, s.Gauge("handler_execution_time", diff.Microseconds(), args))
 		s.logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
 
 		if err == ziggurat.Retry {
