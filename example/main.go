@@ -43,7 +43,7 @@ func main() {
 		return nil
 	})
 
-	handler := r.Compose(event.Logger(jsonLogger), statsdPub.PublishHandlerMetrics, statsdPub.PublishKafkaLag)
+	handler := r.Compose(event.Logger(jsonLogger), statsdPub.PublishHandlerMetrics, statsdPub.PublishEventDelay)
 
 	zig.StartFunc(func(ctx context.Context) {
 		jsonLogger.Error("error running statsd publisher", statsdPub.Run(ctx))

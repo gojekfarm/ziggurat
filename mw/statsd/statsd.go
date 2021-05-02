@@ -140,7 +140,7 @@ func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 		args["event-type"] = event.EventType
 
 		diff := event.ReceivedTimestamp.Sub(event.ProducerTimestamp).Milliseconds()
-		s.logger.Error(publishErrMsg, s.Gauge("kafka_delay", diff, args))
+		s.logger.Error(publishErrMsg, s.Gauge("event_delay", diff, args))
 		return handler.Handle(ctx, event)
 	}
 	return ziggurat.HandlerFunc(f)
