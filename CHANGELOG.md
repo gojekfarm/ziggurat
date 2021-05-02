@@ -5,7 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.4] 2020-04-24
+
+
+
+## [1.0.5] 2021-05-02
+# Changes
+
+- statsD middelware only publishes kafka lag and not all events lag
+
+
+## [1.0.4] 2021-04-24
 # Changes
 
 - Handler signature now uses the `*Event` as the second arg 
@@ -19,13 +28,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - logging middleware
 
 
-## [1.0.0-alpha.16] 2020-02-23
+## [1.0.0-alpha.16] 2021-02-23
 
 # Added
 
 - an error for processing failed
 
-## [1.0.0-alpha.15] 2020-02-19
+## [1.0.0-alpha.15] 2021-02-19
 
 # Changes
 
