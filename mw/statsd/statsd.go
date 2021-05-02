@@ -121,6 +121,10 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 // kafka_delay - time difference in milliseconds between the kafka event timestamp and the current time
 func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 	f := func(ctx context.Context, event *ziggurat.Event) error {
+		if event.EventType != "kafka" {
+			return handler.Handle(ctx, event)
+		}
+
 		headers := event.Headers
 		args := map[string]string{}
 
