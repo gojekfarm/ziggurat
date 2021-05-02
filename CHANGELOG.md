@@ -11,7 +11,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [1.0.5] 2021-05-02
 # Changes
 
-- statsD middelware only publishes kafka lag and not all events lag
+- statsD middleware only publishes kafka lag and not all events lag
+- fixes handler execution calculation in the statsD middleware
 
 
 ## [1.0.4] 2021-04-24
