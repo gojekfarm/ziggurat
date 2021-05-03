@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+
+## [1.0.8] 2021-05-03
+# Changes
+
+- fixes statsD middleware handler metrics publish unit
+
+
 ## [1.0.6] 2021-05-02
 # Added
 - statsD middleware now publishes a generic event delay
