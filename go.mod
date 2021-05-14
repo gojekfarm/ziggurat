@@ -13,4 +13,4 @@ require (
 // go sum hash mismatch errors caused on some CIs
 retract v1.0.6
 // go sum hash mismatch errors caused on some CIs need to fix the GH pipeline
-retract v.1.0.8
+retract v1.0.8
