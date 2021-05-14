@@ -53,6 +53,7 @@ var startConsumer = func(
 					l.Error("kafka poll error", e)
 				default:
 					//Do nothing
+					// Expose metrics in future releases
 				}
 			}
 		}
