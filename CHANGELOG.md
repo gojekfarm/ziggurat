@@ -5,39 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] 2021-05-14
 
+# Changes
+
+- retract v1.0.8 due to tagging in pipelines
 
 ## [1.0.8] 2021-05-03
+
 # Changes
 
 - fixes statsD middleware handler metrics publish unit
 
-
 ## [1.0.6] 2021-05-02
+
 # Added
+
 - statsD middleware now publishes a generic event delay
 
-
 ## [1.0.5] 2021-05-02
+
 # Changes
 
 - statsD middleware only publishes kafka lag and not all events lag
 - fixes handler execution calculation in the statsD middleware
 
-
 ## [1.0.4] 2021-04-24
+
 # Changes
 
-- Handler signature now uses the `*Event` as the second arg 
+- Handler signature now uses the `*Event` as the second arg
 - Includes a `RunAll` method to run multiple streams
 - The Run methods returns an error and blocks, leaving concurrency to the caller
 - Kafka polling uses the `Poll` method instead of the  `readMessage` method
 
 # Added
+
 - statsD middleware
 - Prometheus middleware
 - logging middleware
-
 
 ## [1.0.0-alpha.16] 2021-02-23
 
