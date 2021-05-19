@@ -130,6 +130,7 @@ func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(f)
 }
 
+// PublishEventDelay publishes the event lag per topic in milliseconds
 func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 	f := func(ctx context.Context, event *ziggurat.Event) error {
 		headers := event.Headers
@@ -138,6 +139,7 @@ func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 		args["topic"] = headers["x-kafka-topic"]
 		args["partition"] = headers["x-kafka-partition"]
 		args["event-type"] = event.EventType
+		args["route"] = event.Path
 
 		diff := event.ReceivedTimestamp.Sub(event.ProducerTimestamp).Milliseconds()
 		s.logger.Error(publishErrMsg, s.Gauge("event_delay", diff, args))
