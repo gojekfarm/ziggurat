@@ -103,11 +103,12 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		panic("error: handler cannot be nil")
 	}
 
+	parentCtx, cancelFunc := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
+
 	if z.startFunc != nil {
-		z.startFunc(ctx)
+		z.startFunc(parentCtx)
 	}
 
-	parentCtx, cancelFunc := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
 	defer cancelFunc()
 
 	var wg sync.WaitGroup
