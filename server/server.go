@@ -67,7 +67,7 @@ func (s *DefaultHttpServer) ConfigureHTTPEndpoints(f func(r *httprouter.Router))
 }
 
 // ConfigureHandler lets you configure the embedded handler/router
-// use this to add common middle on the http router
+// use this to add common middleware on the http router
 func (s *DefaultHttpServer) ConfigureHandler(f func(r *httprouter.Router) http.Handler) {
 	s.server.Handler = f(s.router)
 }
