@@ -145,6 +145,6 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		return fmt.Errorf("stream run error: %s\n", strings.Join(errors, "\n"))
 	}
 
-	return errors.New("clean shutdown of streams")
+	return fmt.Errorf("clean shutdown of streams")
 
 }
