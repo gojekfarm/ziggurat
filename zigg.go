@@ -14,6 +14,7 @@ import (
 type StartFunction func(ctx context.Context)
 type StopFunction func()
 
+
 // Ziggurat serves as a container for streams to run in
 // can be used without initialization
 // var z ziggurat.Ziggurat
@@ -128,7 +129,8 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		close(errChan)
 	}()
 
-	errors := make([]string, len(streams))
+	errors := make([]string, 0, len(streams))
+
 	for err := range errChan {
 		if err != nil {
 			errors = append(errors, err.Error())
@@ -138,6 +140,11 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 	if z.stopFunc != nil {
 		z.stopFunc()
 	}
-	return fmt.Errorf("stream run error: %s\n", strings.Join(errors, "\n"))
+
+	if len(errors) > 0 {
+		return fmt.Errorf("stream run error: %s\n", strings.Join(errors, "\n"))
+	}
+
+	return errors.New("clean shutdown of streams")
 
 }
