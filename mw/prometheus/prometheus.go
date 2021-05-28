@@ -58,7 +58,7 @@ var HandlerDurationHistogram = prometheus.NewHistogramVec(
 
 // StartMonitoringServer - starts a monitoring server for prometheus
 func StartMonitoringServer(ctx context.Context) error {
-	httpServer := server.NewHTTPServer(server.WithAddr("9090"))
+	httpServer := server.NewHTTPServer(server.WithAddr(":9090"))
 	httpServer.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
 		r.Handler(http.MethodGet, "/metrics", promhttp.Handler())
 	})
