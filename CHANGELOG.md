@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] 20201-05-31
+
+# Changes
+
+- Fixes Prometheus server port
+
+# Added
+
+- An error for streams clean shutdown
+
 ## [1.0.9] 2021-05-19
 
 # Changes
