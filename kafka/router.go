@@ -91,3 +91,12 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 
 	r.es = sortAndAppend(r.es, e)
 }
+
+func (r *Router) Handle(ctx context.Context, event *ziggurat.Event) error {
+	path := event.Path
+	h, _ := r.match(path)
+	if h != nil {
+		return h.Handle(ctx, event)
+	}
+	return fmt.Errorf("no pattern registered for %s", path)
+}
