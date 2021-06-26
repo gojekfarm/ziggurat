@@ -1,6 +1,9 @@
 package kafka
 
 import (
+	"context"
+	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/gojekfarm/ziggurat"
@@ -8,34 +11,28 @@ import (
 
 /*
 Example route <bootstrap_server>/<topic>/<partition>
-entry {
+routerEntry {
 	handler ziggurat.Handler
 	pattern string
 }
-entries []string sorted by len of paths
+handlerEntry []string sorted by len of paths
 */
 
-//entry contains the pattern and the path entry
-type entry struct {
+//routerEntry contains the pattern and the path routerEntry
+type routerEntry struct {
 	handler ziggurat.Handler
 	pattern string
 }
 
 type Router struct {
-	entries map[string]entry
-	es      []entry
-}
-
-func NewRouter() *Router {
-	return &Router{
-		entries: map[string]entry{},
-	}
+	handlerEntry map[string]routerEntry
+	es           []routerEntry
 }
 
 //match works by matching the shortest prefix that matches the path
 // it returns the matched path and the handler associated with it
 func (r *Router) match(path string) (ziggurat.Handler, string) {
-	if e, ok := r.entries[path]; ok {
+	if e, ok := r.handlerEntry[path]; ok {
 		return e.handler, path
 	}
 	for _, e := range r.es {
@@ -45,4 +42,52 @@ func (r *Router) match(path string) (ziggurat.Handler, string) {
 	}
 
 	return nil, ""
+}
+
+func sortAndAppend(s []routerEntry, e routerEntry) []routerEntry {
+	n := len(s)
+	// Get the insert position
+	// We are sorting all the patterns by len in descending order
+	i := sort.Search(n, func(i int) bool {
+		return len(e.pattern) > len(s[i].pattern)
+	})
+	s = append(s, routerEntry{})
+	copy(s[i+1:], s[i:])
+	s[i] = e
+	return s
+}
+
+func (r *Router) HandleFunc(pattern string, h func(ctx context.Context, event *ziggurat.Event) error) {
+	if pattern == "" {
+		panic(fmt.Errorf("pattern cannot be %q", pattern))
+	}
+	if h == nil {
+		panic("handler cannot be <nil>")
+	}
+	r.register(pattern, ziggurat.HandlerFunc(h))
+}
+
+func (r *Router) register(pattern string, h ziggurat.Handler) {
+	if r.handlerEntry == nil {
+		r.handlerEntry = make(map[string]routerEntry)
+	}
+
+	//strip off trailing slash from the pattern
+	if pattern[len(pattern)-1] == '/' {
+		pattern = pattern[:len(pattern)-1]
+	}
+
+	if pattern == "" {
+		panic(`"/" is not a valid pattern`)
+	}
+
+	//panic on multiple registrations
+	if _, ok := r.handlerEntry[pattern]; ok {
+		panic(fmt.Sprintf("multiple regirstrations for %s", pattern))
+	}
+
+	e := routerEntry{handler: h, pattern: pattern}
+	r.handlerEntry[pattern] = e
+
+	r.es = sortAndAppend(r.es, e)
 }

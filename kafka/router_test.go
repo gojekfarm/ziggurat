@@ -2,19 +2,27 @@ package kafka
 
 import (
 	"context"
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/gojekfarm/ziggurat"
 )
 
+func shouldPanic(t *testing.T, f func()) {
+	defer func() { recover() }()
+	f()
+	t.Errorf("should have panicked")
+}
+
 func Test_match(t *testing.T) {
-	kr := NewRouter()
+	kr := &Router{}
 	f := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error { return nil })
-	sortedPaths := []string{"localhost:9092", "localhost:9092/foo_consumer", "localhost:9092/foo_consumer/bar_topic"}
-	var es []entry
-	entries := make(map[string]entry, len(sortedPaths))
+	sortedPaths := []string{"localhost:9092/foo_consumer/bar_topic", "localhost:9092/foo_consumer", "localhost:9092"}
+	var es []routerEntry
+	entries := make(map[string]routerEntry, len(sortedPaths))
 	for _, sp := range sortedPaths {
-		e := entry{
+		e := routerEntry{
 			handler: f,
 			pattern: sp,
 		}
@@ -22,10 +30,83 @@ func Test_match(t *testing.T) {
 		es = append(es, e)
 	}
 	kr.es = es
-	kr.entries = entries
+	kr.handlerEntry = entries
 
 	_, m := kr.match("localhost:9092/foo_consumer/bar_topic/0")
 	if m != sortedPaths[0] {
-		t.Errorf("expected match to be %s but got %s", es[0], m)
+		t.Errorf("expected match to be %s but got %s", es[0].pattern, m)
+	}
+
+	_, m = kr.match("localhost:9092")
+	if m != sortedPaths[len(sortedPaths)-1] {
+		t.Errorf("expected match to be %s but got %s", es[1], m)
+	}
+}
+
+func Test_sortAndAppend(t *testing.T) {
+	var es []routerEntry
+	want := []routerEntry{
+		{pattern: "foo/bar/baz/2"},
+		{pattern: "foo/bar/0"},
+		{pattern: "bar/baz"},
+	}
+
+	patterns := []string{"foo/bar/0", "bar/baz", "foo/bar/baz/2"}
+
+	for _, p := range patterns {
+		es = sortAndAppend(es, routerEntry{pattern: p})
+	}
+
+	if !reflect.DeepEqual(want, es) {
+		t.Errorf("expected %v but got %v", want, es)
+	}
+}
+
+func Test_register(t *testing.T) {
+	var router Router
+	var h ziggurat.HandlerFunc = func(ctx context.Context, event *ziggurat.Event) error {
+		return nil
+	}
+	cases := map[string]func(t *testing.T){
+		"should panic on empty pattern": func(t *testing.T) {
+			shouldPanic(t, func() {
+				router.HandleFunc("", h)
+			})
+		},
+		"should panic on nil handler": func(t *testing.T) {
+			shouldPanic(t, func() {
+				router.HandleFunc("/bar", nil)
+			})
+		},
+
+		"should panic on / as the pattern": func(t *testing.T) {
+			shouldPanic(t, func() {
+				router.HandleFunc("/", h)
+			})
+		},
+
+		"should not allow multiple registrations of the same pattern": func(t *testing.T) {
+			shouldPanic(t, func() {
+				router.HandleFunc("/bar", h)
+				router.HandleFunc("/bar", h)
+			})
+		},
+		"sort and append should append the patterns in increasing order of len(s)": func(t *testing.T) {
+			var router Router
+			router.HandleFunc("/bar/baz", h)
+			router.HandleFunc("/bar", h)
+			router.HandleFunc("/foo/bar/0", h)
+			want := []routerEntry{
+				{pattern: "/foo/bar/0", handler: h},
+				{pattern: "/bar/baz", handler: h},
+				{pattern: "/bar", handler: h},
+			}
+			if !reflect.DeepEqual(want, router.es) {
+				fmt.Errorf("expected %v got %v", want, router.es)
+			}
+		},
+	}
+	for c, f := range cases {
+		t.Run(c, f)
 	}
 }
