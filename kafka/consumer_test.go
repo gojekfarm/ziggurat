@@ -31,7 +31,8 @@ func TestConsumer_create(t *testing.T) {
 		startConsumer = oldStartConsumer
 		createConsumer = oldCreateConsumer
 	}()
-	startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, wg *sync.WaitGroup) {
+
+	startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.StructuredLogger, consumer *kafka.Consumer, route string, instanceID string, cfgMap kafka.ConfigMap, wg *sync.WaitGroup) {
 
 	}
 	createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.StructuredLogger, topics []string) *kafka.Consumer {
@@ -84,6 +85,6 @@ func TestConsumer_start(t *testing.T) {
 		time.Sleep(1 * time.Second)
 		cancelFunc()
 	}()
-	startConsumer(ctx, hf, l, c, "", "", wg)
+	startConsumer(ctx, hf, l, c, "", "", kafka.ConfigMap{}, wg)
 	wg.Wait()
 }

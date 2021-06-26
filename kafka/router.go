@@ -93,7 +93,7 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 }
 
 func (r *Router) Handle(ctx context.Context, event *ziggurat.Event) error {
-	path := event.Path
+	path := event.RoutingPath
 	h, _ := r.match(path)
 	if h != nil {
 		return h.Handle(ctx, event)

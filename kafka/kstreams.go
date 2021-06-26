@@ -18,7 +18,7 @@ ConsumerConfig {
 	ConsumerCount    4
 	RouteGroup       "song-likes"
 }*/
-type ConsumerConfig struct {
+type 	ConsumerConfig struct {
 	BootstrapServers string
 	OriginTopics     string
 	ConsumerGroupID  string
