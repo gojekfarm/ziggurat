@@ -22,6 +22,7 @@ handlerEntry []string sorted by len of paths
 type routerEntry struct {
 	handler ziggurat.Handler
 	pattern string
+	regex   bool
 }
 
 type Router struct {
@@ -87,6 +88,16 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 	}
 
 	e := routerEntry{handler: h, pattern: pattern}
+
+	//check if topic is a regex
+	pslice := strings.Split(pattern, "/")
+	// check if the topic starts with a '#'
+	if len(pslice) > 2 && pslice[2][0] == '#' {
+		pslice[2] = pslice[2][1:]
+		e.regex = true
+		pattern = strings.Join(pslice, "/")
+	}
+
 	r.handlerEntry[pattern] = e
 
 	r.es = sortAndAppend(r.es, e)
