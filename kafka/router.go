@@ -97,7 +97,6 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 	}
 
 	e := routerEntry{handler: h, pattern: pattern}
-
 	r.handlerEntry[pattern] = e
 
 	r.es = sortAndAppend(r.es, e)
