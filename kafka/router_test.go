@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -102,7 +101,11 @@ func Test_register(t *testing.T) {
 				{pattern: "/bar", handler: h},
 			}
 			if !reflect.DeepEqual(want, router.es) {
-				fmt.Errorf("expected %v got %v", want, router.es)
+				for i, w := range want {
+					if w.pattern != router.es[i].pattern {
+						t.Errorf("expected: %s, got %s", w.pattern, router.es[i].pattern)
+					}
+				}
 			}
 		},
 	}
