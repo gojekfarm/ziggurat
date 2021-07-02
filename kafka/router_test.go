@@ -15,30 +15,30 @@ func shouldPanic(t *testing.T, f func()) {
 }
 
 func Test_match(t *testing.T) {
-	kr := &Router{}
-	f := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error { return nil })
-	sortedPaths := []string{"localhost:9092/foo_consumer/bar_topic", "localhost:9092/foo_consumer", "localhost:9092"}
-	var es []routerEntry
-	entries := make(map[string]routerEntry, len(sortedPaths))
-	for _, sp := range sortedPaths {
-		e := routerEntry{
-			handler: f,
-			pattern: sp,
-		}
-		entries[sp] = e
-		es = append(es, e)
+	tests := []struct {
+		want            string
+		inputES         []routerEntry
+		inputHandlerMap map[string]routerEntry
+	}{
+		want: "localhost:9092/foo_consumer",
+		inputES: []routerEntry{
+			{pattern: "localhost:9092", handler: nil},
+		},
 	}
-	kr.es = es
-	kr.handlerEntry = entries
+}
 
-	_, m := kr.match("localhost:9092/foo_consumer/bar_topic/0")
-	if m != sortedPaths[0] {
-		t.Errorf("expected match to be %s but got %s", es[0].pattern, m)
+func Test_matchRegex(t *testing.T) {
+	var router Router
+	router.es = []routerEntry{
+		{
+			pattern: "localhost:9092/foo_consumer/.*-log",
+			handler: nil,
+		},
 	}
-
-	_, m = kr.match("localhost:9092")
-	if m != sortedPaths[len(sortedPaths)-1] {
-		t.Errorf("expected match to be %s but got %s", es[1], m)
+	pathToMatch := "localhost:9092/foo_consumer/message-log"
+	_, m := router.match(pathToMatch)
+	if m != router.es[0].pattern {
+		t.Errorf("expected match to be %q but got %q", router.es[0].pattern, m)
 	}
 }
 
