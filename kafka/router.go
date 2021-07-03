@@ -32,25 +32,18 @@ type Router struct {
 //match works by matching the shortest prefix that matches the path
 // it returns the matched path and the handler associated with it
 func (r *Router) match(path string) (ziggurat.Handler, string) {
-
 	if e, ok := r.handlerEntry[path]; ok {
 		return e.handler, path
 	}
 	for _, e := range r.es {
-		//		if strings.HasPrefix(path, e.pattern) {
-		//			return e.handler, e.pattern
-		//		}
 		matched, err := regexp.MatchString(e.pattern, path)
 		if err != nil {
 			panic(err)
 		}
-
 		if matched {
 			return e.handler, e.pattern
 		}
-
 	}
-
 	return nil, ""
 }
 
