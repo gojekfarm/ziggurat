@@ -48,6 +48,14 @@ func Test_match(t *testing.T) {
 				{pattern: "localhost:9092/foo_consumer/.*-log", handler: nil},
 			},
 		},
+		{
+			name: "should not match similar consumer group names",
+			want: "",
+			path: "localhost:9092/foo_consumer/",
+			input: []routerEntry{
+				{pattern: "localhost:9092/foo/"},
+			},
+		},
 	}
 
 	esToMap := func(es []routerEntry) map[string]routerEntry {

@@ -76,13 +76,10 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 		r.handlerEntry = make(map[string]routerEntry)
 	}
 
-	//strip off trailing slash from the pattern
-	if pattern[len(pattern)-1] == '/' {
-		pattern = pattern[:len(pattern)-1]
-	}
+	//check if pattern is `""` OR "/"
+	if pattern[len(pattern)-1] == '/' || pattern == "" {
+		panic(pattern + " is not a valid pattern")
 
-	if pattern == "" {
-		panic(`"/" is not a valid pattern`)
 	}
 
 	//panic on multiple registrations
