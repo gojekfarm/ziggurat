@@ -32,6 +32,21 @@ func Test_match(t *testing.T) {
 			want:  "localhost:9092/foo_consumer/.*-log",
 			path:  "localhost:9092/foo_consumer/message-log/0",
 			input: []routerEntry{{pattern: "localhost:9092/foo_consumer/.*-log", handler: nil}},
+		},
+		{
+			name:  "should match exact partition when a certain partition is specified",
+			want:  "",
+			path:  "localhost:9092/foo_consumer/message-log/10",
+			input: []routerEntry{{pattern: "localhost:9092/foo_consumer/message-log/1$", handler: nil}},
+		},
+		{
+			name: "should match the longest prefix with regex",
+			want: "localhost:9092/foo_consumer/.*-log/\\d+",
+			path: "localhost:9092/foo_consumer/message-log/5",
+			input: []routerEntry{
+				{pattern: "localhost:9092/foo_consumer/.*-log/\\d+", handler: nil},
+				{pattern: "localhost:9092/foo_consumer/.*-log", handler: nil},
+			},
 		}}
 
 	esToMap := func(es []routerEntry) map[string]routerEntry {
@@ -49,24 +64,9 @@ func Test_match(t *testing.T) {
 			r.handlerEntry = esToMap(test.input)
 			_, m := r.match(test.path)
 			if m != test.want {
-				t.Errorf("%s test failed, expected %s got %s", test.name, test.want, m)
+				t.Errorf("%s test failed, expected %q got %q", test.name, test.want, m)
 			}
 		})
-	}
-}
-
-func Test_matchRegex(t *testing.T) {
-	var router Router
-	router.es = []routerEntry{
-		{
-			pattern: "localhost:9092/foo_consumer/.*-log",
-			handler: nil,
-		},
-	}
-	pathToMatch := "localhost:9092/foo_consumer/message-log"
-	_, m := router.match(pathToMatch)
-	if m != router.es[0].pattern {
-		t.Errorf("expected match to be %q but got %q", router.es[0].pattern, m)
 	}
 }
 
