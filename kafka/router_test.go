@@ -16,14 +16,42 @@ func shouldPanic(t *testing.T, f func()) {
 
 func Test_match(t *testing.T) {
 	tests := []struct {
-		want            string
-		inputES         []routerEntry
-		inputHandlerMap map[string]routerEntry
+		want  string
+		name  string
+		path  string
+		input []routerEntry
 	}{
-		want: "localhost:9092/foo_consumer",
-		inputES: []routerEntry{
-			{pattern: "localhost:9092", handler: nil},
+		{
+			name:  "should match the longest prefix without regex",
+			want:  "localhost:9092",
+			path:  "localhost:9092/foo_consumer",
+			input: []routerEntry{{pattern: "localhost:9092", handler: nil}},
 		},
+		{
+			name:  "should match when topic regex is provided",
+			want:  "localhost:9092/foo_consumer/.*-log",
+			path:  "localhost:9092/foo_consumer/message-log/0",
+			input: []routerEntry{{pattern: "localhost:9092/foo_consumer/.*-log", handler: nil}},
+		}}
+
+	esToMap := func(es []routerEntry) map[string]routerEntry {
+		m := make(map[string]routerEntry, len(es))
+		for _, e := range es {
+			m[e.pattern] = routerEntry{pattern: e.pattern}
+		}
+		return m
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var r Router
+			r.es = test.input
+			r.handlerEntry = esToMap(test.input)
+			_, m := r.match(test.path)
+			if m != test.want {
+				t.Errorf("%s test failed, expected %s got %s", test.name, test.want, m)
+			}
+		})
 	}
 }
 
