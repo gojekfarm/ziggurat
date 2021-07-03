@@ -1,3 +1,5 @@
+//+build ignore
+
 package main
 
 import (
@@ -32,8 +34,13 @@ func main() {
 		Logger: jsonLogger,
 	}
 
-	r.HandleFunc("/localhost:9092/plain_text_consumer/.*-text-log/0$", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Printf("recevied message %s on parition %s\n", event.Value, event.Headers[kafka.HeaderPartition])
+	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/0$", func(ctx context.Context, event *ziggurat.Event) error {
+		fmt.Println("received message ", string(event.Value), " on partition 0")
+		return nil
+	})
+
+	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/1$", func(ctx context.Context, event *ziggurat.Event) error {
+		fmt.Println("received message ", string(event.Value), " on partition 1")
 		return nil
 	})
 
