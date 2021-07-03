@@ -19,8 +19,6 @@ routerEntry {
 handlerEntry []string sorted by len of paths
 */
 
-type adapter func(h ziggurat.Handler) ziggurat.Handler
-
 //routerEntry contains the pattern and the path routerEntry
 type routerEntry struct {
 	handler ziggurat.Handler

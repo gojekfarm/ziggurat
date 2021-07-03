@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
 	"github.com/gojekfarm/ziggurat"
@@ -30,6 +31,11 @@ func main() {
 		},
 		Logger: jsonLogger,
 	}
+
+	r.HandleFunc("/localhost:9092/plain_text_consumer/.*-text-log/0$", func(ctx context.Context, event *ziggurat.Event) error {
+		fmt.Printf("recevied message %s on parition %s\n", event.Value, event.Headers[kafka.HeaderPartition])
+		return nil
+	})
 
 	zig.StartFunc(func(ctx context.Context) {
 		jsonLogger.Error("error running statsd publisher", statsdPub.Run(ctx))
