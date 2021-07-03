@@ -47,7 +47,8 @@ func Test_match(t *testing.T) {
 				{pattern: "localhost:9092/foo_consumer/.*-log/\\d+", handler: nil},
 				{pattern: "localhost:9092/foo_consumer/.*-log", handler: nil},
 			},
-		}}
+		},
+	}
 
 	esToMap := func(es []routerEntry) map[string]routerEntry {
 		m := make(map[string]routerEntry, len(es))

@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/gojekfarm/ziggurat/util"
 	"regexp"
 	"sort"
 
@@ -17,6 +18,8 @@ routerEntry {
 }
 handlerEntry []string sorted by len of paths
 */
+
+type adapter func(h ziggurat.Handler) ziggurat.Handler
 
 //routerEntry contains the pattern and the path routerEntry
 type routerEntry struct {
@@ -102,4 +105,8 @@ func (r *Router) Handle(ctx context.Context, event *ziggurat.Event) error {
 		return h.Handle(ctx, event)
 	}
 	return fmt.Errorf("no pattern registered for %s", path)
+}
+
+func (r *Router) Compose(hs ...func(handler ziggurat.Handler) ziggurat.Handler) ziggurat.Handler {
+	return util.PipeHandlers(hs...)(r)
 }

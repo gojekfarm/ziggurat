@@ -1,5 +1,3 @@
-//+build ignore
-
 package main
 
 import (
@@ -32,11 +30,6 @@ func main() {
 		},
 		Logger: jsonLogger,
 	}
-
-	r.HandleFunc("localhost:9092/plain_text_consumer/plain-text-log", func(ctx context.Context, event *ziggurat.Event) error {
-		jsonLogger.Info("", map[string]interface{}{"value": string(event.Value)})
-		return nil
-	})
 
 	zig.StartFunc(func(ctx context.Context) {
 		jsonLogger.Error("error running statsd publisher", statsdPub.Run(ctx))
