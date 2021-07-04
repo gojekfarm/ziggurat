@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"fmt"
+
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
 	"github.com/gojekfarm/ziggurat"
@@ -15,6 +16,7 @@ import (
 func main() {
 	var zig ziggurat.Ziggurat
 	var r kafka.Router
+
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	ctx := context.Background()
 	statsdPub := statsd.NewPublisher(
@@ -51,5 +53,4 @@ func main() {
 	if runErr := zig.Run(ctx, &kafkaStreams, &r); runErr != nil {
 		jsonLogger.Error("could not start streams", runErr)
 	}
-
 }

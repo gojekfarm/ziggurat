@@ -3,9 +3,10 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/ziggurat/util"
 	"regexp"
 	"sort"
+
+	"github.com/gojekfarm/ziggurat/util"
 
 	"github.com/gojekfarm/ziggurat"
 )

@@ -2,10 +2,11 @@ package kafka
 
 import (
 	"context"
+	"testing"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/logger"
-	"testing"
 )
 
 func Test_processMessage(t *testing.T) {
