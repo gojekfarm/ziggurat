@@ -13,6 +13,7 @@ type Data struct {
 	ConsumerGroup    string
 	OriginTopics     string
 	BootstrapServers string
+	ZigguratVersion  string
 }
 
 type ZigTemplate struct {
