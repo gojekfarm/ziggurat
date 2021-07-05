@@ -1,4 +1,3 @@
-
 ### Ziggurat Golang
 
 Stream Processing made easy
@@ -75,6 +74,35 @@ func main() {
 		jsonLogger.Error("could not start streams", runErr)
 	}
 }
+```
+
+### Using the kafka router to set up granular routing
+
+```go
+package main
+
+import (
+	"context"
+	"github.com/gojekfarm/ziggurat/kafka"
+)
+
+// Declare a new router
+var router kafka.Router
+
+// HandleFunc accepts a path in the following format 
+// bootstrap_server/consumer_group/topic/partition
+// This pattern matches all topics that end with log but only runs for partition 0
+r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/0$", func (ctx context.Context, event *ziggurat.Event) error {
+	fmt.Println("received message ", string(event.Value), " on partition 0")
+	return nil
+})
+
+// This pattern matches all messages for foo_consumer
+r.HandleFunc("localhost:9092/foo_consumer/", func (ctx context.Context, event *ziggurat.Event) {
+	fmt.Println("received message ", string(event.Value), " for foo_consumer ")
+	return nil
+})
+// It does a longest prefix match in-order to pick the closest matching route
 ```
 
 ### Concepts
