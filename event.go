@@ -15,6 +15,7 @@ type Event struct {
 	Value             []byte
 	Key               []byte
 	Path              string
+	RoutingPath       string
 	ProducerTimestamp time.Time
 	ReceivedTimestamp time.Time
 	EventType         string

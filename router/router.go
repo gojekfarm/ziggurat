@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gojekfarm/ziggurat/util"
+
 	"github.com/gojekfarm/ziggurat"
 )
 
@@ -80,7 +82,7 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(ctx context.C
 // h := router.Compose(middlewareOne,middlewareTwo,middlewareThree)
 // order of execution: middlewareOne -> middlewareTwo -> middlewareThree -> handlerFunc
 func (dr *defaultRouter) Compose(mw ...func(h ziggurat.Handler) ziggurat.Handler) ziggurat.Handler {
-	return PipeHandlers(mw...)(dr)
+	return util.PipeHandlers(mw...)(dr)
 }
 
 // Lookup looks up and returns a handlerFunc if found

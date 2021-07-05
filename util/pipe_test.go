@@ -1,4 +1,4 @@
-package router
+package util
 
 import (
 	"context"
@@ -47,5 +47,5 @@ func TestPipeHandlers(t *testing.T) {
 		return nil
 	})
 	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
-	finalHandler.Handle(context.Background(), &ziggurat.Event{})
+	_ = finalHandler.Handle(context.Background(), &ziggurat.Event{})
 }

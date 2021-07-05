@@ -18,6 +18,7 @@ var startConsumer = func(
 	l ziggurat.StructuredLogger,
 	consumer *kafka.Consumer,
 	route string, instanceID string,
+	cfgMap kafka.ConfigMap,
 	wg *sync.WaitGroup,
 ) {
 	logChan := consumer.Logs()
@@ -48,7 +49,7 @@ var startConsumer = func(
 				switch e := ev.(type) {
 				case *kafka.Message:
 					// blocks until process returns
-					processMessage(ctx, e, consumer, h, l, route)
+					processMessage(ctx, e, consumer, h, l, cfgMap, route)
 				case kafka.Error:
 					l.Error("kafka poll error", e)
 				default:
@@ -79,7 +80,7 @@ var StartConsumers = func(
 		groupID, _ := consumerConfig.Get("group.id", "")
 		instanceID := fmt.Sprintf("%s_%s_%d", route, groupID, i)
 		wg.Add(1)
-		startConsumer(ctx, h, l, consumer, route, instanceID, wg)
+		startConsumer(ctx, h, l, consumer, route, instanceID, *consumerConfig, wg)
 	}
 	return consumers
 }
