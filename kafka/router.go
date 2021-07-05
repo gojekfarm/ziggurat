@@ -78,7 +78,7 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 	}
 
 	//check if pattern is `""` OR "/"
-	if pattern[len(pattern)-1] == '/' || pattern == "" {
+	if (len(pattern) == 1 && pattern[len(pattern)-1] == '/') || pattern == "" {
 		panic(pattern + " is not a valid pattern")
 
 	}
