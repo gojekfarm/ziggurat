@@ -98,6 +98,10 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		args := map[string]string{
 			"route": event.Path,
 		}
+		// required for backwards compatibility
+		if event.Path == "" {
+			args["route"] = event.RoutingPath
+		}
 		s.logger.Error(publishErrMsg, s.Gauge("handler_execution_time", diff.Milliseconds(), args))
 		s.logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
 

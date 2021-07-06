@@ -11,10 +11,13 @@ import (
 // EventType is the type of event eg:- kafka,rabbitmq,redis
 // Headers can contain additional metadata about the message
 type Event struct {
-	Headers           map[string]string
-	Value             []byte
-	Key               []byte
-	Path              string
+	Headers map[string]string
+	Value   []byte
+	Key     []byte
+	// Path can be a single key
+	Path string
+	// RoutingPath can be an actual path like string separated by a delimiter, this was added to maintain
+	// backwards compatibility
 	RoutingPath       string
 	ProducerTimestamp time.Time
 	ReceivedTimestamp time.Time
