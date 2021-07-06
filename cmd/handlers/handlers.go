@@ -20,7 +20,7 @@ zig new <app_name>`
 		ConsumerGroup:    appName + "_" + "consumer",
 		OriginTopics:     "plain-text-log",
 		BootstrapServers: "localhost:9092",
-		ZigguratVersion:  "v1.2.1",
+		ZigguratVersion:  "v1.2.2",
 	}
 	tplConfig := cmd.GetTemplateConfig()
 	zts := cmd.NewZigTemplateSet(appName, tplConfig)
