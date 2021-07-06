@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -44,7 +45,10 @@ func processMessage(ctx context.Context,
 	bs := getStrValFromCfgMap(cfgMap, "bootstrap.servers")
 	cg := getStrValFromCfgMap(cfgMap, "group.id")
 	event := ziggurat.Event{
-		Headers:           map[string]string{},
+		Headers: map[string]string{
+			HeaderPartition: strconv.Itoa(int(msg.TopicPartition.Partition)),
+			HeaderTopic:     *msg.TopicPartition.Topic,
+		},
 		Value:             msg.Value,
 		Key:               msg.Key,
 		Path:              route,
