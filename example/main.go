@@ -31,18 +31,14 @@ func main() {
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
 				ConsumerCount:    1,
+				RouteGroup:       "p-text-log",
 			},
 		},
 		Logger: jsonLogger,
 	}
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/0$", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Println("received message ", string(event.Value), " on partition 0")
-		return nil
-	})
-
-	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/1$", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Println("received message ", string(event.Value), " on partition 1")
+	r.HandleFunc("p-text-log", func(ctx context.Context, event *ziggurat.Event) error {
+		fmt.Println("received message ", string(event.Value))
 		return nil
 	})
 
