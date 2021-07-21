@@ -11,15 +11,15 @@ import (
 // EventType is the type of event eg:- kafka,rabbitmq,redis
 // Headers can contain additional metadata about the message
 type Event struct {
-	Headers map[string]string
-	Value   []byte
-	Key     []byte
+	Headers map[string]string `json:"headers"`
+	Value   []byte            `json:"value"`
+	Key     []byte            `json:"key"`
 	// Path can be a single key
-	Path string
+	Path string `json:"path"`
 	// RoutingPath can be an actual path like string separated by a delimiter, this was added to maintain
 	// backwards compatibility
-	RoutingPath       string
-	ProducerTimestamp time.Time
-	ReceivedTimestamp time.Time
-	EventType         string
+	RoutingPath       string    `json:"routing_path"`
+	ProducerTimestamp time.Time `json:"producer_timestamp"`
+	ReceivedTimestamp time.Time `json:"received_timestamp"`
+	EventType         string    `json:"event_type"`
 }
