@@ -4,7 +4,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
@@ -17,10 +16,10 @@ func main() {
 	var zig ziggurat.Ziggurat
 	var r kafka.Router
 
-	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
+	l := logger.NewLogger(logger.LevelInfo)
 	ctx := context.Background()
 	statsdPub := statsd.NewPublisher(
-		statsd.WithLogger(jsonLogger),
+		statsd.WithLogger(l),
 		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_app"}),
 	)
 
@@ -31,22 +30,21 @@ func main() {
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
 				ConsumerCount:    1,
-				RouteGroup:       "p-text-log",
 			},
 		},
-		Logger: jsonLogger,
+		Logger: l,
 	}
 
-	r.HandleFunc("p-text-log", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Println("received message ", string(event.Value))
+	r.HandleFunc("localhost:9092/plain_text_consumer/", func(ctx context.Context, event *ziggurat.Event) error {
+		l.Info("received message", map[string]interface{}{"value": string(event.Value)})
 		return nil
 	})
 
 	zig.StartFunc(func(ctx context.Context) {
-		jsonLogger.Error("error running statsd publisher", statsdPub.Run(ctx))
+		l.Error("error running statsd publisher", statsdPub.Run(ctx))
 	})
 
 	if runErr := zig.Run(ctx, &kafkaStreams, &r); runErr != nil {
-		jsonLogger.Error("could not start streams", runErr)
+		l.Error("could not start streams", runErr)
 	}
 }

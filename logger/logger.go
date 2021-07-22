@@ -1,70 +1,55 @@
 package logger
 
 import (
-	"os"
+	"fmt"
 
 	"github.com/rs/zerolog"
 )
 
-const callerFrameSkipCount = 3
-
-const LevelInfo = "info"
-const Disabled = "disabled"
-const LevelWarn = "warn"
-const LevelDebug = "debug"
-const LevelFatal = "fatal"
-const LevelError = "error"
-
-var logLevelMapping = map[string]zerolog.Level{
-	"debug":    zerolog.DebugLevel,
-	"info":     zerolog.InfoLevel,
-	"warn":     zerolog.WarnLevel,
-	"error":    zerolog.ErrorLevel,
-	"fatal":    zerolog.FatalLevel,
-	"disabled": zerolog.Disabled,
+type humanLogger struct {
+	l zerolog.Logger
 }
 
-type JSONLogger struct {
-	errLogger zerolog.Logger
-	logger    zerolog.Logger
+func (h *humanLogger) Info(message string, kvs ...map[string]interface{}) {
+	appendFields(h.l.Info(), kvs).Msg(message)
 }
 
-func appendFields(l *zerolog.Event, kvs []map[string]interface{}) *zerolog.Event {
-	for _, m := range kvs {
-		l.Fields(m)
-	}
-	return l
+func (h *humanLogger) Debug(message string, kvs ...map[string]interface{}) {
+	appendFields(h.l.Debug(), kvs).Msg(message)
 }
 
-func (l *JSONLogger) Info(message string, kvs ...map[string]interface{}) {
-	appendFields(l.logger.Info(), kvs).Msg(message)
+func (h *humanLogger) Warn(message string, kvs ...map[string]interface{}) {
+	appendFields(h.l.Warn(), kvs).Msg(message)
 }
 
-func (l *JSONLogger) Debug(message string, kvs ...map[string]interface{}) {
-	appendFields(l.logger.Debug(), kvs).Msg(message)
-}
-
-func (l *JSONLogger) Warn(message string, kvs ...map[string]interface{}) {
-	appendFields(l.logger.Warn(), kvs).Msg(message)
-}
-
-func (l *JSONLogger) Error(message string, err error, kvs ...map[string]interface{}) {
+func (h *humanLogger) Error(message string, err error, kvs ...map[string]interface{}) {
 	if err != nil {
-		appendFields(l.errLogger.Err(err), kvs).Msg(message)
+		appendFields(h.l.Err(err), kvs).Msg(message)
 	}
 }
 
-func (l *JSONLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
+func (h *humanLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
 	if err != nil {
-		appendFields(l.errLogger.Fatal(), kvs).Msg(message)
+		appendFields(h.l.Fatal(), kvs).Msg(message)
 	}
 }
 
-func NewJSONLogger(level string) *JSONLogger {
-	loggerInst := zerolog.New(os.Stdout).With().Str("log-type", "ziggurat").Timestamp().Logger().Level(logLevelMapping[level])
-	errLoggerInst := zerolog.New(os.Stderr).With().Str("log-type", "ziggurat").Timestamp().Logger().Level(logLevelMapping[level])
-	return &JSONLogger{
-		errLogger: errLoggerInst,
-		logger:    loggerInst,
-	}
+func NewLogger(level string, opts ...func(w *zerolog.ConsoleWriter)) *humanLogger {
+	cw := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
+		w.FormatLevel = func(i interface{}) string {
+			return fmt.Sprintf("[ %s ]", i)
+		}
+
+		w.FormatMessage = func(i interface{}) string {
+			return fmt.Sprintf("[ %s ]:", i)
+		}
+
+		w.NoColor = true
+
+		for _, o := range opts {
+			o(w)
+		}
+	})
+	l := zerolog.New(cw).With().Timestamp().Logger().Level(logLevelMapping[level])
+	return &humanLogger{l: l}
 }
