@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -17,7 +16,7 @@ var startConsumer = func(
 	h ziggurat.Handler,
 	l ziggurat.StructuredLogger,
 	consumer *kafka.Consumer,
-	route string, instanceID string,
+	route string,
 	cfgMap kafka.ConfigMap,
 	wg *sync.WaitGroup,
 ) {
@@ -27,16 +26,15 @@ var startConsumer = func(
 		for evt := range logChan {
 			if evt.Tag != logTagToSkip {
 				l.Info(evt.Message, map[string]interface{}{
-					"client":   evt.Name,
-					"tag":      evt.Tag,
-					"ts":       evt.Timestamp,
-					"severity": evt.Level,
+					"client": evt.Name,
+					"tag":    evt.Tag,
+					"time":   evt.Timestamp.String(),
 				})
 			}
 		}
 	}()
 
-	go func(instanceID string) {
+	go func() {
 		run := true
 		doneCh := ctx.Done()
 
@@ -58,9 +56,9 @@ var startConsumer = func(
 				}
 			}
 		}
-		l.Error("stopping consumer", ctx.Err(), map[string]interface{}{"consumerID": instanceID})
+		l.Error("stopping consumer", ctx.Err(), map[string]interface{}{"client": consumer.String()})
 		wg.Done()
-	}(instanceID)
+	}()
 }
 
 var StartConsumers = func(
@@ -77,10 +75,8 @@ var StartConsumers = func(
 	for i := 0; i < instances; i++ {
 		consumer := createConsumer(consumerConfig, l, topics)
 		consumers = append(consumers, consumer)
-		groupID, _ := consumerConfig.Get("group.id", "")
-		instanceID := fmt.Sprintf("%s_%s_%d", route, groupID, i)
 		wg.Add(1)
-		startConsumer(ctx, h, l, consumer, route, instanceID, *consumerConfig, wg)
+		startConsumer(ctx, h, l, consumer, route, *consumerConfig, wg)
 	}
 	return consumers
 }

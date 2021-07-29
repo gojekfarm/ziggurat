@@ -37,11 +37,7 @@ func (h *humanLogger) Fatal(message string, err error, kvs ...map[string]interfa
 func NewLogger(level string, opts ...func(w *zerolog.ConsoleWriter)) *humanLogger {
 	cw := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
 		w.FormatLevel = func(i interface{}) string {
-			return fmt.Sprintf("[ %s ]", i)
-		}
-
-		w.FormatMessage = func(i interface{}) string {
-			return fmt.Sprintf("[ %s ]:", i)
+			return fmt.Sprintf("[%s]", i)
 		}
 
 		w.NoColor = true
