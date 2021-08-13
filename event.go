@@ -11,9 +11,10 @@ import (
 // EventType is the type of event eg:- kafka,rabbitmq,redis
 // Headers can contain additional metadata about the message
 type Event struct {
-	Headers map[string]string `json:"headers"`
-	Value   []byte            `json:"value"`
-	Key     []byte            `json:"key"`
+	Headers  map[string]string      `json:"headers"`
+	Metadata map[string]interface{} `json:"meta"`
+	Value    []byte                 `json:"value"`
+	Key      []byte                 `json:"key"`
 	// Path can be a single key
 	Path string `json:"path"`
 	// RoutingPath can be an actual path like string separated by a delimiter, this was added to maintain

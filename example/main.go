@@ -30,6 +30,7 @@ func main() {
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
 				ConsumerCount:    1,
+				RouteGroup:       "plain-text-log",
 			},
 		},
 		Logger: l,

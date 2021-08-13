@@ -57,7 +57,7 @@ func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 
 func (k *Streams) stop() {
 	for _, consumers := range k.routeConsumerMap {
-		for i, _ := range consumers {
+		for i := range consumers {
 			k.Logger.Error("error stopping consumer %v", consumers[i].Close(), nil)
 		}
 	}
