@@ -66,8 +66,12 @@ func (r *retry) Publish(ctx context.Context, event *ziggurat.Event, opts ...Publ
 
 	queueTypes := []string{"delay", "instant", "dlq"}
 	for _, qt := range queueTypes {
+		args := amqp.Table{}
 		queueName := fmt.Sprintf("%s_%s", pubOpts.queueKey, qt)
-		if err := CreateAndBindQueue(ch, queueName); err != nil {
+		if qt == "delay" {
+			args = amqp.Table{"x-dead-letter-exchange": fmt.Sprintf("%s_%s_%s", pubOpts.queueKey, "instant", "exchange")}
+		}
+		if err := CreateAndBindQueue(ch, queueName, args); err != nil {
 			return err
 		}
 	}
@@ -80,6 +84,13 @@ func (r *retry) Publish(ctx context.Context, event *ziggurat.Event, opts ...Publ
 		return err
 	}
 	defer pub.Close()
+	newCount := getRetryCount(event) + 1
+
+	if newCount > pubOpts.retryCount {
+		fmt.Printf("retry count %d: publishing to dead letter", newCount)
+		return nil
+	}
+
 	eb, err := json.Marshal(event)
 	if err != nil {
 		return err

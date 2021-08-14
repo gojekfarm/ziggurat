@@ -37,3 +37,21 @@ type publishOpts struct {
 }
 
 type PublishOpts func(po *publishOpts)
+
+func WithRetryCount(count int) PublishOpts {
+	return func(p *publishOpts) {
+		p.retryCount = count
+	}
+}
+
+func WithQueue(queue string) PublishOpts {
+	return func(po *publishOpts) {
+		po.queueKey = queue
+	}
+}
+
+func WithDelayExpiration(expiration string) PublishOpts {
+	return func(po *publishOpts) {
+		po.delayExpiration = expiration
+	}
+}

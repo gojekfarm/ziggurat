@@ -19,7 +19,6 @@ func main() {
 	l := logger.NewLogger(logger.LevelInfo)
 
 	rmq, err := rabbitmq.NewRetry(ctx,
-		rabbitmq.WithLogger(l),
 		rabbitmq.WithPassword("bitnami"),
 		rabbitmq.WithUsername("user"))
 
@@ -45,10 +44,10 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("localhost:9092/plain_text_consumer/", rmq.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 		l.Info("received message", map[string]interface{}{"value": string(event.Value)})
-		return nil
-	})
+		return ziggurat.Retry
+	}, rabbitmq.WithRetryCount(2), rabbitmq.WithDelayExpiration("500"), rabbitmq.WithQueue("booking_log")))
 
 	zig.StartFunc(func(ctx context.Context) {
 		l.Error("error running statsd publisher", statsdPub.Run(ctx))

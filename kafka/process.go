@@ -40,10 +40,11 @@ func processMessage(ctx context.Context,
 	cfgMap kafka.ConfigMap,
 	route string) {
 
-	//we ignore the errors as we the createConsumer panics if
+	//we ignore the errors as createConsumer panics if
 	// bootstrap.servers is not present
 	bs := getStrValFromCfgMap(cfgMap, "bootstrap.servers")
 	cg := getStrValFromCfgMap(cfgMap, "group.id")
+
 	event := ziggurat.Event{
 		Headers: map[string]string{
 			HeaderPartition: strconv.Itoa(int(msg.TopicPartition.Partition)),
