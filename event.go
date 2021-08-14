@@ -10,6 +10,7 @@ import (
 // Path is the message path and can be used by routers to route message to the correct handler
 // EventType is the type of event eg:- kafka,rabbitmq,redis
 // Headers can contain additional metadata about the message
+// Metadata is used to store metadata about the message
 type Event struct {
 	Headers  map[string]string      `json:"headers"`
 	Metadata map[string]interface{} `json:"meta"`

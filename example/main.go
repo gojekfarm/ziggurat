@@ -1,9 +1,8 @@
-//+build ignore
-
 package main
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
@@ -16,8 +15,18 @@ func main() {
 	var zig ziggurat.Ziggurat
 	var r kafka.Router
 
-	l := logger.NewLogger(logger.LevelInfo)
 	ctx := context.Background()
+	l := logger.NewLogger(logger.LevelInfo)
+
+	rmq, err := rabbitmq.NewRetry(ctx,
+		rabbitmq.WithLogger(l),
+		rabbitmq.WithPassword("bitnami"),
+		rabbitmq.WithUsername("user"))
+
+	if err != nil {
+		panic(err)
+	}
+
 	statsdPub := statsd.NewPublisher(
 		statsd.WithLogger(l),
 		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_app"}),
