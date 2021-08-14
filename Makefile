@@ -5,7 +5,7 @@ TOPIC_PLAIN_TEXT="plain-text-log"
 TEST_PACKAGES=$(shell go list ./... | grep -v -E 'cmd|logger|example|mock|mw')
 EXAMPLE_BUILD_PKG="./example/main.go"
 
-docker.start-kafka:
+docker.start:
 	docker-compose down
 	docker-compose up -d
 	sleep 10
@@ -13,6 +13,9 @@ docker.start-kafka:
 	docker exec -it ziggurat_go_kafka /opt/bitnami/kafka/bin/kafka-topics.sh --create --topic $(TOPIC_PLAIN_TEXT) --partitions 3 --replication-factor 1 --zookeeper ziggurat_go_zookeeper
 	@echo 'Please run `go run main.go` in a new tab or terminal'
 	sleep 5
+
+tidy:
+	go mod tidy -v
 
 format:
 	@goimports -l -w ./
