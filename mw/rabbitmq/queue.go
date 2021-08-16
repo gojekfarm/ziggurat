@@ -1,8 +1,11 @@
 package rabbitmq
 
-import "github.com/streadway/amqp"
+import (
+	"fmt"
+	"github.com/streadway/amqp"
+)
 
-func CreateAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) error {
+func createAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) error {
 
 	if err := ch.ExchangeDeclare(queueName+"_exchange", amqp.ExchangeFanout, false, false, false, false, amqp.Table{}); err != nil {
 		return err
@@ -16,3 +19,17 @@ func CreateAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) err
 	return nil
 }
 
+func createQueuesAndExchanges(ch *amqp.Channel, queueName string) error {
+	queueTypes := []string{"delay", "instant", "dlq"}
+	for _, qt := range queueTypes {
+		args := amqp.Table{}
+		queueName := fmt.Sprintf("%s_%s", queueName, qt)
+		if qt == "delay" {
+			args = amqp.Table{"x-dead-letter-exchange": fmt.Sprintf("%s_%s_%s", queueName, "instant", "exchange")}
+		}
+		if err := createAndBindQueue(ch, queueName, args); err != nil {
+			return err
+		}
+	}
+	return nil
+}

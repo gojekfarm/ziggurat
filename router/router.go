@@ -76,7 +76,7 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(ctx context.C
 // Compose takes in a set of middleware functions
 // builds a chain of executing from left to right and returns a new handler
 // router := New()
-// router.HandleFunc("my-route",func(c context.Context,e ziggurat.Event) error {
+// router.HandleFunc("my-route",func(c context.Context,e *ziggurat.Event) error {
 //		return nil
 //})
 // h := router.Compose(middlewareOne,middlewareTwo,middlewareThree)

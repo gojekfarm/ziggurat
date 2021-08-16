@@ -2,10 +2,14 @@ package rabbitmq
 
 import "github.com/gojekfarm/ziggurat"
 
-const RetryCountKey = "retryCount"
+const KeyRetryCount = "retryCount"
 
 func getRetryCount(e *ziggurat.Event) int {
-	c, ok := e.Metadata[RetryCountKey]
+	if e.Metadata == nil {
+		return 0
+	}
+
+	c, ok := e.Metadata[KeyRetryCount]
 	if !ok {
 		return 0
 	}

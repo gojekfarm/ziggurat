@@ -2,13 +2,10 @@ package rabbitmq
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
-	"github.com/makasim/amqpextra/publisher"
-	"github.com/streadway/amqp"
 )
 
 type retry struct {
@@ -39,7 +36,7 @@ func NewRetry(ctx context.Context, opts ...Opts) (*retry, error) {
 		AMQPURLs = append(AMQPURLs, constructAMQPURL(h, r.username, r.password))
 	}
 
-	dialer, err := NewDialer(ctx, AMQPURLs, r.logger)
+	dialer, err := newDialer(ctx, AMQPURLs, r.logger)
 	if err != nil {
 		return nil, err
 	}
@@ -64,49 +61,23 @@ func (r *retry) Publish(ctx context.Context, event *ziggurat.Event, opts ...Publ
 		return err
 	}
 
-	queueTypes := []string{"delay", "instant", "dlq"}
-	for _, qt := range queueTypes {
-		args := amqp.Table{}
-		queueName := fmt.Sprintf("%s_%s", pubOpts.queueKey, qt)
-		if qt == "delay" {
-			args = amqp.Table{"x-dead-letter-exchange": fmt.Sprintf("%s_%s_%s", pubOpts.queueKey, "instant", "exchange")}
-		}
-		if err := CreateAndBindQueue(ch, queueName, args); err != nil {
-			return err
-		}
+	err = createQueuesAndExchanges(ch, pubOpts.queueKey)
+	if err != nil {
+		return err
 	}
 
-	pub, err := r.dialer.Publisher(
-		publisher.WithContext(ctx),
-		publisher.WithLogger(r.logger))
+	err = ch.Close()
+	if err != nil {
+		r.logger.Printf("error closing channel: " + err.Error())
+	}
+	pub, err := getPublisher(ctx, r.dialer, r.logger)
 
 	if err != nil {
 		return err
 	}
 	defer pub.Close()
-	newCount := getRetryCount(event) + 1
+	return publish(pub, pubOpts.queueKey, pubOpts.retryCount, pubOpts.delayExpiration, event)
 
-	if newCount > pubOpts.retryCount {
-		fmt.Printf("retry count %d: publishing to dead letter", newCount)
-		return nil
-	}
-
-	eb, err := json.Marshal(event)
-	if err != nil {
-		return err
-	}
-
-	exchange := fmt.Sprintf("%s_%s_%s", pubOpts.queueKey, "delay", "exchange")
-	msg := publisher.Message{
-		Exchange: exchange,
-		Publishing: amqp.Publishing{
-			Expiration: pubOpts.delayExpiration,
-			Body:       eb,
-		},
-	}
-
-	err = pub.Publish(msg)
-	return err
 }
 
 func (r *retry) Wrap(f ziggurat.HandlerFunc, opts ...PublishOpts) ziggurat.HandlerFunc {
