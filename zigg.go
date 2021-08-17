@@ -36,7 +36,7 @@ type Ziggurat struct {
 func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) error {
 
 	if z.Logger == nil {
-		z.Logger = logger.NewJSONLogger("info")
+		z.Logger = logger.NewDiscardLogger()
 	}
 
 	if streams == nil {

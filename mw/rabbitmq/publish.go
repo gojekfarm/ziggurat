@@ -15,6 +15,8 @@ var publishAMQP = func(p *publisher.Publisher, msg publisher.Message) error {
 
 func publish(p *publisher.Publisher, queue string, retryCount int, delayExpiration string, event *ziggurat.Event) error {
 
+	expiration := delayExpiration
+
 	if event.Metadata == nil {
 		event.Metadata = map[string]interface{}{KeyRetryCount: 0}
 	}
@@ -26,6 +28,7 @@ func publish(p *publisher.Publisher, queue string, retryCount int, delayExpirati
 	if newCount > retryCount {
 		event.Metadata[KeyRetryCount] = retryCount
 		exchange = fmt.Sprintf("%s_%s_%s", queue, "dlq", "exchange")
+		expiration = ""
 	} else {
 		event.Metadata[KeyRetryCount] = newCount
 	}
@@ -38,7 +41,7 @@ func publish(p *publisher.Publisher, queue string, retryCount int, delayExpirati
 	msg := publisher.Message{
 		Exchange: exchange,
 		Publishing: amqp.Publishing{
-			Expiration: delayExpiration,
+			Expiration: expiration,
 			Body:       eb,
 		},
 	}

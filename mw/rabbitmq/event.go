@@ -1,6 +1,8 @@
 package rabbitmq
 
-import "github.com/gojekfarm/ziggurat"
+import (
+	"github.com/gojekfarm/ziggurat"
+)
 
 const KeyRetryCount = "retryCount"
 
@@ -13,9 +15,11 @@ func getRetryCount(e *ziggurat.Event) int {
 	if !ok {
 		return 0
 	}
-	count, ok := c.(int)
+
+	count, ok := c.(float64)
 	if !ok {
-		return 0
+		panic("couldn't assert count to a number")
 	}
-	return count
+
+	return int(count)
 }

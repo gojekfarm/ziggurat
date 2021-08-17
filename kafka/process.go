@@ -21,7 +21,7 @@ func constructPath(bs string, cg string, topic string, part int32) string {
 }
 
 func getStrValFromCfgMap(cfgMap kafka.ConfigMap, prop string) string {
-	//we ignore the error as we the createConsumer panics if
+	//we ignore the error as the createConsumer panics if
 	// bootstrap.servers is not present
 	v, _ := cfgMap.Get(prop, "")
 	if s, ok := v.(string); ok {

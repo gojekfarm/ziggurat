@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 
-	"github.com/gojekfarm/ziggurat/mw/statsd"
-
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
@@ -18,18 +16,10 @@ func main() {
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
 
-	rmq, err := rabbitmq.NewRetry(ctx,
+	ar := rabbitmq.AutoRetry(
 		rabbitmq.WithPassword("bitnami"),
-		rabbitmq.WithUsername("user"))
-
-	if err != nil {
-		panic(err)
-	}
-
-	statsdPub := statsd.NewPublisher(
-		statsd.WithLogger(l),
-		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_app"}),
-	)
+		rabbitmq.WithUsername("user"),
+		rabbitmq.WithLogger(l))
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -44,13 +34,23 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/", rmq.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-		l.Info("received message", map[string]interface{}{"value": string(event.Value)})
-		return ziggurat.Retry
-	}, rabbitmq.WithRetryCount(2), rabbitmq.WithDelayExpiration("500"), rabbitmq.WithQueue("booking_log")))
+	r.HandleFunc("localhost:9092/plain_text_consumer/",
+		ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+			l.Info("received message", map[string]interface{}{"value": string(event.Value)})
+			return ziggurat.Retry
+		}, "booking_log"))
 
 	zig.StartFunc(func(ctx context.Context) {
-		l.Error("error running statsd publisher", statsdPub.Run(ctx))
+		go func() {
+			err := ar.Run(ctx, &r, rabbitmq.WithQueues(
+				rabbitmq.QueueConfig{
+					QueueName:           "booking_log",
+					DelayExpirationInMS: "1000",
+					RetryCount:          5,
+					WorkerCount:         10,
+				}))
+			l.Error("error starting rabbitmq", err)
+		}()
 	})
 
 	if runErr := zig.Run(ctx, &kafkaStreams, &r); runErr != nil {
