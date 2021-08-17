@@ -64,11 +64,7 @@ func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc 
 	return hf
 }
 
-func (r *retry) Run(ctx context.Context, h ziggurat.Handler, opts ...Opts) error {
-
-	for _, o := range opts {
-		o(r)
-	}
+func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 
 	pdialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
