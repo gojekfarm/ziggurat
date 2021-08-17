@@ -27,13 +27,14 @@ func WithLogger(l ziggurat.StructuredLogger) Opts {
 		r.logger = &amqpExtraLogger{
 			l: l,
 		}
+		r.ogLogger = l
 	}
 }
 
 func WithQueues(QConf ...QueueConfig) Opts {
 	return func(r *retry) {
-		qm := make(map[string]QueueConfig,len(QConf))
-		for _,qc := range QConf {
+		qm := make(map[string]QueueConfig, len(QConf))
+		for _, qc := range QConf {
 			qm[qc.QueueName] = qc
 		}
 		r.queueConfig = qm

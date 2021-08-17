@@ -21,30 +21,31 @@ func main() {
 	ar := rabbitmq.AutoRetry(
 		rabbitmq.WithPassword("bitnami"),
 		rabbitmq.WithUsername("user"),
+		rabbitmq.WithLogger(l),
 		rabbitmq.WithQueues(
 			rabbitmq.QueueConfig{
-				QueueName:           "booking_log",
-				DelayExpirationInMS: "1000",
+				QueueName:           "plain_text_log",
+				DelayExpirationInMS: "5000",
 				RetryCount:          5,
-				WorkerCount:         50,
+				WorkerCount:         10,
 			}))
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
-				BootstrapServers: "g-gojek-id-mainstream.golabs.io:6668",
-				OriginTopics:     "^.*-booking-log",
+				BootstrapServers: "localhost:9092",
+				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "another_brick_in_the_wall",
-				ConsumerCount:    12,
+				ConsumerCount:    2,
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("g-gojek-id-mainstream.golabs.io:6668/another_brick_in_the_wall/",
+	r.HandleFunc("localhost:9092/another_brick_in_the_wall/",
 		ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 			return ziggurat.Retry
-		}, "booking_log"))
+		}, "plain_text_log"))
 
 	zig.StartFunc(func(ctx context.Context) {
 

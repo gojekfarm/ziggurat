@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
+	zl "github.com/gojekfarm/ziggurat/logger"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 )
@@ -16,6 +17,7 @@ type retry struct {
 	username      string
 	password      string
 	logger        logger.Logger
+	ogLogger      ziggurat.StructuredLogger
 	queueConfig   map[string]QueueConfig
 }
 
@@ -28,6 +30,7 @@ func AutoRetry(opts ...Opts) *retry {
 		dialer:   nil,
 		hosts:    []string{"localhost:5672"},
 		username: "guest",
+		ogLogger: zl.NewDiscardLogger(),
 		password: "guest",
 		logger:   logger.Discard,
 	}
@@ -94,13 +97,13 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	consStopCh := make(chan struct{})
 	for _, qc := range r.queueConfig {
 		go func(qname string, wc int) {
-			cons, err := startConsumer(ctx, r.consumeDialer, qname, wc, h, r.logger)
+			cons, err := startConsumer(ctx, r.consumeDialer, qname, wc, h, r.logger, r.ogLogger)
 			if err != nil {
-				r.logger.Printf("error starting consumer: %v", err)
+				r.ogLogger.Error("error starting consumer", err)
 			}
 			<-cons.NotifyClosed()
 			consStopCh <- struct{}{}
-			r.logger.Printf("shutting down consumer for %s", qname)
+			r.ogLogger.Info("shutting down consumer for", map[string]interface{}{"queue": qname})
 		}(qc.QueueName, qc.WorkerCount)
 	}
 
@@ -119,10 +122,10 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 		}
 		select {
 		case <-r.consumeDialer.NotifyClosed():
-			r.logger.Printf("shutting down consumer dialer")
+			r.ogLogger.Info("shutting down consumer dialer")
 			closeCount++
 		case <-r.dialer.NotifyClosed():
-			r.logger.Printf("shutting down publisher dialer")
+			r.ogLogger.Info("shutting down publisher dialer")
 			closeCount++
 		}
 	}

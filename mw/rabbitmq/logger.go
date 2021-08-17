@@ -11,5 +11,5 @@ type amqpExtraLogger struct {
 
 func (a *amqpExtraLogger) Printf(format string, v ...interface{}) {
 	s := fmt.Sprintf("[RABBITMQ AR] "+format, v...)
-	a.l.Info(s)
+	a.l.Debug(s)
 }
