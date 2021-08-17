@@ -1,3 +1,5 @@
+//+build ignore
+
 package main
 
 import (
@@ -19,41 +21,36 @@ func main() {
 	ar := rabbitmq.AutoRetry(
 		rabbitmq.WithPassword("bitnami"),
 		rabbitmq.WithUsername("user"),
-		rabbitmq.WithLogger(l))
+		rabbitmq.WithQueues(
+			rabbitmq.QueueConfig{
+				QueueName:           "booking_log",
+				DelayExpirationInMS: "1000",
+				RetryCount:          5,
+				WorkerCount:         50,
+			}))
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
-				BootstrapServers: "localhost:9092",
-				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "plain_text_consumer",
-				ConsumerCount:    1,
-				RouteGroup:       "plain-text-log",
+				BootstrapServers: "g-gojek-id-mainstream.golabs.io:6668",
+				OriginTopics:     "^.*-booking-log",
+				ConsumerGroupID:  "another_brick_in_the_wall",
+				ConsumerCount:    12,
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/",
+	r.HandleFunc("g-gojek-id-mainstream.golabs.io:6668/another_brick_in_the_wall/",
 		ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-			l.Info("received message", map[string]interface{}{"value": string(event.Value)})
 			return ziggurat.Retry
 		}, "booking_log"))
 
 	zig.StartFunc(func(ctx context.Context) {
-		go func() {
-			err := ar.Run(ctx, &r, rabbitmq.WithQueues(
-				rabbitmq.QueueConfig{
-					QueueName:           "booking_log",
-					DelayExpirationInMS: "1000",
-					RetryCount:          5,
-					WorkerCount:         10,
-				}))
-			l.Error("error starting rabbitmq", err)
-		}()
+
 	})
 
-	if runErr := zig.Run(ctx, &kafkaStreams, &r); runErr != nil {
+	if runErr := zig.RunAll(ctx, &r, &kafkaStreams, ar); runErr != nil {
 		l.Error("could not start streams", runErr)
 	}
 }
