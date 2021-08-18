@@ -29,7 +29,9 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, worke
 				rejectErr := msg.Reject(true)
 				ogl.Error("error rejecting message:", rejectErr)
 			}
-			ogl.Info("amqp processing message: ", map[string]interface{}{"consumer": consumerName})
+			ogl.Info("amqp processing message", map[string]interface{}{
+				"consumer": consumerName,
+			}, event.Metadata)
 			err = h.Handle(ctx, &event)
 			if err != nil {
 				ogl.Error("error processing message", err)

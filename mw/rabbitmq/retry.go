@@ -67,14 +67,16 @@ func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc 
 	return hf
 }
 
-func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
-
+func (r *retry) InitPublishers(ctx context.Context) error {
 	pdialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
 	}
 	r.dialer = pdialer
+	return nil
+}
 
+func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	cdialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err

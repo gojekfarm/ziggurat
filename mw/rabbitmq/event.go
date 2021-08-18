@@ -16,10 +16,12 @@ func getRetryCount(e *ziggurat.Event) int {
 		return 0
 	}
 
-	count, ok := c.(float64)
-	if !ok {
-		panic("couldn't assert count to a number")
+	switch count := c.(type) {
+	case int:
+		return count
+	case float64:
+		return int(count)
+	default:
+		return 0
 	}
-
-	return int(count)
 }
