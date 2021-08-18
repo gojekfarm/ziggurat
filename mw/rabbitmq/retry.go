@@ -61,9 +61,7 @@ func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc 
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
 			pubErr := r.Publish(ctx, event, queue)
-			if pubErr != nil {
-				r.ogLogger.Error("AR publish error", pubErr)
-			}
+			r.ogLogger.Error("AR publish error", pubErr)
 			// return the original error
 			return err
 		}
@@ -101,9 +99,7 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 		}
 	}
 	err = ch.Close()
-	if err != nil {
-		r.ogLogger.Error("error closing channel", err)
-	}
+	r.ogLogger.Error("error closing channel", err)
 
 	consStopCh := make(chan struct{})
 	for _, qc := range r.queueConfig {
