@@ -11,7 +11,7 @@ import (
 
 func Test_RetryFlow(t *testing.T) {
 
-	ctx, cfn := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cfn := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cfn()
 	var callCount int32 = 0
 	var expectedCallCount int32 = 5
@@ -48,7 +48,7 @@ func Test_RetryFlow(t *testing.T) {
 		close(done)
 	}()
 
-	for i := 0; i < 5; i++ {
+	for i := 0; i < int(expectedCallCount); i++ {
 		err := ar.Publish(ctx, &event, "test_12345")
 		if err != nil {
 			t.Errorf("error publishing: %v", err)
