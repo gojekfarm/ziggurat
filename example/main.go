@@ -48,10 +48,10 @@ func main() {
 		}, "plain_text_log"))
 
 	zig.StartFunc(func(ctx context.Context) {
-
+		ar.InitPublishers(ctx)
 	})
 
 	if runErr := zig.RunAll(ctx, &r, &kafkaStreams, ar); runErr != nil {
-		l.Error("could not start streams", runErr)
+		l.Error("", runErr)
 	}
 }
