@@ -89,12 +89,15 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	}
 
 	for _, qc := range r.queueConfig {
-		if err := createQueuesAndExchanges(ch, qc.QueueName); err != nil {
-			r.logger.Printf("error creating queues and exchanges: %v", err)
+		if err := createQueuesAndExchanges(ch, qc.QueueName, r.ogLogger); err != nil {
+			r.ogLogger.Error("error creating queues and exchanges", err)
 			return err
 		}
 	}
-	ch.Close()
+	err = ch.Close()
+	if err != nil {
+		r.ogLogger.Error("error closing channel", err)
+	}
 
 	consStopCh := make(chan struct{})
 	for _, qc := range r.queueConfig {

@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"fmt"
+	"github.com/gojekfarm/ziggurat"
 	"github.com/streadway/amqp"
 )
 
@@ -19,11 +20,12 @@ func createAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) err
 	return nil
 }
 
-func createQueuesAndExchanges(ch *amqp.Channel, queueName string) error {
+func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggurat.StructuredLogger) error {
 	queueTypes := []string{"delay", "instant", "dlq"}
 	for _, qt := range queueTypes {
 		args := amqp.Table{}
 		qnameWithType := fmt.Sprintf("%s_%s", queueName, qt)
+		logger.Info("creating queue", map[string]interface{}{"queue": qnameWithType})
 		if qt == "delay" {
 			args = amqp.Table{"x-dead-letter-exchange": fmt.Sprintf("%s_%s_%s", queueName, "instant", "exchange")}
 		}
