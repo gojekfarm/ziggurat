@@ -24,8 +24,14 @@ jobs:
       - name: Test
         run: make lib.test
 
+      - name: Test Integration
+        run: make lib.test-integration
+
       - name: Coverage
-        run: make lib.test-coverage
+        run: |
+          make docker.start
+          sleep 30
+          make lib.test-coverage
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v1
