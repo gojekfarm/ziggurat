@@ -60,9 +60,15 @@ func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc 
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
-			return r.Publish(ctx, event, queue)
+			pubErr := r.Publish(ctx, event, queue)
+			if pubErr != nil {
+				r.ogLogger.Error("AR publish error", pubErr)
+			}
+			// return the original error
+			return err
 		}
-		return nil
+		// return the original error and not nil
+		return err
 	}
 	return hf
 }
