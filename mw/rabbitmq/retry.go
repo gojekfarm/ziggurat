@@ -119,22 +119,19 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	}
 	close(consStopCh)
 
+	done := make(chan struct{})
+
+	go func() {
+		<-r.dialer.NotifyClosed()
+		r.ogLogger.Info("stopped publisher dialer")
+		<-r.dialer.NotifyClosed()
+		r.ogLogger.Info("stopped consumer dialer")
+		done <- struct{}{}
+	}()
+
 	r.dialer.Close()
 	r.consumeDialer.Close()
 
-	var closeCount int
-	for {
-		if closeCount == 2 {
-			return nil
-		}
-		select {
-		case <-r.consumeDialer.NotifyClosed():
-			r.ogLogger.Info("shutting down consumer dialer")
-			closeCount++
-		case <-r.dialer.NotifyClosed():
-			r.ogLogger.Info("shutting down publisher dialer")
-			closeCount++
-		}
-	}
-
+	<-done
+	return nil
 }

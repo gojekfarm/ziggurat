@@ -17,7 +17,6 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, worke
 	consumerName := fmt.Sprintf("%s_consumer", queue)
 	cons, err := d.Consumer(
 		consumer.WithContext(ctx),
-		consumer.WithConsumeArgs(consumerName, false, false, false, false, amqp.Table{}),
 		consumer.WithQueue(qname),
 		consumer.WithQos(1, false),
 		consumer.WithWorker(parallelWorker),
@@ -26,16 +25,15 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, worke
 			var event ziggurat.Event
 			err := json.Unmarshal(bb, &event)
 			if err != nil {
-				rejectErr := msg.Reject(true)
-				ogl.Error("error rejecting message:", rejectErr)
+				ogl.Error("error rejecting message:", err)
+				return msg.Reject(true)
 			}
 			ogl.Info("amqp processing message", map[string]interface{}{"consumer": consumerName}, event.Metadata)
 			err = h.Handle(ctx, &event)
 			if err != nil {
 				ogl.Error("error processing message", err)
 			}
-			//return msg.Ack(false)
-			return nil
+			return msg.Ack(true)
 		})),
 	)
 	if err != nil {
