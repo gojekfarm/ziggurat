@@ -1,8 +1,9 @@
 package rabbitmq
 
 import (
-	"github.com/gojekfarm/ziggurat"
 	"testing"
+
+	"github.com/gojekfarm/ziggurat"
 )
 
 func Test_getRetryCount(t *testing.T) {

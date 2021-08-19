@@ -2,11 +2,12 @@ package rabbitmq
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 func Test_RetryFlow(t *testing.T) {

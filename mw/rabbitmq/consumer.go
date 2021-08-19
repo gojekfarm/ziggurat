@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/consumer"

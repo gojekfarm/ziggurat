@@ -1,9 +1,10 @@
 package rabbitmq
 
 import (
+	"testing"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/makasim/amqpextra/publisher"
-	"testing"
 )
 
 func Test_publish(t *testing.T) {

@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"

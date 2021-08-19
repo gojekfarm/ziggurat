@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"

@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
+
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
 	"github.com/makasim/amqpextra"

@@ -2,9 +2,10 @@ package kafka
 
 import (
 	"context"
+	"sync"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
-	"sync"
 )
 
 const logTagToSkip = "COMMIT"
