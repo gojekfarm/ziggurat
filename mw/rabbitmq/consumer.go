@@ -17,7 +17,7 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, worke
 	consumerName := fmt.Sprintf("%s_consumer", queue)
 	cons, err := d.Consumer(
 		consumer.WithContext(ctx),
-		consumer.WithConsumeArgs(consumerName, true, false, false, false, amqp.Table{}),
+		consumer.WithConsumeArgs(consumerName, false, false, false, false, amqp.Table{}),
 		consumer.WithQueue(qname),
 		consumer.WithQos(1, false),
 		consumer.WithWorker(parallelWorker),
@@ -29,9 +29,7 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, worke
 				rejectErr := msg.Reject(true)
 				ogl.Error("error rejecting message:", rejectErr)
 			}
-			ogl.Info("amqp processing message", map[string]interface{}{
-				"consumer": consumerName,
-			}, event.Metadata)
+			ogl.Info("amqp processing message", map[string]interface{}{"consumer": consumerName}, event.Metadata)
 			err = h.Handle(ctx, &event)
 			if err != nil {
 				ogl.Error("error processing message", err)
