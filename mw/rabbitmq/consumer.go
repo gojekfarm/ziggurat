@@ -19,6 +19,7 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, worke
 	cons, err := d.Consumer(
 		consumer.WithContext(ctx),
 		consumer.WithQueue(qname),
+		consumer.WithLogger(l),
 		consumer.WithQos(1, false),
 		consumer.WithWorker(parallelWorker),
 		consumer.WithHandler(consumer.HandlerFunc(func(ctx context.Context, msg amqp.Delivery) interface{} {
@@ -37,6 +38,7 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, worke
 			return msg.Ack(true)
 		})),
 	)
+
 	if err != nil {
 		return nil, err
 	}
