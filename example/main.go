@@ -17,7 +17,7 @@ func main() {
 	var r kafka.Router
 
 	ctx := context.Background()
-	l := logger.NewJSONLogger(logger.LevelInfo)
+	l := logger.NewLogger(logger.LevelInfo)
 
 	ar := rabbitmq.AutoRetry(
 		[]rabbitmq.QueueConfig{{
