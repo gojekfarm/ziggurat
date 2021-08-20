@@ -11,10 +11,7 @@ func getRetryCount(e *ziggurat.Event) int {
 		return 0
 	}
 
-	c, ok := e.Metadata[KeyRetryCount]
-	if !ok {
-		return 0
-	}
+	c, _ := e.Metadata[KeyRetryCount]
 
 	switch count := c.(type) {
 	case int:

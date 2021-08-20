@@ -26,15 +26,21 @@ func constructAMQPURL(host, username, password string) string {
 	return fmt.Sprintf("amqp://%s:%s@%s", username, password, host)
 }
 
-func AutoRetry(opts ...Opts) *retry {
+func AutoRetry(qc []QueueConfig, opts ...Opts) *retry {
 	r := &retry{
-		dialer:   nil,
-		hosts:    []string{"localhost:5672"},
-		username: "guest",
-		ogLogger: zl.NewDiscardLogger(),
-		password: "guest",
-		logger:   logger.Discard,
+		dialer:      nil,
+		hosts:       []string{"localhost:5672"},
+		username:    "guest",
+		ogLogger:    zl.NewDiscardLogger(),
+		password:    "guest",
+		logger:      logger.Discard,
+		queueConfig: map[string]QueueConfig{},
 	}
+
+	for _, c := range qc {
+		r.queueConfig[c.QueueName] = c
+	}
+
 	for _, o := range opts {
 		o(r)
 	}

@@ -22,12 +22,12 @@ func Test_RetryFlow(t *testing.T) {
 		Value: []byte(expectedValue),
 	}
 	ar := AutoRetry(
-		WithQueues(QueueConfig{
+		[]QueueConfig{{
 			QueueName:           "test_12345",
 			DelayExpirationInMS: "500",
 			RetryCount:          5,
 			WorkerCount:         1,
-		}),
+		}},
 		WithUsername("user"),
 		WithPassword("bitnami"),
 		WithLogger(logger.NewDiscardLogger()))
