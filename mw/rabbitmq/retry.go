@@ -3,7 +3,6 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
-
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
 	"github.com/makasim/amqpextra"
@@ -141,4 +140,8 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 
 	<-done
 	return nil
+}
+
+func (r *retry) ConfigureHTTPEndpoints() {
+
 }

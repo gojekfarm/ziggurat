@@ -4,7 +4,7 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
-const KeyRetryCount = "retryCount"
+const KeyRetryCount = "rabbitmqAutoRetryCount"
 
 func getRetryCount(e *ziggurat.Event) int {
 	if e.Metadata == nil {

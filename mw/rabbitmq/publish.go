@@ -9,6 +9,9 @@ import (
 	"github.com/streadway/amqp"
 )
 
+const HeaderRabbitMQ = "x-retry-agent"
+const HeaderRabbitMQVal = "rabbitmq"
+
 //mock the actual implementation
 var publishAMQP = func(p *publisher.Publisher, msg publisher.Message) error {
 	return p.Publish(msg)
@@ -33,6 +36,8 @@ func publish(p *publisher.Publisher, queue string, retryCount int, delayExpirati
 	} else {
 		event.Metadata[KeyRetryCount] = newCount
 	}
+
+	event.Headers[HeaderRabbitMQ] = HeaderRabbitMQVal
 
 	eb, err := json.Marshal(event)
 	if err != nil {
