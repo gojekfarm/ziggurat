@@ -5,20 +5,25 @@ import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/server"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
+	"github.com/streadway/amqp"
 )
 
+type managementServerResponse []ziggurat.Event
+
 type retry struct {
-	dialer        *amqpextra.Dialer
-	consumeDialer *amqpextra.Dialer
-	hosts         []string
-	amqpURLs      []string
-	username      string
-	password      string
-	logger        logger.Logger
-	ogLogger      ziggurat.StructuredLogger
-	queueConfig   map[string]QueueConfig
+	dialer           *amqpextra.Dialer
+	consumeDialer    *amqpextra.Dialer
+	hosts            []string
+	amqpURLs         []string
+	username         string
+	password         string
+	logger           logger.Logger
+	ogLogger         ziggurat.StructuredLogger
+	queueConfig      map[string]QueueConfig
+	managementServer *server.DefaultHttpServer
 }
 
 func constructAMQPURL(host, username, password string) string {
@@ -50,7 +55,7 @@ func AutoRetry(qc []QueueConfig, opts ...Opts) *retry {
 	return r
 }
 
-func (r *retry) Publish(ctx context.Context, event *ziggurat.Event, queue string) error {
+func (r *retry) publish(ctx context.Context, event *ziggurat.Event, queue string) error {
 
 	pub, err := getPublisher(ctx, r.dialer, r.logger)
 
@@ -66,7 +71,7 @@ func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc 
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
-			pubErr := r.Publish(ctx, event, queue)
+			pubErr := r.publish(ctx, event, queue)
 			r.ogLogger.Error("AR publish error", pubErr)
 			// return the original error
 			return err
@@ -142,6 +147,21 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	return nil
 }
 
-func (r *retry) ConfigureHTTPEndpoints() {
+func (r *retry) view(ctx context.Context, queue string, count int) ([]amqp.Delivery, error) {
+	ch, err := getChannelFromDialer(ctx, r.dialer)
 
+	if err != nil {
+		return nil, err
+	}
+
+	deliveries := make([]amqp.Delivery, count)
+	qn := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
+	for i := 0; i < count; i++ {
+		msg, _, err := ch.Get(qn, false)
+		if err != nil {
+			return nil, err
+		}
+		deliveries = append(deliveries, msg)
+	}
+	return deliveries, nil
 }

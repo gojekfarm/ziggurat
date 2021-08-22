@@ -50,7 +50,7 @@ func Test_RetryFlow(t *testing.T) {
 	}()
 
 	for i := 0; i < int(expectedCallCount); i++ {
-		err := ar.Publish(ctx, &event, "test_12345")
+		err := ar.publish(ctx, &event, "test_12345")
 		if err != nil {
 			t.Errorf("error publishing: %v", err)
 		}
