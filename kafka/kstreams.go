@@ -46,7 +46,7 @@ func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 		consumerConfig := NewConsumerConfig(stream.BootstrapServers, stream.ConsumerGroupID)
 		topics := strings.Split(stream.OriginTopics, ",")
 		routeName := stream.RouteGroup
-		k.routeConsumerMap[routeName] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.ConsumerCount, handler, k.Logger, &wg)
+		k.routeConsumerMap[stream.ConsumerGroupID] = StartConsumers(ctx, consumerConfig, routeName, topics, stream.ConsumerCount, handler, k.Logger, &wg)
 	}
 
 	wg.Wait()

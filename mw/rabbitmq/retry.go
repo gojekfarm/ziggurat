@@ -200,13 +200,13 @@ func (r *retry) view(ctx context.Context, queue string, count int) ([]*ziggurat.
 	for i := 0; i < count; i++ {
 		msg, _, err := ch.Get(qn, false)
 		if err != nil {
-			return nil, err
+			return []*ziggurat.Event{}, err
 		}
 		b := msg.Body
 		var e ziggurat.Event
 		err = json.Unmarshal(b, &e)
 		if err != nil {
-			return nil, err
+			return []*ziggurat.Event{}, err
 		}
 
 		r.ogLogger.Error("", msg.Reject(true))
