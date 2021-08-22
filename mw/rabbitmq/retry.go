@@ -208,6 +208,8 @@ func (r *retry) view(ctx context.Context, queue string, count int) ([]*ziggurat.
 		if err != nil {
 			return nil, err
 		}
+		
+		r.ogLogger.Error("", msg.Reject(true))
 		deliveries[i] = &e
 	}
 	return deliveries, nil
