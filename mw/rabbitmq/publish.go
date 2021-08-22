@@ -14,7 +14,7 @@ var publishAMQP = func(p *publisher.Publisher, msg publisher.Message) error {
 	return p.Publish(msg)
 }
 
-func publish(p *publisher.Publisher, queue string, retryCount int, delayExpiration string, event *ziggurat.Event) error {
+func publishInternal(p *publisher.Publisher, queue string, retryCount int, delayExpiration string, event *ziggurat.Event) error {
 
 	expiration := delayExpiration
 

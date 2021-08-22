@@ -12,15 +12,25 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func startConsumer(ctx context.Context, d *amqpextra.Dialer, queue string, workerCount int, h ziggurat.Handler, l logger.Logger, ogl ziggurat.StructuredLogger) (*consumer.Consumer, error) {
-	parallelWorker := consumer.NewParallelWorker(workerCount)
-	qname := fmt.Sprintf("%s_%s_%s", queue, "instant", "queue")
-	consumerName := fmt.Sprintf("%s_consumer", queue)
+func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h ziggurat.Handler, l logger.Logger, ogl ziggurat.StructuredLogger) (*consumer.Consumer, error) {
+	pfc := 1
+	wc := 1
+
+	if c.ConsumerPrefetchCount > 1 {
+		pfc = c.ConsumerPrefetchCount
+	}
+	if c.WorkerCount > 1 {
+		wc = c.WorkerCount
+	}
+
+	qname := fmt.Sprintf("%s_%s_%s", c.QueueName, "instant", "queue")
+	parallelWorker := consumer.NewParallelWorker(wc)
+	consumerName := fmt.Sprintf("%s_consumer", c.QueueName)
 	cons, err := d.Consumer(
 		consumer.WithContext(ctx),
 		consumer.WithQueue(qname),
 		consumer.WithLogger(l),
-		consumer.WithQos(1, false),
+		consumer.WithQos(pfc, false),
 		consumer.WithWorker(parallelWorker),
 		consumer.WithHandler(consumer.HandlerFunc(func(ctx context.Context, msg amqp.Delivery) interface{} {
 			bb := msg.Body

@@ -2,12 +2,14 @@ package rabbitmq
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/server"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
+	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 )
 
@@ -63,8 +65,28 @@ func (r *retry) publish(ctx context.Context, event *ziggurat.Event, queue string
 		return err
 	}
 	defer pub.Close()
-	return publish(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
+	return publishInternal(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
+}
 
+func (r *retry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
+	exchange := fmt.Sprintf("%s_%s_%s", queue, queueType, "exchange")
+	p, err := getPublisher(ctx, r.dialer, r.logger)
+	defer p.Close()
+	if err != nil {
+		return err
+	}
+	eb, err := json.Marshal(event)
+	if err != nil {
+		return err
+	}
+	msg := publisher.Message{
+		Exchange: exchange,
+		Publishing: amqp.Publishing{
+			Expiration: expirationInMS,
+			Body:       eb,
+		},
+	}
+	return p.Publish(msg)
 }
 
 func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc {
@@ -72,7 +94,7 @@ func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc 
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
 			pubErr := r.publish(ctx, event, queue)
-			r.ogLogger.Error("AR publish error", pubErr)
+			r.ogLogger.Error("AR publishInternal error", pubErr)
 			// return the original error
 			return err
 		}
