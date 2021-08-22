@@ -1,11 +1,11 @@
-//+build ignore
-
 package main
 
 import (
 	"context"
-
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
+	"github.com/gojekfarm/ziggurat/server"
+	"github.com/julienschmidt/httprouter"
+	"net/http"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
@@ -18,6 +18,7 @@ func main() {
 
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
+	srvr := server.NewHTTPServer(server.WithAddr(":8080"))
 
 	ar := rabbitmq.AutoRetry(
 		[]rabbitmq.QueueConfig{{
@@ -29,6 +30,10 @@ func main() {
 		rabbitmq.WithPassword("bitnami"),
 		rabbitmq.WithUsername("user"),
 		rabbitmq.WithLogger(l))
+
+	srvr.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
+		r.Handler(http.MethodGet, "/dead_set", ar.DSViewHandler(ctx))
+	})
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -47,11 +52,19 @@ func main() {
 			return ziggurat.Retry
 		}, "pt_log"))
 
+	done := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {
 		l.Error("error starting rabbitmq publishers", ar.InitPublishers(ctx))
+
+		go func() {
+			err := srvr.Run(ctx)
+			l.Error("server error", err)
+			done <- struct{}{}
+		}()
 	})
 
 	if runErr := zig.RunAll(ctx, &r, &kafkaStreams, ar); runErr != nil {
 		l.Error("", runErr)
 	}
+	<-done
 }

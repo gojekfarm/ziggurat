@@ -11,9 +11,14 @@ import (
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
+	"net/http"
+	"strconv"
 )
 
-type managementServerResponse []ziggurat.Event
+type managementServerResponse struct {
+	Events []*ziggurat.Event `json:"events"`
+	Count  int               `json:"count"`
+}
 
 type retry struct {
 	dialer           *amqpextra.Dialer
@@ -110,6 +115,20 @@ func (r *retry) InitPublishers(ctx context.Context) error {
 		return err
 	}
 	r.dialer = pdialer
+
+	ch, err := getChannelFromDialer(ctx, r.dialer)
+	if err != nil {
+		return err
+	}
+
+	for _, qc := range r.queueConfig {
+		if err := createQueuesAndExchanges(ch, qc.QueueName, r.ogLogger); err != nil {
+			r.ogLogger.Error("error creating queues and exchanges", err)
+			return err
+		}
+	}
+	err = ch.Close()
+	r.ogLogger.Error("error closing channel", err)
 	return nil
 }
 
@@ -136,15 +155,15 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 
 	consStopCh := make(chan struct{})
 	for _, qc := range r.queueConfig {
-		go func(qname string, wc int) {
-			cons, err := startConsumer(ctx, r.consumeDialer, qname, wc, h, r.logger, r.ogLogger)
+		go func(qc QueueConfig) {
+			cons, err := startConsumer(ctx, r.consumeDialer, qc, h, r.logger, r.ogLogger)
 			if err != nil {
 				r.ogLogger.Error("error starting consumer", err)
 			}
 			<-cons.NotifyClosed()
 			consStopCh <- struct{}{}
-			r.ogLogger.Info("shutting down consumer for", map[string]interface{}{"queue": qname})
-		}(qc.QueueName, qc.WorkerCount)
+			r.ogLogger.Info("shutting down consumer for", map[string]interface{}{"queue": qc.QueueName})
+		}(qc)
 	}
 
 	for i := 0; i < len(r.queueConfig); i++ {
@@ -169,21 +188,66 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	return nil
 }
 
-func (r *retry) view(ctx context.Context, queue string, count int) ([]amqp.Delivery, error) {
+func (r *retry) view(ctx context.Context, queue string, count int) ([]*ziggurat.Event, error) {
 	ch, err := getChannelFromDialer(ctx, r.dialer)
 
 	if err != nil {
 		return nil, err
 	}
 
-	deliveries := make([]amqp.Delivery, count)
+	deliveries := make([]*ziggurat.Event, count)
 	qn := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
 	for i := 0; i < count; i++ {
 		msg, _, err := ch.Get(qn, false)
 		if err != nil {
 			return nil, err
 		}
-		deliveries = append(deliveries, msg)
+		b := msg.Body
+		var e ziggurat.Event
+		err = json.Unmarshal(b, &e)
+		if err != nil {
+			return nil, err
+		}
+		deliveries[i] = &e
 	}
 	return deliveries, nil
+}
+
+func (r *retry) DSViewHandler(ctx context.Context) http.Handler {
+	f := func(w http.ResponseWriter, req *http.Request) {
+		qparams := req.URL.Query()
+		qname, ok := qparams["queue"]
+		if !ok {
+			http.Error(w, "expected query param qname", 400)
+			return
+		}
+
+		c, ok := qparams["count"]
+		if !ok {
+			http.Error(w, "expected query param count", 400)
+			return
+		}
+		count, err := strconv.Atoi(c[0])
+		if err != nil {
+			http.Error(w, fmt.Sprintf("expected count to be a number: %v", err), 400)
+			return
+		}
+		events, err := r.view(ctx, qname[0], count)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("couldn't view messages from dlq: %v", err), 500)
+			return
+		}
+
+		je := json.NewEncoder(w)
+		resp := managementServerResponse{
+			Events: events,
+			Count:  len(events),
+		}
+		err = je.Encode(resp)
+
+		if err != nil {
+			http.Error(w, "json encode error", 500)
+		}
+	}
+	return http.HandlerFunc(f)
 }
