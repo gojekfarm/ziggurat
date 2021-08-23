@@ -190,14 +190,23 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 
 func (r *retry) view(ctx context.Context, queue string, count int) ([]*ziggurat.Event, error) {
 	ch, err := getChannelFromDialer(ctx, r.dialer)
-
+	actualCount := count
 	if err != nil {
 		return nil, err
 	}
 
-	deliveries := make([]*ziggurat.Event, count)
 	qn := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
-	for i := 0; i < count; i++ {
+	q, err := ch.QueueInspect(qn)
+	if err != nil {
+		return []*ziggurat.Event{}, nil
+	}
+
+	if actualCount > q.Messages {
+		actualCount = q.Messages
+	}
+
+	deliveries := make([]*ziggurat.Event, actualCount)
+	for i := 0; i < actualCount; i++ {
 		msg, _, err := ch.Get(qn, false)
 		if err != nil {
 			return []*ziggurat.Event{}, err
