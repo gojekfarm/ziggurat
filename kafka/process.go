@@ -45,13 +45,20 @@ func processMessage(ctx context.Context,
 	bs := getStrValFromCfgMap(cfgMap, "bootstrap.servers")
 	cg := getStrValFromCfgMap(cfgMap, "group.id")
 
+	//copy kvs into new slices
+	key := make([]byte, len(msg.Key))
+	value := make([]byte, len(msg.Value))
+
+	copy(key, msg.Key)
+	copy(value, msg.Value)
+
 	event := ziggurat.Event{
 		Headers: map[string]string{
 			HeaderPartition: strconv.Itoa(int(msg.TopicPartition.Partition)),
 			HeaderTopic:     *msg.TopicPartition.Topic,
 		},
-		Value:             msg.Value,
-		Key:               msg.Key,
+		Value:             key,
+		Key:               value,
 		Path:              route,
 		Metadata:          map[string]interface{}{},
 		RoutingPath:       constructPath(bs, cg, *msg.TopicPartition.Topic, msg.TopicPartition.Partition),
@@ -59,7 +66,7 @@ func processMessage(ctx context.Context,
 		ReceivedTimestamp: time.Now(),
 		EventType:         EventType,
 	}
-	l.Info(fmt.Sprintf("%s processing message", c.String()))
+	l.Info("processing message", map[string]interface{}{"consumer": c.String()})
 	l.Error("kafka processing error", h.Handle(ctx, &event))
 	err := storeOffsets(c, msg.TopicPartition)
 	l.Error("error storing offsets: %v", err)

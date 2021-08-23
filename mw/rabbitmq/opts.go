@@ -4,7 +4,7 @@ import "github.com/gojekfarm/ziggurat"
 
 type Opts func(r *autoRetry)
 
-func WithHosts(hosts []string) Opts {
+func WithHosts(hosts ...string) Opts {
 	return func(r *autoRetry) {
 		r.hosts = hosts
 	}

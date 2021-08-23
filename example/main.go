@@ -4,10 +4,11 @@ package main
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 	"github.com/gojekfarm/ziggurat/server"
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
@@ -49,15 +50,12 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/another_brick_in_the_wall/",
-		ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-			return ziggurat.Retry
-		}, "pt_log"))
+	r.HandleFunc("localhost:9092/another_brick_in_the_wall/", func(ctx context.Context, event *ziggurat.Event) error {
+		return nil
+	})
 
 	done := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {
-		l.Error("error starting rabbitmq publishers", ar.InitPublishers(ctx))
-
 		go func() {
 			err := srvr.Run(ctx)
 			l.Error("server error", err)
@@ -65,7 +63,7 @@ func main() {
 		}()
 	})
 
-	if runErr := zig.RunAll(ctx, &r, &kafkaStreams, ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, &r, &kafkaStreams); runErr != nil {
 		l.Error("", runErr)
 	}
 	<-done

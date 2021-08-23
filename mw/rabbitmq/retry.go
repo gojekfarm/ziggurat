@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
-	"net/http"
 )
 
 type managementServerResponse struct {
@@ -186,7 +187,11 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 }
 
 func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggurat.Event, error) {
-	ch, err := getChannelFromDialer(ctx, r.dialer)
+	d, err := newDialer(ctx, r.amqpURLs, r.logger)
+	if err != nil {
+		return nil, err
+	}
+	ch, err := getChannelFromDialer(ctx, d)
 	actualCount := count
 	if err != nil {
 		return nil, err
@@ -202,7 +207,7 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggu
 		actualCount = q.Messages
 	}
 
-	deliveries := make([]*ziggurat.Event, actualCount)
+	events := make([]*ziggurat.Event, actualCount)
 	for i := 0; i < actualCount; i++ {
 		msg, _, err := ch.Get(qn, false)
 		if err != nil {
@@ -216,9 +221,9 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggu
 		}
 
 		r.ogLogger.Error("", msg.Reject(true))
-		deliveries[i] = &e
+		events[i] = &e
 	}
-	return deliveries, nil
+	return events, nil
 }
 
 func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
