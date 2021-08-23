@@ -4,15 +4,12 @@ package main
 
 import (
 	"context"
-	"net/http"
-
-	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
-	"github.com/gojekfarm/ziggurat/server"
-	"github.com/julienschmidt/httprouter"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
+	"github.com/gojekfarm/ziggurat/mw/statsd"
 )
 
 func main() {
@@ -21,22 +18,18 @@ func main() {
 
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
-	srvr := server.NewHTTPServer(server.WithAddr(":8080"))
+	s := statsd.NewPublisher(statsd.WithPrefix("example_go_ziggurat"),
+		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_go_ziggurat"}),
+		statsd.WithLogger(l))
 
-	ar := rabbitmq.AutoRetry(
-		[]rabbitmq.QueueConfig{{
-			QueueName:           "pt_log",
-			DelayExpirationInMS: "2000",
-			RetryCount:          2,
-			WorkerCount:         5,
-		}},
-		rabbitmq.WithPassword("bitnami"),
+	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{{
+		QueueName:           "pt_retries",
+		DelayExpirationInMS: "3000",
+		RetryCount:          5,
+		WorkerCount:         10,
+	}}, rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
-		rabbitmq.WithLogger(l))
-
-	srvr.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
-		r.Handler(http.MethodGet, "/dead_set", ar.DSViewHandler(ctx))
-	})
+		rabbitmq.WithPassword("bitnami"))
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -50,21 +43,21 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/another_brick_in_the_wall/", func(ctx context.Context, event *ziggurat.Event) error {
-		return nil
-	})
+	r.HandleFunc("localhost:9092/another_brick_in_the_wall/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+		return ziggurat.Retry
+	}, "pt_retries"))
 
-	done := make(chan struct{})
+	h := r.Compose(s.PublishHandlerMetrics)
+
 	zig.StartFunc(func(ctx context.Context) {
-		go func() {
-			err := srvr.Run(ctx)
-			l.Error("server error", err)
-			done <- struct{}{}
-		}()
+		err := s.Run(ctx)
+		l.Error("", err)
+		err = ar.InitPublishers(ctx)
+		l.Error("", err)
 	})
 
-	if runErr := zig.RunAll(ctx, &r, &kafkaStreams); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
 		l.Error("", runErr)
 	}
-	<-done
+
 }

@@ -45,12 +45,6 @@ func WithRetryCount(count int) PublishOpts {
 	}
 }
 
-func WithQueue(queue string) PublishOpts {
-	return func(po *publishOpts) {
-		po.queueKey = queue
-	}
-}
-
 func WithDelayExpiration(expiration string) PublishOpts {
 	return func(po *publishOpts) {
 		po.delayExpiration = expiration
