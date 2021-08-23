@@ -25,6 +25,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/gojekfarm/ziggurat/router"
 
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 
@@ -35,7 +36,7 @@ import (
 
 func main() {
 	var zig ziggurat.Ziggurat
-	var r kafka.Router
+	var r = router.New()
 
 	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	ctx := context.Background()
@@ -51,17 +52,18 @@ func main() {
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "plain_text_consumer",
 				ConsumerCount:    1,
+				RouteGroup:       "pl-txt-log",
 			},
 		},
 		Logger: jsonLogger,
 	}
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/0$", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("pl-txt-log", func(ctx context.Context, event *ziggurat.Event) error {
 		fmt.Println("received message ", string(event.Value), " on partition 0")
 		return nil
 	})
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/1$", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("pl-txt-log", func(ctx context.Context, event *ziggurat.Event) error {
 		fmt.Println("received message ", string(event.Value), " on partition 1")
 		return nil
 	})
@@ -78,6 +80,7 @@ func main() {
 
 ### Using the kafka router to set up granular routing
 
+Note: This might not work with other stream consumers
 ```go
 package main
 

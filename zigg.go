@@ -3,6 +3,7 @@ package ziggurat
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/signal"
 	"strings"
 	"sync"
@@ -13,6 +14,8 @@ import (
 
 type StartFunction func(ctx context.Context)
 type StopFunction func()
+
+var signals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1}
 
 // Ziggurat serves as a container for streams to run in
 // can be used without initialization
@@ -33,7 +36,7 @@ type Ziggurat struct {
 func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) error {
 
 	if z.Logger == nil {
-		z.Logger = logger.NewJSONLogger("info")
+		z.Logger = logger.NewDiscardLogger()
 	}
 
 	if streams == nil {
@@ -47,7 +50,7 @@ func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) e
 	z.streams = streams
 	z.handler = handler
 
-	parentCtx, canceler := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM)
+	parentCtx, canceler := signal.NotifyContext(ctx, signals...)
 
 	err := z.start(parentCtx, z.startFunc)
 	z.Logger.Error("streams shutdown", err)
@@ -103,7 +106,7 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		panic("error: handler cannot be nil")
 	}
 
-	parentCtx, cancelFunc := signal.NotifyContext(ctx, syscall.SIGTERM, syscall.SIGINT)
+	parentCtx, cancelFunc := signal.NotifyContext(ctx, signals...)
 
 	if z.startFunc != nil {
 		z.startFunc(parentCtx)
@@ -140,7 +143,7 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 	}
 
 	if len(errors) > 0 {
-		return fmt.Errorf("multistreams run error: %s\n", strings.Join(errors, "\n"))
+		return fmt.Errorf("multistreams run error: %s\n", strings.Join(errors, ","))
 	}
 
 	return fmt.Errorf("clean shutdown of multistreams")

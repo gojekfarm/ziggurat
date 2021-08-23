@@ -2,7 +2,7 @@ name: GoCI
 
 on:
   push:
-    branches: [ master ]
+#    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -23,6 +23,12 @@ jobs:
 
       - name: Test
         run: make lib.test
+
+      - name: Test Integration
+        run: |
+          make docker.start
+          sleep 30
+          make lib.test-integration
 
       - name: Coverage
         run: make lib.test-coverage

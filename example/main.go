@@ -4,53 +4,60 @@ package main
 
 import (
 	"context"
-	"fmt"
-
-	"github.com/gojekfarm/ziggurat/mw/statsd"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
+	"github.com/gojekfarm/ziggurat/mw/statsd"
 )
 
 func main() {
 	var zig ziggurat.Ziggurat
 	var r kafka.Router
 
-	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
 	ctx := context.Background()
-	statsdPub := statsd.NewPublisher(
-		statsd.WithLogger(jsonLogger),
-		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_app"}),
-	)
+	l := logger.NewLogger(logger.LevelInfo)
+	s := statsd.NewPublisher(statsd.WithPrefix("example_go_ziggurat"),
+		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_go_ziggurat"}),
+		statsd.WithLogger(l))
+
+	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{{
+		QueueName:           "pt_retries",
+		DelayExpirationInMS: "3000",
+		RetryCount:          5,
+		WorkerCount:         10,
+	}}, rabbitmq.WithLogger(l),
+		rabbitmq.WithUsername("user"),
+		rabbitmq.WithPassword("bitnami"))
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "plain_text_consumer",
-				ConsumerCount:    1,
+				ConsumerGroupID:  "another_brick_in_the_wall",
+				ConsumerCount:    2,
 			},
 		},
-		Logger: jsonLogger,
+		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/0$", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Println("received message ", string(event.Value), " on partition 0")
-		return nil
-	})
+	r.HandleFunc("localhost:9092/another_brick_in_the_wall/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+		return ziggurat.Retry
+	}, "pt_retries"))
 
-	r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/1$", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Println("received message ", string(event.Value), " on partition 1")
-		return nil
-	})
+	h := r.Compose(s.PublishHandlerMetrics)
 
 	zig.StartFunc(func(ctx context.Context) {
-		jsonLogger.Error("error running statsd publisher", statsdPub.Run(ctx))
+		err := s.Run(ctx)
+		l.Error("", err)
+		err = ar.InitPublishers(ctx)
+		l.Error("", err)
 	})
 
-	if runErr := zig.Run(ctx, &kafkaStreams, &r); runErr != nil {
-		jsonLogger.Error("could not start streams", runErr)
+	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
+		l.Error("", runErr)
 	}
+
 }

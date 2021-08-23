@@ -26,7 +26,7 @@ func WithAddr(addr string) func(s *DefaultHttpServer) {
 // returns a ready to use http server with an embedded router
 func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	router := httprouter.New()
-	requestLogger := logger.NewJSONLogger(logger.LevelInfo)
+	requestLogger := logger.NewDiscardLogger()
 	httpRequestLogger := HTTPRequestLogger(requestLogger)
 	server := &http.Server{Handler: httpRequestLogger(router)}
 	s := &DefaultHttpServer{
