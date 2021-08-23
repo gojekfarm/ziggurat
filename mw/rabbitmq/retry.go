@@ -6,13 +6,11 @@ import (
 	"fmt"
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
-	"github.com/gojekfarm/ziggurat/server"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
 	"net/http"
-	"strconv"
 )
 
 type managementServerResponse struct {
@@ -20,25 +18,24 @@ type managementServerResponse struct {
 	Count  int               `json:"count"`
 }
 
-type retry struct {
-	dialer           *amqpextra.Dialer
-	consumeDialer    *amqpextra.Dialer
-	hosts            []string
-	amqpURLs         []string
-	username         string
-	password         string
-	logger           logger.Logger
-	ogLogger         ziggurat.StructuredLogger
-	queueConfig      map[string]QueueConfig
-	managementServer *server.DefaultHttpServer
+type autoRetry struct {
+	dialer        *amqpextra.Dialer
+	consumeDialer *amqpextra.Dialer
+	hosts         []string
+	amqpURLs      []string
+	username      string
+	password      string
+	logger        logger.Logger
+	ogLogger      ziggurat.StructuredLogger
+	queueConfig   map[string]QueueConfig
 }
 
 func constructAMQPURL(host, username, password string) string {
 	return fmt.Sprintf("amqp://%s:%s@%s", username, password, host)
 }
 
-func AutoRetry(qc []QueueConfig, opts ...Opts) *retry {
-	r := &retry{
+func AutoRetry(qc []QueueConfig, opts ...Opts) *autoRetry {
+	r := &autoRetry{
 		dialer:      nil,
 		hosts:       []string{"localhost:5672"},
 		username:    "guest",
@@ -62,7 +59,7 @@ func AutoRetry(qc []QueueConfig, opts ...Opts) *retry {
 	return r
 }
 
-func (r *retry) publish(ctx context.Context, event *ziggurat.Event, queue string) error {
+func (r *autoRetry) publish(ctx context.Context, event *ziggurat.Event, queue string) error {
 
 	pub, err := getPublisher(ctx, r.dialer, r.logger)
 
@@ -73,7 +70,7 @@ func (r *retry) publish(ctx context.Context, event *ziggurat.Event, queue string
 	return publishInternal(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
 }
 
-func (r *retry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
+func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
 	exchange := fmt.Sprintf("%s_%s_%s", queue, queueType, "exchange")
 	p, err := getPublisher(ctx, r.dialer, r.logger)
 	defer p.Close()
@@ -94,7 +91,7 @@ func (r *retry) Publish(ctx context.Context, event *ziggurat.Event, queue string
 	return p.Publish(msg)
 }
 
-func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc {
+func (r *autoRetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc {
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
@@ -109,7 +106,7 @@ func (r *retry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc 
 	return hf
 }
 
-func (r *retry) InitPublishers(ctx context.Context) error {
+func (r *autoRetry) InitPublishers(ctx context.Context) error {
 	pdialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
@@ -132,7 +129,7 @@ func (r *retry) InitPublishers(ctx context.Context) error {
 	return nil
 }
 
-func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
+func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	cdialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
@@ -188,7 +185,7 @@ func (r *retry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	return nil
 }
 
-func (r *retry) view(ctx context.Context, queue string, count int) ([]*ziggurat.Event, error) {
+func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggurat.Event, error) {
 	ch, err := getChannelFromDialer(ctx, r.dialer)
 	actualCount := count
 	if err != nil {
@@ -224,31 +221,20 @@ func (r *retry) view(ctx context.Context, queue string, count int) ([]*ziggurat.
 	return deliveries, nil
 }
 
-func (r *retry) DSViewHandler(ctx context.Context) http.Handler {
+func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 	f := func(w http.ResponseWriter, req *http.Request) {
-		qparams := req.URL.Query()
-		qname, ok := qparams["queue"]
-		if !ok {
-			http.Error(w, "expected query param qname", 400)
+		qname, count, err := validateQueryParams(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		events, err := r.view(ctx, qname, count)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("couldn't view messages from dlq: %v", err), http.StatusInternalServerError)
 			return
 		}
 
-		c, ok := qparams["count"]
-		if !ok {
-			http.Error(w, "expected query param count", 400)
-			return
-		}
-		count, err := strconv.Atoi(c[0])
-		if err != nil {
-			http.Error(w, fmt.Sprintf("expected count to be a number: %v", err), 400)
-			return
-		}
-		events, err := r.view(ctx, qname[0], count)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("couldn't view messages from dlq: %v", err), 500)
-			return
-		}
-
+		w.WriteHeader(http.StatusOK)
 		je := json.NewEncoder(w)
 		resp := managementServerResponse{
 			Events: events,
@@ -257,7 +243,7 @@ func (r *retry) DSViewHandler(ctx context.Context) http.Handler {
 		err = je.Encode(resp)
 
 		if err != nil {
-			http.Error(w, "json encode error", 500)
+			http.Error(w, "json encode error", http.StatusInternalServerError)
 		}
 	}
 	return http.HandlerFunc(f)

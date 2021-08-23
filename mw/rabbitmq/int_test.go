@@ -10,7 +10,7 @@ import (
 	"github.com/gojekfarm/ziggurat/logger"
 )
 
-func newAutoRetry(qn string) *retry {
+func newAutoRetry(qn string) *autoRetry {
 	ar := AutoRetry(
 		[]QueueConfig{{
 			QueueName:           qn,

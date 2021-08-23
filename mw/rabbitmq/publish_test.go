@@ -24,12 +24,12 @@ func Test_publish(t *testing.T) {
 	}
 
 	cases := []test{{
-		name:                 "retry count",
+		name:                 "autoRetry count",
 		input:                &ziggurat.Event{},
 		expectedExchangeName: "foo_delay_exchange",
 		retryCount:           1,
 	}, {
-		name:                 "retry count exceeded",
+		name:                 "autoRetry count exceeded",
 		input:                &ziggurat.Event{},
 		expectedExchangeName: "foo_dlq_exchange",
 		retryCount:           0,
@@ -66,12 +66,12 @@ func Test_publish_retries(t *testing.T) {
 		publishIterations int
 	}
 	cases := []test{{
-		name:              "retry count increase",
+		name:              "autoRetry count increase",
 		retryCount:        1,
 		expectedCount:     1,
 		publishIterations: 1,
 	}, {
-		name:              "retry count shouldn't exceed the max count",
+		name:              "autoRetry count shouldn't exceed the max count",
 		retryCount:        5,
 		expectedCount:     5,
 		event:             ziggurat.Event{},

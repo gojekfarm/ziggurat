@@ -15,17 +15,17 @@ func Test_getRetryCount(t *testing.T) {
 
 	tests := []test{
 		{
-			name:     "retry count should be 0 when metadata is nil",
+			name:     "autoRetry count should be 0 when metadata is nil",
 			input:    &ziggurat.Event{Metadata: nil},
 			expected: 0,
 		},
 		{
-			name:     "retry count when metadata does not contain retryCount key",
+			name:     "autoRetry count when metadata does not contain retryCount key",
 			input:    &ziggurat.Event{Metadata: map[string]interface{}{}},
 			expected: 0,
 		},
 		{
-			name:     "retry count when key is present",
+			name:     "autoRetry count when key is present",
 			input:    &ziggurat.Event{Metadata: map[string]interface{}{KeyRetryCount: 5}},
 			expected: 5,
 		}}
