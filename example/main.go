@@ -43,9 +43,9 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/another_brick_in_the_wall/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-		return ziggurat.Retry
-	}, "pt_retries"))
+	r.HandleFunc("localhost:9092/another_brick_in_the_wall/", func(ctx context.Context, event *ziggurat.Event) error {
+		return nil
+	})
 
 	h := r.Compose(s.PublishHandlerMetrics)
 

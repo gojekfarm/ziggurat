@@ -2,6 +2,7 @@ package statsd
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/gojekfarm/ziggurat/logger"
@@ -19,6 +20,10 @@ type Client struct {
 }
 
 const publishErrMsg = "statsd client: error publishing metric"
+
+func fixRoutingPath(rp string) string {
+	return strings.ReplaceAll(rp, ":", "_")
+}
 
 // NewPublisher creates a new publisher with an embedded statsd client
 // use statsd.WithPrefix to specify a prefix which will be sent as a common label with all metrics
@@ -98,9 +103,9 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		args := map[string]string{
 			"route": event.Path,
 		}
-		// required for backwards compatibility
+		//required for backwards compatibility
 		if event.Path == "" {
-			args["route"] = event.RoutingPath
+			args["route"] = fixRoutingPath(event.RoutingPath)
 		}
 
 		s.logger.Error(publishErrMsg, s.Gauge("handler_execution_time", diff.Milliseconds(), args))
@@ -145,6 +150,10 @@ func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 		args["partition"] = headers["x-kafka-partition"]
 		args["event-type"] = event.EventType
 		args["route"] = event.Path
+
+		if event.Path == "" {
+			args["route"] = fixRoutingPath(event.RoutingPath)
+		}
 
 		diff := event.ReceivedTimestamp.Sub(event.ProducerTimestamp).Milliseconds()
 		s.logger.Error(publishErrMsg, s.Gauge("event_delay", diff, args))
