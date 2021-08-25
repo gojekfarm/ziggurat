@@ -157,6 +157,7 @@ Stream A ----> Handler --Retry--> RabbitMQ <br>
 ```go
 rabbitmq.WithLogger(loggerImpl)
 rabbitmq.WithUsername("user")
+rabbitmq.WithHosts("localhost:15672", "localhost-2:15672") // provide multiple hosts to dial a cluster
 rabbitmq.WithPassword("bitnami")
 ```
 Queue config

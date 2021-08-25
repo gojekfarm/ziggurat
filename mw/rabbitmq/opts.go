@@ -30,23 +30,3 @@ func WithLogger(l ziggurat.StructuredLogger) Opts {
 		r.ogLogger = l
 	}
 }
-
-type publishOpts struct {
-	retryCount      int
-	queueKey        string
-	delayExpiration string
-}
-
-type PublishOpts func(po *publishOpts)
-
-func WithRetryCount(count int) PublishOpts {
-	return func(p *publishOpts) {
-		p.retryCount = count
-	}
-}
-
-func WithDelayExpiration(expiration string) PublishOpts {
-	return func(po *publishOpts) {
-		po.delayExpiration = expiration
-	}
-}
