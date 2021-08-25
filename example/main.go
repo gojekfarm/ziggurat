@@ -4,23 +4,28 @@ package main
 
 import (
 	"context"
-
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
+	"github.com/gojekfarm/ziggurat/server"
+	"github.com/julienschmidt/httprouter"
+	"net/http"
+	"time"
 )
 
 func main() {
 	var zig ziggurat.Ziggurat
 	var r kafka.Router
-
 	ctx := context.Background()
+
 	l := logger.NewLogger(logger.LevelInfo)
 	s := statsd.NewPublisher(statsd.WithPrefix("example_go_ziggurat"),
 		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_go_ziggurat"}),
 		statsd.WithLogger(l))
+
+	srvr := server.NewHTTPServer()
 
 	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{{
 		QueueName:           "pt_retries",
@@ -30,6 +35,10 @@ func main() {
 	}}, rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
 		rabbitmq.WithPassword("bitnami"))
+
+	srvr.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
+		r.Handler(http.MethodGet, "/dead_set", ar.DSViewHandler(ctx))
+	})
 
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
@@ -49,15 +58,27 @@ func main() {
 
 	h := r.Compose(s.PublishHandlerMetrics)
 
+	done := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {
 		err := s.Run(ctx)
 		l.Error("", err)
-		err = ar.InitPublishers(ctx)
+
+		c, cfn := context.WithTimeout(ctx, 10*time.Second)
+		defer cfn()
+		err = ar.InitPublishers(c)
 		l.Error("", err)
+
+		go func() {
+			srvr.Run(ctx)
+			done <- struct{}{}
+		}()
+
 	})
 
 	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
 		l.Error("", runErr)
 	}
+
+	<-done
 
 }

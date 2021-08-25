@@ -35,9 +35,9 @@ func Test_validateParams(t *testing.T) {
 		{
 			name:          "both params are sent",
 			expectedCount: 10,
-			expectedQname: "foo",
+			expectedQname: "foo_bar",
 			expectedErr:   "",
-			path:          "/ds?queue=foo&count=10",
+			path:          "/ds?queue=foo_bar&count=10",
 		},
 		{
 			name:          "when count is not a number",
