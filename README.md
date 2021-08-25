@@ -78,7 +78,7 @@ func main() {
 }
 ```
 
-### Using the kafka router to set up granular routing
+### Using the kafka router to set up granular routing [ only for kafka streams ]
 
 Note: This might not work with other stream consumers
 ```go
@@ -94,7 +94,7 @@ var router kafka.Router
 
 // HandleFunc accepts a path in the following format 
 // bootstrap_server/consumer_group/topic/partition
-// This pattern matches all topics that end with log but only runs for partition 0
+// This pattern matches all topics that end with -text-log but only runs for partition 0
 r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/0$", func (ctx context.Context, event *ziggurat.Event) error {
 	fmt.Println("received message ", string(event.Value), " on partition 0")
 	return nil
@@ -141,5 +141,37 @@ type Handler interface {
 // The default router shipped with Ziggurat also implements the Handler interface
 ```
 
+### Using the RabbitMQ auto retry middleware
 
+- Starting from ziggurat `v1.3.1` a new rabbitMQ retry middleware is included.
+- Messages can be auto-retried in case of processing errors/failures
 
+#### How are messages retried?
+
+Stream A ----> Handler --Retry--> RabbitMQ <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|_____ Stream B _____|                        
+- The rabbitmq auto retry implements the streamer interface.
+- The rabbitmq auto retry exposes a Wrap method in which the handlerFunc can be wrapped and provide the queue name to retry with.
+
+#### Config 
+```go
+rabbitmq.WithLogger(loggerImpl)
+rabbitmq.WithUsername("user")
+rabbitmq.WithPassword("bitnami")
+```
+Queue config
+```go
+type QueueConfig struct {
+	QueueName             string  //queue to push the retried messages to 
+	DelayExpirationInMS   string //time to wait before being consumed again 
+	RetryCount            int   //number of times to retry the message
+	WorkerCount           int  //number of concurrent RabbitMQ processors
+	ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
+}
+```
+Example Usage
+```go
+r.HandleFunc("localhost:9092/another_brick_in_the_wall/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+		return ziggurat.Retry
+	}, "pt_retries"))
+```

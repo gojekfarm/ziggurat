@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] 2021-08-25
+
+# Added
+
+- RabbitMQ middleware for auto retrying messages
+- A human friendly logger
+
+# Changes
+
+- Event now includes a metadata map of type `map[string]interface{}` 
+- kafka key values are copied to a new slice before passing it on
+- statsD middleware no longer sends the `route` label
+- loggers use the `logger.DiscardLogger` as the default logger
+
 ## [1.2.2] 2021-07-06
 
 # Changes
