@@ -188,10 +188,12 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 
 func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggurat.Event, error) {
 	d, err := newDialer(ctx, r.amqpURLs, r.logger)
+	defer d.Close()
 	if err != nil {
 		return nil, err
 	}
 	ch, err := getChannelFromDialer(ctx, d)
+	defer ch.Close()
 	actualCount := count
 	if err != nil {
 		return nil, err
