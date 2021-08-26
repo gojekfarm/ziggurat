@@ -14,9 +14,14 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type managementServerResponse struct {
+type dsViewResp struct {
 	Events []*ziggurat.Event `json:"events"`
 	Count  int               `json:"count"`
+}
+
+type dsReplayResp struct {
+	ReplayCount int `json:"replay_count"`
+	ErrorCount  int `json:"error_count"`
 }
 
 type autoRetry struct {
@@ -186,7 +191,7 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	return nil
 }
 
-func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggurat.Event, error) {
+func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool) ([]*ziggurat.Event, error) {
 	d, err := newDialer(ctx, r.amqpURLs, r.logger)
 	defer d.Close()
 	if err != nil {
@@ -222,7 +227,14 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggu
 			return []*ziggurat.Event{}, err
 		}
 
-		r.ogLogger.Error("", msg.Reject(true))
+		var ackErr error
+		if ack {
+			ackErr = msg.Ack(true)
+		} else {
+			ackErr = msg.Reject(true)
+		}
+
+		r.ogLogger.Error("", ackErr)
 		events[i] = &e
 	}
 	return events, nil
@@ -235,7 +247,7 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		events, err := r.view(ctx, qname, count)
+		events, err := r.view(ctx, qname, count, false)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("couldn't view messages from dlq: %v", err), http.StatusInternalServerError)
 			return
@@ -243,7 +255,7 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 
 		w.WriteHeader(http.StatusOK)
 		je := json.NewEncoder(w)
-		resp := managementServerResponse{
+		resp := dsViewResp{
 			Events: events,
 			Count:  len(events),
 		}
@@ -252,6 +264,43 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 		if err != nil {
 			http.Error(w, "json encode error", http.StatusInternalServerError)
 		}
+	}
+	return http.HandlerFunc(f)
+}
+
+func (r *autoRetry) DSReplayHandler(ctx context.Context) http.Handler {
+	f := func(w http.ResponseWriter, req *http.Request) {
+		qname, count, err := validateQueryParams(req)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		events, err := r.view(ctx, qname, count, true)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		var errCount int
+		for _, e := range events {
+			err := r.Publish(ctx, e, qname, "instant", "")
+			if err != nil {
+				errCount++
+			}
+		}
+
+		replayedCount := len(events) - errCount
+		w.WriteHeader(http.StatusOK)
+		je := json.NewEncoder(w)
+		err = je.Encode(dsReplayResp{
+			ReplayCount: replayedCount,
+			ErrorCount:  errCount,
+		})
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 	}
 	return http.HandlerFunc(f)
 }

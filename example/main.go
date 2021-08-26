@@ -12,7 +12,6 @@ import (
 	"github.com/gojekfarm/ziggurat/server"
 	"github.com/julienschmidt/httprouter"
 	"net/http"
-	"time"
 )
 
 func main() {
@@ -38,6 +37,7 @@ func main() {
 
 	srvr.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
 		r.Handler(http.MethodGet, "/dead_set", ar.DSViewHandler(ctx))
+		r.Handler(http.MethodGet, "/dead_set/replay", ar.DSReplayHandler(ctx))
 	})
 
 	kafkaStreams := kafka.Streams{
@@ -63,9 +63,7 @@ func main() {
 		err := s.Run(ctx)
 		l.Error("", err)
 
-		c, cfn := context.WithTimeout(ctx, 10*time.Second)
-		defer cfn()
-		err = ar.InitPublishers(c)
+		err = ar.InitPublishers(ctx)
 		l.Error("", err)
 
 		go func() {
@@ -75,7 +73,7 @@ func main() {
 
 	})
 
-	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &kafkaStreams,ar); runErr != nil {
 		l.Error("", runErr)
 	}
 
