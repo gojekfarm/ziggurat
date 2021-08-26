@@ -208,9 +208,9 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int) ([]*ziggu
 	if actualCount > q.Messages {
 		actualCount = q.Messages
 	}
-
 	events := make([]*ziggurat.Event, actualCount)
 	for i := 0; i < actualCount; i++ {
+
 		msg, _, err := ch.Get(qn, false)
 		if err != nil {
 			return []*ziggurat.Event{}, err

@@ -20,6 +20,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestConsumer_create(t *testing.T) {
+
 	l := logger.NewJSONLogger("disabled")
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
 	handler := ziggurat.HandlerFunc(func(messagectx context.Context, event *ziggurat.Event) error {
@@ -32,16 +33,29 @@ func TestConsumer_create(t *testing.T) {
 		createConsumer = oldCreateConsumer
 	}()
 
-	startConsumer = func(ctx context.Context, h ziggurat.Handler, l ziggurat.StructuredLogger, consumer *kafka.Consumer, route string, cfgMap kafka.ConfigMap, wg *sync.WaitGroup) {
-
+	type test struct {
+		Name          string
+		ExpectedCount int
 	}
-	createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.StructuredLogger, topics []string) *kafka.Consumer {
+
+	tests := []test{{
+		Name:          "consumer creation",
+		ExpectedCount: 5,
+	}}
+
+	startConsumer = func(_ context.Context, _ ziggurat.Handler, _ ziggurat.StructuredLogger, _ *kafka.Consumer, _ string, _ kafka.ConfigMap, _ *sync.WaitGroup) {
+	}
+	createConsumer = func(_ *kafka.ConfigMap, _ ziggurat.StructuredLogger, _ []string) *kafka.Consumer {
 		return &kafka.Consumer{}
 	}
 
-	consumers := StartConsumers(context.Background(), cfgMap, "foo", []string{"bar"}, 2, handler, l, &sync.WaitGroup{})
-	if len(consumers) < 2 {
-		t.Errorf("could not start consuemrs")
+	for _, c := range tests {
+		t.Run(c.Name, func(t *testing.T) {
+			consumers := StartConsumers(context.Background(), cfgMap, "foo", []string{"bar"}, c.ExpectedCount, handler, l, &sync.WaitGroup{})
+			if len(consumers) != c.ExpectedCount {
+				t.Errorf("expected count [%d] got [%d]", c.ExpectedCount, len(consumers))
+			}
+		})
 	}
 }
 
