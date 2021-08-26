@@ -11,6 +11,6 @@ type amqpExtraLogger struct {
 }
 
 func (a *amqpExtraLogger) Printf(format string, v ...interface{}) {
-	s := fmt.Sprintf("[RABBITMQ AR] "+format, v...)
+	s := fmt.Sprintf("[AUTORETRY] "+format, v...)
 	a.l.Debug(s)
 }
