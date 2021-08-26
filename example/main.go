@@ -73,7 +73,7 @@ func main() {
 
 	})
 
-	if runErr := zig.RunAll(ctx, h, &kafkaStreams,ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
 		l.Error("", runErr)
 	}
 
