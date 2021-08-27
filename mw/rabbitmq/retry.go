@@ -3,16 +3,18 @@ package rabbitmq
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
+	"net/http"
 )
+
+var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not initialized, please call the InitPublisher method")
 
 type dsViewResp struct {
 	Events []*ziggurat.Event `json:"events"`
@@ -25,7 +27,7 @@ type dsReplayResp struct {
 }
 
 type autoRetry struct {
-	dialer        *amqpextra.Dialer
+	publishDialer *amqpextra.Dialer
 	consumeDialer *amqpextra.Dialer
 	hosts         []string
 	amqpURLs      []string
@@ -42,13 +44,13 @@ func constructAMQPURL(host, username, password string) string {
 
 func AutoRetry(qc []QueueConfig, opts ...Opts) *autoRetry {
 	r := &autoRetry{
-		dialer:      nil,
-		hosts:       []string{"localhost:5672"},
-		username:    "guest",
-		ogLogger:    zl.NewDiscardLogger(),
-		password:    "guest",
-		logger:      logger.Discard,
-		queueConfig: map[string]QueueConfig{},
+		publishDialer: nil,
+		hosts:         []string{"localhost:5672"},
+		username:      "guest",
+		ogLogger:      zl.NewDiscardLogger(),
+		password:      "guest",
+		logger:        logger.Discard,
+		queueConfig:   map[string]QueueConfig{},
 	}
 
 	for _, c := range qc {
@@ -66,9 +68,10 @@ func AutoRetry(qc []QueueConfig, opts ...Opts) *autoRetry {
 }
 
 func (r *autoRetry) publish(ctx context.Context, event *ziggurat.Event, queue string) error {
-
-	pub, err := getPublisher(ctx, r.dialer, r.logger)
-
+	if r.publishDialer == nil {
+		return ErrPublisherNotInit
+	}
+	pub, err := getPublisher(ctx, r.publishDialer, r.logger)
 	if err != nil {
 		return err
 	}
@@ -77,8 +80,11 @@ func (r *autoRetry) publish(ctx context.Context, event *ziggurat.Event, queue st
 }
 
 func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
+	if r.publishDialer == nil {
+		return ErrPublisherNotInit
+	}
 	exchange := fmt.Sprintf("%s_%s_%s", queue, queueType, "exchange")
-	p, err := getPublisher(ctx, r.dialer, r.logger)
+	p, err := getPublisher(ctx, r.publishDialer, r.logger)
 	defer p.Close()
 	if err != nil {
 		return err
@@ -113,13 +119,13 @@ func (r *autoRetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerF
 }
 
 func (r *autoRetry) InitPublishers(ctx context.Context) error {
-	pdialer, err := newDialer(ctx, r.amqpURLs, r.logger)
+	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
 	}
-	r.dialer = pdialer
+	r.publishDialer = dialer
 
-	ch, err := getChannelFromDialer(ctx, r.dialer)
+	ch, err := getChannelFromDialer(ctx, r.publishDialer)
 	if err != nil {
 		return err
 	}
@@ -136,13 +142,13 @@ func (r *autoRetry) InitPublishers(ctx context.Context) error {
 }
 
 func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
-	cdialer, err := newDialer(ctx, r.amqpURLs, r.logger)
+	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
 	}
-	r.consumeDialer = cdialer
+	r.consumeDialer = dialer
 
-	ch, err := getChannelFromDialer(ctx, cdialer)
+	ch, err := getChannelFromDialer(ctx, dialer)
 	if err != nil {
 		return err
 	}
@@ -177,14 +183,14 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	done := make(chan struct{})
 
 	go func() {
-		<-r.dialer.NotifyClosed()
+		<-r.publishDialer.NotifyClosed()
 		r.ogLogger.Info("stopped publisher dialer")
-		<-r.dialer.NotifyClosed()
+		<-r.publishDialer.NotifyClosed()
 		r.ogLogger.Info("stopped consumer dialer")
 		done <- struct{}{}
 	}()
 
-	r.dialer.Close()
+	r.publishDialer.Close()
 	r.consumeDialer.Close()
 
 	<-done
@@ -198,11 +204,12 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool)
 		return nil, err
 	}
 	ch, err := getChannelFromDialer(ctx, d)
-	defer ch.Close()
-	actualCount := count
+
 	if err != nil {
 		return nil, err
 	}
+
+	actualCount := count
 
 	qn := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
 	q, err := ch.QueueInspect(qn)
@@ -237,6 +244,7 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool)
 		r.ogLogger.Error("", ackErr)
 		events[i] = &e
 	}
+	r.ogLogger.Error("auto retry view: channel close error:", ch.Close())
 	return events, nil
 }
 

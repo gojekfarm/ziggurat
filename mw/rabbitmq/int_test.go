@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -69,30 +70,46 @@ func Test_RetryFlow(t *testing.T) {
 
 func Test_view(t *testing.T) {
 	qname := "blah"
-	ar := newAutoRetry(qname)
+
 	count := 5
-	ctx := context.Background()
-	err := ar.InitPublishers(ctx)
-	if err != nil {
-		t.Errorf("error initialzing publishers: %v", err)
-	}
-	for i := 0; i < count; i++ {
-		e := &ziggurat.Event{
-			Value: []byte("baz"),
-		}
-		err := ar.Publish(ctx, e, qname, "dlq", "")
-		if err != nil {
-			t.Errorf("error publishing to queue: %v", err)
-		}
+	ctx, cfn := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cfn()
+	type test struct {
+		qname             string
+		publishCount      int
+		viewCount         int
+		expectedViewCount int
+		name              string
 	}
 
-	events, err := ar.view(ctx, qname, count, false)
-	if err != nil {
-		t.Errorf("error viewing messages: %v", err)
-	}
+	cases := []test{{
+		name:              "read exact number of messages as there are in the queue",
+		qname:             "foo_test",
+		publishCount:      5,
+		viewCount:         5,
+		expectedViewCount: 5,
+	}}
 
-	if len(events) != count {
-		t.Errorf("expected to read %d messages but read %d", count, len(events))
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			ar := newAutoRetry(qname)
+			for i := 0; i < c.publishCount; i++ {
+				e := &ziggurat.Event{
+					Value: []byte(fmt.Sprintf("bar-%d", i)),
+				}
+				err := ar.Publish(ctx, e, qname, "dlq", "")
+				if err != nil {
+					t.Errorf("error publishing to queue: %v", err)
+				}
+			}
+			events, err := ar.view(ctx, qname, count, false)
+			if err != nil {
+				t.Errorf("error viewing messages: %v", err)
+			}
+			if len(events) != count {
+				t.Errorf("expected to read %d messages but read %d", count, len(events))
+			}
+		})
 	}
 
 }
