@@ -142,7 +142,7 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	}
 	r.consumeDialer = cdialer
 
-	ch, err := getChannelFromDialer(ctx, r.dialer)
+	ch, err := getChannelFromDialer(ctx, cdialer)
 	if err != nil {
 		return err
 	}
@@ -266,6 +266,10 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 		}
 	}
 	return http.HandlerFunc(f)
+}
+
+func (r *autoRetry) replay() (replayCount int, errorCount int, err error) {
+
 }
 
 func (r *autoRetry) DSReplayHandler(ctx context.Context) http.Handler {
