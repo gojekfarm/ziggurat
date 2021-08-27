@@ -268,10 +268,6 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 	return http.HandlerFunc(f)
 }
 
-func (r *autoRetry) replay() (replayCount int, errorCount int, err error) {
-
-}
-
 func (r *autoRetry) DSReplayHandler(ctx context.Context) http.Handler {
 	f := func(w http.ResponseWriter, req *http.Request) {
 		qname, count, err := validateQueryParams(req)
