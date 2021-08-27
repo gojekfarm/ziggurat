@@ -86,7 +86,7 @@ func Test_view(t *testing.T) {
 		}
 	}
 
-	events, err := ar.view(ctx, qname, count)
+	events, err := ar.view(ctx, qname, count, false)
 	if err != nil {
 		t.Errorf("error viewing messages: %v", err)
 	}
