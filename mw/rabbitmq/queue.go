@@ -7,8 +7,9 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func createAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) error {
+var queueTypes = []string{"delay", "instant", "dlq"}
 
+func createAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) error {
 	if err := ch.ExchangeDeclare(queueName+"_exchange", amqp.ExchangeFanout, false, false, false, false, amqp.Table{}); err != nil {
 		return err
 	}
@@ -22,7 +23,6 @@ func createAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) err
 }
 
 func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggurat.StructuredLogger) error {
-	queueTypes := []string{"delay", "instant", "dlq"}
 	for _, qt := range queueTypes {
 		args := amqp.Table{}
 		qnameWithType := fmt.Sprintf("%s_%s", queueName, qt)
@@ -31,6 +31,22 @@ func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggura
 			args = amqp.Table{"x-dead-letter-exchange": fmt.Sprintf("%s_%s_%s", queueName, "instant", "exchange")}
 		}
 		if err := createAndBindQueue(ch, qnameWithType, args); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func deleteQueuesAndExchanges(ch *amqp.Channel, queueName string) error {
+	for _, qt := range queueTypes {
+		exchangeName := fmt.Sprintf("%s_%s_%s", queueName, qt, "exchange")
+		err := ch.ExchangeDelete(exchangeName, false, false)
+		if err != nil {
+			return err
+		}
+		queueName := fmt.Sprintf("%s_%s_%s", queueName, qt, "queue")
+		_, err = ch.QueueDelete(queueName, false, false, false)
+		if err != nil {
 			return err
 		}
 	}

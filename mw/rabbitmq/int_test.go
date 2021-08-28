@@ -66,12 +66,13 @@ func Test_RetryFlow(t *testing.T) {
 	if expectedCallCount != atomic.LoadInt32(&callCount) {
 		t.Errorf("expected %d got %d", expectedCallCount, callCount)
 	}
+	err = ar.DeleteQueuesAndExchanges(context.Background(), queueName)
+	if err != nil {
+		t.Errorf("error deleting queues:%v", err)
+	}
 }
 
 func Test_view(t *testing.T) {
-	qname := "blah"
-
-	count := 5
 	ctx, cfn := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cfn()
 	type test struct {
@@ -82,32 +83,62 @@ func Test_view(t *testing.T) {
 		name              string
 	}
 
-	cases := []test{{
-		name:              "read exact number of messages as there are in the queue",
-		qname:             "foo_test",
-		publishCount:      5,
-		viewCount:         5,
-		expectedViewCount: 5,
-	}}
+	cases := []test{
+		{
+			name:              "read exact number of messages as there are in the queue",
+			qname:             "foo_test",
+			publishCount:      5,
+			viewCount:         5,
+			expectedViewCount: 5,
+		},
+		{
+			name:              "read excess number of messages than there are in the queue",
+			qname:             "bar_test",
+			publishCount:      5,
+			viewCount:         10,
+			expectedViewCount: 5,
+		},
+		{
+			name:              "read negative number of messages",
+			qname:             "baz_test",
+			publishCount:      5,
+			viewCount:         -1,
+			expectedViewCount: 0,
+		},
+		{
+			name:              "read zero messages",
+			qname:             "foo_test",
+			viewCount:         0,
+			publishCount:      5,
+			expectedViewCount: 0,
+		}}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ar := newAutoRetry(qname)
+			ar := newAutoRetry(c.qname)
+			err := ar.InitPublishers(ctx)
+			if err != nil {
+				t.Errorf("error could not init publishers:%v", err)
+			}
 			for i := 0; i < c.publishCount; i++ {
 				e := &ziggurat.Event{
 					Value: []byte(fmt.Sprintf("bar-%d", i)),
 				}
-				err := ar.Publish(ctx, e, qname, "dlq", "")
+				err := ar.Publish(ctx, e, c.qname, "dlq", "")
 				if err != nil {
 					t.Errorf("error publishing to queue: %v", err)
 				}
 			}
-			events, err := ar.view(ctx, qname, count, false)
+			events, err := ar.view(ctx, c.qname, c.viewCount, false)
 			if err != nil {
 				t.Errorf("error viewing messages: %v", err)
 			}
-			if len(events) != count {
-				t.Errorf("expected to read %d messages but read %d", count, len(events))
+			if len(events) != c.expectedViewCount {
+				t.Errorf("expected to read %d messages but read %d", c.expectedViewCount, len(events))
+			}
+			err = ar.DeleteQueuesAndExchanges(context.Background(), c.qname)
+			if err != nil {
+				t.Errorf("error deleting queues:%v", err)
 			}
 		})
 	}

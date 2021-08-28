@@ -199,6 +199,10 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 }
 
 func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool) ([]*ziggurat.Event, error) {
+	if count < 1 {
+		return []*ziggurat.Event{}, nil
+	}
+
 	d, err := newDialer(ctx, r.amqpURLs, r.logger)
 	defer d.Close()
 	if err != nil {
@@ -275,6 +279,23 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 		}
 	}
 	return http.HandlerFunc(f)
+}
+
+func (r *autoRetry) DeleteQueuesAndExchanges(ctx context.Context, queueName string) error {
+	d, err := newDialer(ctx, r.amqpURLs, r.logger)
+	if err != nil {
+		return fmt.Errorf("error getting dialer:%v", err)
+	}
+	ch, err := getChannelFromDialer(ctx, d)
+	if err != nil {
+		return fmt.Errorf("error getting channel:%v", err)
+	}
+
+	err = deleteQueuesAndExchanges(ch, queueName)
+	r.ogLogger.Error("auto retry exchange and queue deletion error", ch.Close())
+	d.Close()
+	return err
+
 }
 
 func (r *autoRetry) DSReplayHandler(ctx context.Context) http.Handler {
