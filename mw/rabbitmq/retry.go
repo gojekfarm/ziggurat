@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
 	"github.com/streadway/amqp"
-	"net/http"
 )
 
 var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not initialized, please call the InitPublisher method")

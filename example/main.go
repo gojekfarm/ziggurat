@@ -4,6 +4,8 @@ package main
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
@@ -11,7 +13,6 @@ import (
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 	"github.com/gojekfarm/ziggurat/server"
 	"github.com/julienschmidt/httprouter"
-	"net/http"
 )
 
 func main() {
