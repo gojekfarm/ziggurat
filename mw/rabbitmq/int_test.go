@@ -205,7 +205,7 @@ func Test_replay(t *testing.T) {
 			if err != nil {
 				t.Errorf("error replaying messags:%v", err)
 			}
-			ch, err := getChannelFromDialer(ctx, ar.publishDialer)
+
 			if err != nil {
 				t.Errorf("error getting channel:%v", err)
 			}
