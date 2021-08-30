@@ -101,6 +101,7 @@ func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue st
 			Body:       eb,
 		},
 	}
+	defer p.Close()
 	return p.Publish(msg)
 }
 
@@ -284,18 +285,68 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 func (r *autoRetry) DeleteQueuesAndExchanges(ctx context.Context, queueName string) error {
 	d, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
-		return fmt.Errorf("error getting dialer:%v", err)
+		return fmt.Errorf("error getting dialer:%w", err)
 	}
 	ch, err := getChannelFromDialer(ctx, d)
 	if err != nil {
-		return fmt.Errorf("error getting channel:%v", err)
+		return fmt.Errorf("error getting channel:%w", err)
 	}
 
 	err = deleteQueuesAndExchanges(ch, queueName)
 	r.ogLogger.Error("auto retry exchange and queue deletion error", ch.Close())
 	d.Close()
 	return err
+}
 
+func (r *autoRetry) replay(ctx context.Context, queue string, count int) (int, error) {
+	var replayCount int
+
+	actualCount := count
+	d, err := newDialer(ctx, r.amqpURLs, r.logger)
+	if err != nil {
+		return replayCount, err
+	}
+
+	ch, err := getChannelFromDialer(ctx, d)
+	if err != nil {
+		return replayCount, fmt.Errorf("error getting channel:%w", err)
+	}
+
+	srcQueue := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
+	q, err := ch.QueueInspect(srcQueue)
+	if err != nil {
+		return replayCount, fmt.Errorf("error inspecting queue:%w", err)
+	}
+
+	if actualCount > q.Messages {
+		actualCount = q.Messages
+	}
+
+	p, err := d.Publisher()
+	if err != nil {
+		return replayCount, fmt.Errorf("error getting publiser:%w", err)
+	}
+	for i := 0; i < actualCount; i++ {
+		m, _, err := ch.Get(srcQueue, false)
+		if err != nil {
+			return replayCount, fmt.Errorf("error getting message from queue:%w", err)
+		}
+		err = p.Publish(publisher.Message{
+			Exchange: fmt.Sprintf("%s_%s_%s", queue, "instant", "exchange"),
+			Publishing: amqp.Publishing{
+				Body: m.Body,
+			},
+		})
+		if err != nil {
+			return replayCount, fmt.Errorf("error publishing to instant queue:%w", err)
+		}
+		err = m.Ack(false)
+		if err != nil {
+			return replayCount, fmt.Errorf("error ack-ing maessage:%w", err)
+		}
+		replayCount++
+	}
+	return replayCount, nil
 }
 
 func (r *autoRetry) DSReplayHandler(ctx context.Context) http.Handler {
@@ -305,26 +356,16 @@ func (r *autoRetry) DSReplayHandler(ctx context.Context) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		events, err := r.view(ctx, qname, count, true)
+
+		replayCount, err := r.replay(ctx, qname, count)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-
-		var errCount int
-		for _, e := range events {
-			err := r.Publish(ctx, e, qname, "instant", "")
-			if err != nil {
-				errCount++
-			}
-		}
-
-		replayedCount := len(events) - errCount
 		w.WriteHeader(http.StatusOK)
 		je := json.NewEncoder(w)
 		err = je.Encode(dsReplayResp{
-			ReplayCount: replayedCount,
-			ErrorCount:  errCount,
+			ReplayCount: replayCount,
 		})
 
 		if err != nil {

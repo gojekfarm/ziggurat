@@ -144,3 +144,81 @@ func Test_view(t *testing.T) {
 	}
 
 }
+
+func Test_replay(t *testing.T) {
+	type test struct {
+		publishCount  int
+		replayCount   int
+		expectedCount int
+		queueName     string
+		name          string
+	}
+
+	cases := []test{
+		{
+			name:          "replay exact number of messages",
+			publishCount:  5,
+			replayCount:   5,
+			expectedCount: 5,
+			queueName:     "foo_test",
+		},
+		{
+			name:          "replay excess number of messages",
+			publishCount:  5,
+			replayCount:   10,
+			expectedCount: 5,
+			queueName:     "foo_test",
+		},
+		{
+			name:          "replay 0 messages",
+			publishCount:  5,
+			replayCount:   0,
+			expectedCount: 0,
+			queueName:     "foo_test",
+		},
+		{
+			name:          "replay negative number of messages",
+			publishCount:  5,
+			replayCount:   -1,
+			expectedCount: 0,
+			queueName:     "foo_test",
+		}}
+
+	ctx := context.Background()
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			ar := newAutoRetry(tc.queueName)
+			err := ar.InitPublishers(ctx)
+			if err != nil {
+				t.Errorf("couldn't start publishers:%v", err)
+			}
+			for i := 0; i < tc.publishCount; i++ {
+				e := ziggurat.Event{Value: []byte(fmt.Sprintf("%s-%d", "foo", i))}
+				err := ar.Publish(ctx, &e, tc.queueName, "dlq", "")
+				if err != nil {
+					t.Errorf("error publishing to dql:%v", err)
+				}
+			}
+
+			c, err := ar.replay(ctx, tc.queueName, tc.replayCount)
+			if err != nil {
+				t.Errorf("error replaying messags:%v", err)
+			}
+			ch, err := getChannelFromDialer(ctx, ar.publishDialer)
+			if err != nil {
+				t.Errorf("error getting channel:%v", err)
+			}
+			if c != tc.expectedCount {
+				t.Errorf("expected count to be [%d] got [%d]", tc.expectedCount, c)
+			}
+
+			err = ar.DeleteQueuesAndExchanges(ctx, tc.queueName)
+			if err != nil {
+				t.Errorf("error deleting queues and exchanges:%v", err)
+			}
+
+		})
+	}
+
+}
