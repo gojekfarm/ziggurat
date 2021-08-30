@@ -39,7 +39,6 @@ func NewLogger(level string, opts ...func(w *zerolog.ConsoleWriter)) *humanLogge
 		w.FormatLevel = func(i interface{}) string {
 			return fmt.Sprintf("[%s]", i)
 		}
-
 		w.NoColor = true
 
 		for _, o := range opts {

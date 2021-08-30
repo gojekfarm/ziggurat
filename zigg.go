@@ -2,6 +2,7 @@ package ziggurat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -14,6 +15,8 @@ import (
 
 type StartFunction func(ctx context.Context)
 type StopFunction func()
+
+var ErrCleanShutdown = errors.New("clean shutdown of streams")
 
 var signals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1}
 
@@ -130,11 +133,11 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		close(errChan)
 	}()
 
-	errors := make([]string, 0, len(streams))
+	errs := make([]string, 0, len(streams))
 
 	for err := range errChan {
 		if err != nil {
-			errors = append(errors, err.Error())
+			errs = append(errs, err.Error())
 		}
 	}
 
@@ -142,10 +145,10 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		z.stopFunc()
 	}
 
-	if len(errors) > 0 {
-		return fmt.Errorf("multistreams run error: %s\n", strings.Join(errors, ","))
+	if len(errs) > 0 {
+		return fmt.Errorf("multistreams run error: %s\n", strings.Join(errs, ","))
 	}
 
-	return fmt.Errorf("clean shutdown of multistreams")
+	return ErrCleanShutdown
 
 }

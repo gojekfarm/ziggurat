@@ -1,14 +1,12 @@
-//+build ignore
-
 package main
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/logger"
 	"net/http"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
-	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 	"github.com/gojekfarm/ziggurat/server"
@@ -27,12 +25,14 @@ func main() {
 
 	srvr := server.NewHTTPServer()
 
-	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{{
-		QueueName:           "pt_retries",
-		DelayExpirationInMS: "3000",
-		RetryCount:          5,
-		WorkerCount:         10,
-	}}, rabbitmq.WithLogger(l),
+	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{
+		{
+			QueueName:           "pt_retries",
+			DelayExpirationInMS: "3000",
+			RetryCount:          5,
+			WorkerCount:         10,
+		}},
+		rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
 		rabbitmq.WithPassword("bitnami"))
 
@@ -68,14 +68,15 @@ func main() {
 		l.Error("", err)
 
 		go func() {
-			srvr.Run(ctx)
+			err := srvr.Run(ctx)
+			l.Error("could not start http server", err)
 			done <- struct{}{}
 		}()
 
 	})
 
 	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
-		l.Error("", runErr)
+		l.Error("error running streams", runErr)
 	}
 
 	<-done

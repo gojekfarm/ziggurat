@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"sync"
 
@@ -34,6 +35,8 @@ type Streams struct {
 	StreamConfig     StreamConfig
 }
 
+var ErrCleanShutdown = errors.New("clean shutdown of kafka streams")
+
 // Stream implements the ziggurat.Streamer interface
 // blocks until an error is received or context is cancelled
 func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
@@ -52,7 +55,7 @@ func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 	wg.Wait()
 	k.stop()
 
-	return nil
+	return ErrCleanShutdown
 }
 
 func (k *Streams) stop() {

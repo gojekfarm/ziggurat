@@ -135,7 +135,7 @@ func (r *autoRetry) InitPublishers(ctx context.Context) error {
 	for _, qc := range r.queueConfig {
 		if err := createQueuesAndExchanges(ch, qc.QueueName, r.ogLogger); err != nil {
 			r.ogLogger.Error("error creating queues and exchanges", err)
-			return err
+			return fmt.Errorf("error iniitializing publishers:%w", err)
 		}
 	}
 	err = ch.Close()
@@ -158,7 +158,7 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	for _, qc := range r.queueConfig {
 		if err := createQueuesAndExchanges(ch, qc.QueueName, r.ogLogger); err != nil {
 			r.ogLogger.Error("error creating queues and exchanges", err)
-			return err
+			return fmt.Errorf("error iniitializing publishers:%w", err)
 		}
 	}
 	err = ch.Close()
@@ -254,6 +254,9 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool)
 	return events, nil
 }
 
+/*DSViewHandler allows you to peek into
+  the rabbitMQ dead-set queue.
+*/
 func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 	f := func(w http.ResponseWriter, req *http.Request) {
 		qname, count, err := validateQueryParams(req)
