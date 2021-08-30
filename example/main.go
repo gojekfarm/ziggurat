@@ -1,9 +1,12 @@
+//+build ignore
+
 package main
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/logger"
 	"net/http"
+
+	"github.com/gojekfarm/ziggurat/logger"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
