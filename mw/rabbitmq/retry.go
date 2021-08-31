@@ -16,6 +16,7 @@ import (
 )
 
 var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not initialized, please call the InitPublisher method")
+var ErrCleanShutdown = errors.New("clean shutdown of rabbitmq streams")
 
 type dsViewResp struct {
 	Events []*ziggurat.Event `json:"events"`
@@ -196,7 +197,7 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	r.consumeDialer.Close()
 
 	<-done
-	return nil
+	return ErrCleanShutdown
 }
 
 func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool) ([]*ziggurat.Event, error) {
