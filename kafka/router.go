@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/gojekfarm/ziggurat/util"
-
 	"github.com/gojekfarm/ziggurat"
 )
 
@@ -101,8 +99,4 @@ func (r *Router) Handle(ctx context.Context, event *ziggurat.Event) error {
 		return h.Handle(ctx, event)
 	}
 	return fmt.Errorf("no pattern registered for %s", path)
-}
-
-func (r *Router) Compose(hs ...func(handler ziggurat.Handler) ziggurat.Handler) ziggurat.Handler {
-	return util.PipeHandlers(hs...)(r)
 }

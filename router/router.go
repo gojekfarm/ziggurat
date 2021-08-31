@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/gojekfarm/ziggurat/util"
-
 	"github.com/gojekfarm/ziggurat"
 )
 
@@ -71,18 +69,6 @@ func (dr *defaultRouter) HandleFunc(route string, handlerFunc func(ctx context.C
 		panic(fmt.Sprintf("route %s has already been registered", route))
 	}
 	dr.handlerFunctionMap[route] = handlerFunc
-}
-
-// Compose takes in a set of middleware functions
-// builds a chain of executing from left to right and returns a new handler
-// router := New()
-// router.HandleFunc("my-route",func(c context.Context,e *ziggurat.Event) error {
-//		return nil
-//})
-// h := router.Compose(middlewareOne,middlewareTwo,middlewareThree)
-// order of execution: middlewareOne -> middlewareTwo -> middlewareThree -> handlerFunc
-func (dr *defaultRouter) Compose(mw ...func(h ziggurat.Handler) ziggurat.Handler) ziggurat.Handler {
-	return util.PipeHandlers(mw...)(dr)
 }
 
 // Lookup looks up and returns a handlerFunc if found

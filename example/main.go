@@ -60,7 +60,7 @@ func main() {
 		return ziggurat.Retry
 	}, "pt_retries"))
 
-	h := r.Compose(s.PublishHandlerMetrics)
+	h := ziggurat.Use(&r, s.PublishHandlerMetrics, s.PublishEventDelay)
 
 	done := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {

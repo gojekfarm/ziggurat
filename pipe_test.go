@@ -1,17 +1,15 @@
-package util
+package ziggurat
 
 import (
 	"context"
 	"testing"
 	"time"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 func TestPipeHandlers(t *testing.T) {
-	mw1 := func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent *ziggurat.Event) error {
-			me := ziggurat.Event{
+	mw1 := func(next Handler) Handler {
+		return HandlerFunc(func(ctx context.Context, messageEvent *Event) error {
+			me := Event{
 				Headers:           nil,
 				Value:             []byte("foo"),
 				Key:               nil,
@@ -24,10 +22,10 @@ func TestPipeHandlers(t *testing.T) {
 			return next.Handle(ctx, &me)
 		})
 	}
-	mw2 := func(next ziggurat.Handler) ziggurat.Handler {
-		return ziggurat.HandlerFunc(func(ctx context.Context, messageEvent *ziggurat.Event) error {
+	mw2 := func(next Handler) Handler {
+		return HandlerFunc(func(ctx context.Context, messageEvent *Event) error {
 			byteValue := append(messageEvent.Value, []byte("-bar")...)
-			me := ziggurat.Event{
+			me := Event{
 				Headers:           nil,
 				Value:             byteValue,
 				Key:               nil,
@@ -40,12 +38,12 @@ func TestPipeHandlers(t *testing.T) {
 			return next.Handle(ctx, &me)
 		})
 	}
-	actualHandler := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
+	actualHandler := HandlerFunc(func(ctx context.Context, event *Event) error {
 		if string(event.Value) != "foo-bar" {
 			t.Errorf("expected message to be %s,but got %s", "foo-bar", string(event.Value))
 		}
 		return nil
 	})
-	finalHandler := PipeHandlers(mw1, mw2)(actualHandler)
-	_ = finalHandler.Handle(context.Background(), &ziggurat.Event{})
+	finalHandler := pipe(actualHandler, mw1, mw2)
+	_ = finalHandler.Handle(context.Background(), &Event{})
 }
