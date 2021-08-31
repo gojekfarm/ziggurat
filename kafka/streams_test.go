@@ -2,7 +2,9 @@ package kafka
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 	"sync/atomic"
@@ -10,19 +12,28 @@ import (
 	"time"
 )
 
+func makeRandString() string {
+	bb := make([]byte, 5)
+	_, err := rand.Read(bb)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%X", bb)
+}
+
 func Test_streams(t *testing.T) {
 	c, cfn := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cfn()
 	var expectedMessageCount int32 = 5
-	topic := "test_log"
+	topic := makeRandString()
 	var messageCount int32
 	done := make(chan struct{})
 	ks := Streams{
 		StreamConfig: StreamConfig{{
 			BootstrapServers: "localhost:9092",
-			ConsumerGroupID:  "test_consumer_1234",
+			ConsumerGroupID:  makeRandString() + "_consumer",
 			ConsumerCount:    1,
-			OriginTopics:     "test_log",
+			OriginTopics:     topic,
 		}},
 	}
 	go func() {
