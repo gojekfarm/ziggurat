@@ -20,16 +20,16 @@ func TestKafkaStreams_Consume(t *testing.T) {
 	StartConsumers = func(ctx context.Context, consumerConfig *kafka.ConfigMap, route string, topics []string, instances int, h ziggurat.Handler, l ziggurat.StructuredLogger, wg *sync.WaitGroup) []*kafka.Consumer {
 		return []*kafka.Consumer{}
 	}
-	kstreams := Streams{
+	ks := Streams{
 		routeConsumerMap: nil,
-		Logger:           logger.NewJSONLogger("disabled"),
+		Logger:           logger.NoopLogger,
 		StreamConfig:     StreamConfig{{RouteGroup: "foo"}},
 	}
 	f := func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	}
-	kstreams.Stream(context.Background(), ziggurat.HandlerFunc(f))
-	if len(kstreams.routeConsumerMap) < len(routes) {
-		t.Errorf("expected count %d but got %d", len(kstreams.routeConsumerMap), len(routes))
+	ks.Stream(context.Background(), ziggurat.HandlerFunc(f))
+	if len(ks.routeConsumerMap) < len(routes) {
+		t.Errorf("expected count %d but got %d", len(ks.routeConsumerMap), len(routes))
 	}
 }
