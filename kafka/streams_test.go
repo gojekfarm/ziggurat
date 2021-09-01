@@ -41,6 +41,7 @@ func Test_streams(t *testing.T) {
 			atomic.AddInt32(&messageCount, 1)
 			return nil
 		}))
+
 		if !errors.Is(err, ErrCleanShutdown) {
 			t.Errorf("streams failed with error:%v", err)
 		}
@@ -71,7 +72,7 @@ func Test_streams(t *testing.T) {
 		err := p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{
 				Topic:     &topic,
-				Partition: kafka.PartitionAny,
+				Partition: 0,
 			},
 			Value:         []byte("foo"),
 			Key:           []byte("foo"),

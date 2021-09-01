@@ -62,6 +62,10 @@ func TestConsumer_create(t *testing.T) {
 func TestConsumer_start(t *testing.T) {
 	expectedBytes := []byte("foo")
 	l := logger.NewJSONLogger("disabled")
+	var oldPoll = pollEvent
+	defer func() {
+		pollEvent = oldPoll
+	}()
 	pollEvent = func(c *kafka.Consumer, pollTimeout int) kafka.Event {
 		t := ""
 		return &kafka.Message{

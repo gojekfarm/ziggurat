@@ -27,7 +27,7 @@ var startConsumer = func(
 			if evt.Tag != logTagToSkip {
 				l.Info(evt.Message, map[string]interface{}{
 					"client": evt.Name,
-					"lvl":  evt.Level,
+					"lvl":    evt.Level,
 				})
 			}
 		}

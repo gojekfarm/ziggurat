@@ -24,6 +24,7 @@ type ConsumerConfig struct {
 	OriginTopics     string
 	ConsumerGroupID  string
 	ConsumerCount    int
+	AutoCreateTopic  bool
 	RouteGroup       string
 }
 

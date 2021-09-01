@@ -8,11 +8,11 @@ import (
 var createConsumer = func(consumerConfig *kafka.ConfigMap, l ziggurat.StructuredLogger, topics []string) *kafka.Consumer {
 	consumer, err := kafka.NewConsumer(consumerConfig)
 	if err != nil {
-		panic(err)
+		panic("error creating consumer:" + err.Error())
 	}
 	subscribeErr := consumer.SubscribeTopics(topics, nil)
 	if subscribeErr != nil {
-		panic(subscribeErr)
+		panic("error subscribing to topics:" + subscribeErr.Error())
 	}
 	return consumer
 }
