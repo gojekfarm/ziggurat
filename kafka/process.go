@@ -69,5 +69,5 @@ func processMessage(ctx context.Context,
 	l.Info("processing message", map[string]interface{}{"consumer": c.String()})
 	l.Error("kafka processing error", h.Handle(ctx, &event))
 	err := storeOffsets(c, msg.TopicPartition)
-	l.Error("error storing offsets: %v", err)
+	l.Error("kafka offset error", err)
 }

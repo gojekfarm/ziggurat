@@ -1,6 +1,6 @@
 module github.com/gojekfarm/ziggurat
 
-go 1.16
+go 1.17
 
 require (
 	github.com/cactus/go-statsd-client/v5 v5.0.0

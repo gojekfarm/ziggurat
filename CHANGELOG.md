@@ -10,14 +10,23 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 # Breaking changes
 
 - `Compose` methods are removed from the router API(s)
-- 
 
+# Changes
+
+- uses `go v1.17`
+- various bug fixes and panic fixes
+- more descriptive errors
+
+# Added
+
+- integration tests for kafka streams and RabbitMQ
+- `ziggurat.Use` API to compose middleware
+- all packages use the `logger.Noop` as the default implementation
 
 ## [1.3.5] 2021-08-27
 
 - adds a rabbitmq dead set replay handler
 - fixes RabbitMQ panic
-
 
 ## [1.3.2] 2021-08-25
 
@@ -28,7 +37,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # Changes
 
-- Event now includes a metadata map of type `map[string]interface{}` 
+- Event now includes a metadata map of type `map[string]interface{}`
 - kafka key values are copied to a new slice before passing it on
 - statsD middleware no longer sends the `route` label
 - loggers use the `logger.DiscardLogger` as the default logger

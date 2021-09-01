@@ -62,10 +62,10 @@ func sortAndAppend(s []routerEntry, e routerEntry) []routerEntry {
 
 func (r *Router) HandleFunc(pattern string, h func(ctx context.Context, event *ziggurat.Event) error) {
 	if pattern == "" {
-		panic(fmt.Errorf("pattern cannot be %q", pattern))
+		panic(fmt.Errorf("kafka router:pattern cannot be %q", pattern))
 	}
 	if h == nil {
-		panic("handler cannot be <nil>")
+		panic("kafka router:handler cannot be <nil>")
 	}
 	r.register(pattern, ziggurat.HandlerFunc(h))
 }
@@ -83,7 +83,7 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 
 	//panic on multiple registrations
 	if _, ok := r.handlerEntry[pattern]; ok {
-		panic(fmt.Sprintf("multiple regirstrations for %s", pattern))
+		panic(fmt.Sprintf("kafka router:multiple regirstrations for %s", pattern))
 	}
 
 	e := routerEntry{handler: h, pattern: pattern}
@@ -98,5 +98,5 @@ func (r *Router) Handle(ctx context.Context, event *ziggurat.Event) error {
 	if h != nil {
 		return h.Handle(ctx, event)
 	}
-	return fmt.Errorf("no pattern registered for %s", path)
+	return fmt.Errorf("kafka router:no pattern registered for %s", path)
 }

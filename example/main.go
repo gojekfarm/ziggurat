@@ -1,5 +1,3 @@
-//+build ignore
-
 package main
 
 import (
@@ -65,7 +63,7 @@ func main() {
 	done := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {
 		err := s.Run(ctx)
-		l.Error("", err)
+		l.Error("error running statsd publisher", err)
 
 		err = ar.InitPublishers(ctx)
 		l.Error("", err)
@@ -78,7 +76,7 @@ func main() {
 
 	})
 
-	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &kafkaStreams); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 

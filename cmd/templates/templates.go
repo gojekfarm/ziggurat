@@ -274,7 +274,8 @@ import (
 
 func main() {
 	var zig ziggurat.Ziggurat
-	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
+	var r kafka.Router
+	l := logger.NewLogger(logger.LevelInfo)
 	ctx := context.Background()
 
 	kafkaStreams := kafka.Streams{
@@ -287,16 +288,14 @@ func main() {
 				RouteGroup:       "plain-text-log",
 			},
 		},
-		Logger: jsonLogger,
+		Logger: l,
 	}
 
-	r := router.New()
 
-	r.HandleFunc("plain-text-log", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("localhost:9092/plain_text_consumer/*", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 
-	handler := r.Compose(event.Logger(jsonLogger))
 
 	if runErr := zig.Run(ctx, &kafkaStreams, handler); runErr != nil {
 		jsonLogger.Error("could not start streams", runErr)
@@ -473,7 +472,7 @@ cache_mode = private
 # Either "redis", "memcached" or "database" default is "database"
 type = database
 
-# cache connectionstring options
+# cache connection string options
 # database: will use Grafana primary database.
 # redis: config like redis server e.g.` + `addr = 127.0.0.1:6379, pool_size = 100, db = 0, ssl = false.` + `Only addr is required. ssl may be 'true', 'false', or 'insecure'.
 # memcache: 127.0.0.1:11211

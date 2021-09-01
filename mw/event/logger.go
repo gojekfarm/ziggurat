@@ -21,7 +21,7 @@ func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat
 				kvs[k] = v
 			}
 
-			l.Info("received message", kvs)
+			l.Info("processing message", kvs)
 			return handler.Handle(ctx, event)
 		}
 		return ziggurat.HandlerFunc(f)

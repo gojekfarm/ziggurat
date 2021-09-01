@@ -49,7 +49,7 @@ func AutoRetry(qc []QueueConfig, opts ...Opts) *autoRetry {
 		publishDialer: nil,
 		hosts:         []string{"localhost:5672"},
 		username:      "guest",
-		ogLogger:      zl.NewDiscardLogger(),
+		ogLogger:      zl.NoopLogger,
 		password:      "guest",
 		logger:        logger.Discard,
 		queueConfig:   map[string]QueueConfig{},
