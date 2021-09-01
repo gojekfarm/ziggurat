@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"testing"
@@ -49,7 +50,7 @@ func Test_RetryFlow(t *testing.T) {
 			}
 			return ziggurat.Retry
 		}))
-		if err != nil {
+		if !errors.Is(err, ErrCleanShutdown) {
 			t.Errorf("error running consumers: %v", err)
 		}
 		close(done)

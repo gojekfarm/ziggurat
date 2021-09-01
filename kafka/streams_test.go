@@ -5,11 +5,12 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"github.com/gojekfarm/ziggurat"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/gojekfarm/ziggurat"
 )
 
 func makeRandString() string {
