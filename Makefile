@@ -2,8 +2,8 @@
 
 TOPIC_JSON="json-log"
 TOPIC_PLAIN_TEXT="plain-text-log"
-TEST_PACKAGES=$(shell go list ./... | grep -v -E 'cmd|logger|example|mock|mw')
-TEST_PACKAGES_INTEGRATION=$(shell go list ./... | grep -E 'mw/rabbitmq')
+TEST_PACKAGES=$(shell go list ./... | grep -v -E 'cmd|logger|example|mock|mw|kafka')
+TEST_PACKAGES_INTEGRATION=$(shell go list ./... | grep -E 'mw/rabbitmq|kafka')
 EXAMPLE_BUILD_PKG="./example/main.go"
 
 docker.start:
