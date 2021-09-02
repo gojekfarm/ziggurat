@@ -2,7 +2,6 @@ package rabbitmq
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/makasim/amqpextra"
@@ -28,7 +27,6 @@ var getChannelFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeou
 	defer cfn()
 	go func() {
 		<-done
-		fmt.Println("timed out")
 		cfn()
 	}()
 

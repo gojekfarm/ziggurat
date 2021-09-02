@@ -20,6 +20,7 @@ func newAutoRetry(qn string) *autoRetry {
 			WorkerCount:         1,
 		}},
 		WithUsername("user"),
+		WithConnectionTimeout(5*time.Second),
 		WithPassword("bitnami"))
 	return ar
 }
