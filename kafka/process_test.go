@@ -10,7 +10,7 @@ import (
 )
 
 func Test_processMessage(t *testing.T) {
-	dl := logger.NewDiscardLogger()
+	dl := logger.NOOP
 	var oldStoreOffsets = storeOffsets
 	defer func() {
 		storeOffsets = oldStoreOffsets

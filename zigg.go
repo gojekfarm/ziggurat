@@ -39,7 +39,7 @@ type Ziggurat struct {
 func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) error {
 
 	if z.Logger == nil {
-		z.Logger = logger.NewDiscardLogger()
+		z.Logger = logger.NOOP
 	}
 
 	if streams == nil {
@@ -99,7 +99,7 @@ func (z *Ziggurat) StopFunc(function StopFunction) {
 // all the streams.
 func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
 	if z.Logger == nil {
-		z.Logger = logger.NewJSONLogger(logger.LevelInfo)
+		z.Logger = logger.NOOP
 	}
 	if len(streams) < 1 {
 		panic("error: at least one streamer implementation should be provided")

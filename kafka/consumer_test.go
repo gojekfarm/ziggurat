@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 
 func TestConsumer_create(t *testing.T) {
 
-	l := logger.NewJSONLogger("disabled")
+	l := logger.NOOP
 	cfgMap := NewConsumerConfig("localhost:9092", "bar")
 	handler := ziggurat.HandlerFunc(func(messagectx context.Context, event *ziggurat.Event) error {
 		return nil
@@ -61,7 +61,7 @@ func TestConsumer_create(t *testing.T) {
 
 func TestConsumer_start(t *testing.T) {
 	expectedBytes := []byte("foo")
-	l := logger.NewJSONLogger("disabled")
+	l := logger.NOOP
 	var oldPoll = pollEvent
 	defer func() {
 		pollEvent = oldPoll

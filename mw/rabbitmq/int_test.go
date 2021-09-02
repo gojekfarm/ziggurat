@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
 )
 
 func newAutoRetry(qn string) *autoRetry {
@@ -21,8 +20,7 @@ func newAutoRetry(qn string) *autoRetry {
 			WorkerCount:         1,
 		}},
 		WithUsername("user"),
-		WithPassword("bitnami"),
-		WithLogger(logger.NewDiscardLogger()))
+		WithPassword("bitnami"))
 	return ar
 }
 
@@ -185,8 +183,9 @@ func Test_replay(t *testing.T) {
 			queueName:     "foo_test",
 		}}
 
-	ctx := context.Background()
+	ctx, cfn := context.WithTimeout(context.Background(), time.Second*10)
 
+	defer cfn()
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			ar := newAutoRetry(tc.queueName)

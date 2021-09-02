@@ -12,6 +12,18 @@ require (
 	github.com/streadway/amqp v1.0.1-0.20200716223359-e6b33f460591
 )
 
+require (
+	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/cespare/xxhash/v2 v2.1.1 // indirect
+	github.com/golang/protobuf v1.4.3 // indirect
+	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/prometheus/client_model v0.2.0 // indirect
+	github.com/prometheus/common v0.18.0 // indirect
+	github.com/prometheus/procfs v0.6.0 // indirect
+	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 // indirect
+	google.golang.org/protobuf v1.23.0 // indirect
+)
+
 // go sum hash mismatch errors caused on some CIs
 retract v1.0.6
 

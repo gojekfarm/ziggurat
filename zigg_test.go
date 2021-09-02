@@ -23,7 +23,7 @@ func TestZigguratStartStop(t *testing.T) {
 	isStopCalled := false
 	ctx, cfn := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cfn()
-	z := &Ziggurat{Logger: logger.NewJSONLogger("disabled")}
+	z := &Ziggurat{Logger: logger.NOOP}
 	z.StartFunc(func(ctx context.Context) {
 		isStartCalled = true
 	})
@@ -36,7 +36,7 @@ func TestZigguratStartStop(t *testing.T) {
 		return ctx.Err()
 	}}
 
-	z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event *Event) error { return nil }))
+	_ = z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event *Event) error { return nil }))
 
 	if !isStartCalled {
 		t.Error("expected start callback to be called")
@@ -47,7 +47,7 @@ func TestZigguratStartStop(t *testing.T) {
 }
 
 func TestZiggurat_Run(t *testing.T) {
-	z := &Ziggurat{Logger: logger.NewJSONLogger("disabled")}
+	z := &Ziggurat{Logger: logger.NOOP}
 	ctx, cfn := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cfn()
 
@@ -83,7 +83,7 @@ func TestZiggurat_RunAll(t *testing.T) {
 	}
 }
 
-func TestZiggurat_MultistreamHandlerExec(t *testing.T) {
+func TestZiggurat_MultiStreamHandlerExec(t *testing.T) {
 	var z Ziggurat
 	var handlerCallCount int64
 	streamOne := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
@@ -94,7 +94,7 @@ func TestZiggurat_MultistreamHandlerExec(t *testing.T) {
 		return handler.Handle(ctx, &Event{EventType: "bar"})
 	}}
 
-	z.RunAll(context.Background(), HandlerFunc(func(ctx context.Context, event *Event) error {
+	_ = z.RunAll(context.Background(), HandlerFunc(func(ctx context.Context, event *Event) error {
 		if event.EventType == "foo" || event.EventType == "bar" {
 			atomic.AddInt64(&handlerCallCount, 1)
 		}

@@ -34,7 +34,7 @@ func NewPublisher(opts ...func(c *Client)) *Client {
 
 	c.prefix = "ziggurat_statsd"
 	c.host = "localhost:8125"
-	c.logger = logger.NewDiscardLogger()
+	c.logger = logger.NOOP
 	c.defaultTags = map[string]string{}
 
 	for _, opt := range opts {

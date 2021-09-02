@@ -4,7 +4,7 @@ TOPIC_JSON="json-log"
 TOPIC_PLAIN_TEXT="plain-text-log"
 TEST_PACKAGES=$(shell go list ./... | grep -v -E 'cmd|logger|example|mock|mw|kafka')
 TEST_PACKAGES_INTEGRATION=$(shell go list ./... | grep -E 'mw/rabbitmq|kafka')
-EXAMPLE_BUILD_PKG="./example/main.go"
+EXAMPLE_BUILD_PKG="./example/sampleapp/main.go"
 
 docker.start:
 	docker-compose down
@@ -30,15 +30,15 @@ lib.build:
 	go build .
 
 app.start:
-	go build -o ziggurat_example $(EXAMPLE_BUILD_PKG)
-	./ziggurat_example
+	go build -o sample_app $(EXAMPLE_BUILD_PKG)
+	./sample_app
 
 lib.test:
 	go test -count 1 -v $(TEST_PACKAGES)
 
 app.start-race:
-	go build -race -o ziggurat_example $(EXAMPLE_BUILD_PKG)
-	./ziggurat_example
+	go build -race -o sample_app $(EXAMPLE_BUILD_PKG)
+	./sample_app
 
 docker.cleanup:
 	docker-compose down

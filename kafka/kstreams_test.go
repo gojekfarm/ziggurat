@@ -22,7 +22,7 @@ func TestKafkaStreams_Consume(t *testing.T) {
 	}
 	ks := Streams{
 		routeConsumerMap: nil,
-		Logger:           logger.NoopLogger,
+		Logger:           logger.NOOP,
 		StreamConfig:     StreamConfig{{RouteGroup: "foo"}},
 	}
 	f := func(ctx context.Context, event *ziggurat.Event) error {

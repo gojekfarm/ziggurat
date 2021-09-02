@@ -18,4 +18,4 @@ func (n noopLogger) Error(message string, err error, kvs ...map[string]interface
 func (n noopLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
 }
 
-var NoopLogger = noopLogger{}
+var NOOP = noopLogger{}

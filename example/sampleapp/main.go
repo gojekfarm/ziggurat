@@ -4,10 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gojekfarm/ziggurat/logger"
-
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
+	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
 	"github.com/gojekfarm/ziggurat/server"
@@ -20,7 +19,7 @@ func main() {
 
 	ctx := context.Background()
 
-	l := logger.NewLogger(logger.LevelInfo)
+	l := logger.NewLogger(logger.LevelDebug)
 	s := statsd.NewPublisher(statsd.WithPrefix("example_go_ziggurat"),
 		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_go_ziggurat"}),
 		statsd.WithLogger(l))
@@ -73,6 +72,7 @@ func main() {
 			err := srvr.Run(ctx)
 			l.Error("could not start http server", err)
 			done <- struct{}{}
+
 		}()
 
 	})

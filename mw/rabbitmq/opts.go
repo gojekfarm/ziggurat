@@ -1,6 +1,10 @@
 package rabbitmq
 
-import "github.com/gojekfarm/ziggurat"
+import (
+	"time"
+
+	"github.com/gojekfarm/ziggurat"
+)
 
 type Opts func(r *autoRetry)
 
@@ -28,5 +32,11 @@ func WithLogger(l ziggurat.StructuredLogger) Opts {
 			l: l,
 		}
 		r.ogLogger = l
+	}
+}
+
+func WithConnectionTimeout(t time.Duration) Opts {
+	return func(r *autoRetry) {
+		r.connTimeout = t
 	}
 }

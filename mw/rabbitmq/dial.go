@@ -2,6 +2,8 @@ package rabbitmq
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
@@ -20,8 +22,17 @@ var newDialer = func(ctx context.Context, AMQPURLs []string, l logger.Logger) (*
 	return dialer, nil
 }
 
-var getChannelFromDialer = func(ctx context.Context, d *amqpextra.Dialer) (*amqp.Channel, error) {
-	conn, err := d.Connection(ctx)
+var getChannelFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeout time.Duration) (*amqp.Channel, error) {
+	timeoutCtx, cfn := context.WithTimeout(ctx, timeout)
+	done := timeoutCtx.Done()
+	defer cfn()
+	go func() {
+		<-done
+		fmt.Println("timed out")
+		cfn()
+	}()
+
+	conn, err := d.Connection(timeoutCtx)
 	if err != nil {
 		return nil, err
 	}

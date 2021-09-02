@@ -42,7 +42,7 @@ var ErrCleanShutdown = errors.New("clean shutdown of kafka streams")
 // blocks until an error is received or context is cancelled
 func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 	if k.Logger == nil {
-		k.Logger = logger.NoopLogger
+		k.Logger = logger.NOOP
 	}
 	var wg sync.WaitGroup
 	k.routeConsumerMap = make(map[string][]*kafka.Consumer, len(k.StreamConfig))

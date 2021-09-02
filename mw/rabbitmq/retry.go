@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gojekfarm/ziggurat"
 	zl "github.com/gojekfarm/ziggurat/logger"
@@ -36,6 +37,7 @@ type autoRetry struct {
 	username      string
 	password      string
 	logger        logger.Logger
+	connTimeout   time.Duration
 	ogLogger      ziggurat.StructuredLogger
 	queueConfig   map[string]QueueConfig
 }
@@ -49,7 +51,8 @@ func AutoRetry(qc []QueueConfig, opts ...Opts) *autoRetry {
 		publishDialer: nil,
 		hosts:         []string{"localhost:5672"},
 		username:      "guest",
-		ogLogger:      zl.NoopLogger,
+		ogLogger:      zl.NOOP,
+		connTimeout:   30 * time.Second,
 		password:      "guest",
 		logger:        logger.Discard,
 		queueConfig:   map[string]QueueConfig{},
@@ -122,13 +125,14 @@ func (r *autoRetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerF
 }
 
 func (r *autoRetry) InitPublishers(ctx context.Context) error {
+
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
 	}
 	r.publishDialer = dialer
 
-	ch, err := getChannelFromDialer(ctx, r.publishDialer)
+	ch, err := getChannelFromDialer(ctx, r.publishDialer, r.connTimeout)
 	if err != nil {
 		return err
 	}
@@ -151,7 +155,7 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	}
 	r.consumeDialer = dialer
 
-	ch, err := getChannelFromDialer(ctx, dialer)
+	ch, err := getChannelFromDialer(ctx, dialer, r.connTimeout)
 	if err != nil {
 		return err
 	}
@@ -210,7 +214,7 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool)
 	if err != nil {
 		return nil, err
 	}
-	ch, err := getChannelFromDialer(ctx, d)
+	ch, err := getChannelFromDialer(ctx, d, r.connTimeout)
 
 	if err != nil {
 		return nil, err
@@ -291,7 +295,7 @@ func (r *autoRetry) DeleteQueuesAndExchanges(ctx context.Context, queueName stri
 	if err != nil {
 		return fmt.Errorf("error getting dialer:%w", err)
 	}
-	ch, err := getChannelFromDialer(ctx, d)
+	ch, err := getChannelFromDialer(ctx, d, r.connTimeout)
 	if err != nil {
 		return fmt.Errorf("error getting channel:%w", err)
 	}
@@ -311,7 +315,7 @@ func (r *autoRetry) replay(ctx context.Context, queue string, count int) (int, e
 		return replayCount, err
 	}
 
-	ch, err := getChannelFromDialer(ctx, d)
+	ch, err := getChannelFromDialer(ctx, d, r.connTimeout)
 	if err != nil {
 		return replayCount, fmt.Errorf("error getting channel:%w", err)
 	}
