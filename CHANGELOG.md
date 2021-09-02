@@ -22,6 +22,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - integration tests for kafka streams and RabbitMQ
 - `ziggurat.Use` API to compose middleware
 - all packages use the `logger.Noop` as the default implementation
+- `rabbitmq.WithConnectionTimeout` to specify a timeout for queue creation
 
 ## [1.3.5] 2021-08-27
 
