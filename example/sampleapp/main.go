@@ -1,3 +1,5 @@
+//+build ignore
+
 package main
 
 import (
@@ -19,7 +21,7 @@ func main() {
 
 	ctx := context.Background()
 
-	l := logger.NewLogger(logger.LevelError)
+	l := logger.NewLogger(logger.LevelInfo)
 	s := statsd.NewPublisher(statsd.WithPrefix("example_go_ziggurat"),
 		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_go_ziggurat"}),
 		statsd.WithLogger(l))
