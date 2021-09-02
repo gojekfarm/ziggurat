@@ -19,7 +19,7 @@ func main() {
 
 	ctx := context.Background()
 
-	l := logger.NewLogger(logger.LevelDebug)
+	l := logger.NewLogger(logger.LevelError)
 	s := statsd.NewPublisher(statsd.WithPrefix("example_go_ziggurat"),
 		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_go_ziggurat"}),
 		statsd.WithLogger(l))
@@ -66,7 +66,9 @@ func main() {
 		l.Error("error running statsd publisher", err)
 
 		err = ar.InitPublishers(ctx)
-		l.Error("", err)
+		if err != nil {
+			panic("could not start publishers:" + err.Error())
+		}
 
 		go func() {
 			err := srvr.Run(ctx)
@@ -77,7 +79,7 @@ func main() {
 
 	})
 
-	if runErr := zig.RunAll(ctx, h, &kafkaStreams); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &kafkaStreams, ar); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 
