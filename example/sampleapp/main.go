@@ -30,10 +30,10 @@ func main() {
 
 	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{
 		{
-			QueueName:           "pt_retries",
-			DelayExpirationInMS: "3000",
-			RetryCount:          5,
-			WorkerCount:         10,
+			QueueName:             "pt_retries",
+			DelayExpirationInMS:   "1000",
+			RetryCount:            2,
+			ConsumerPrefetchCount: 10,
 		}},
 		rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),

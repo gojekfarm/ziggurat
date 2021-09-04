@@ -17,7 +17,6 @@ func newAutoRetry(qn string) *autoRetry {
 			QueueName:           qn,
 			DelayExpirationInMS: "500",
 			RetryCount:          5,
-			WorkerCount:         1,
 		}},
 		WithUsername("user"),
 		WithConnectionTimeout(5*time.Second),

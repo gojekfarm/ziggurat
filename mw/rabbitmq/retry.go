@@ -18,6 +18,7 @@ import (
 
 var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not initialized, please call the InitPublisher method")
 var ErrCleanShutdown = errors.New("clean shutdown of rabbitmq streams")
+var errRabbitMQPublish = errors.New("autoretry.Wrap error")
 
 type dsViewResp struct {
 	Events []*ziggurat.Event `json:"events"`
@@ -80,8 +81,10 @@ func (r *autoRetry) publish(ctx context.Context, event *ziggurat.Event, queue st
 	if err != nil {
 		return err
 	}
-	defer pub.Close()
-	return publishInternal(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
+
+	err = publishInternal(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
+	pub.Close()
+	return err
 }
 
 func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
