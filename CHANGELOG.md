@@ -16,6 +16,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - uses `go v1.17`
 - various bug fixes and panic fixes
 - more descriptive errors
+- RabbitMQ consumers do not use go-routine based workers
+
 
 # Added
 
@@ -23,6 +25,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `ziggurat.Use` API to compose middleware
 - all packages use the `logger.Noop` as the default implementation
 - `rabbitmq.WithConnectionTimeout` to specify a timeout for queue creation
+- Parallelize RabbitMQ consumption using the `ConsumerCount`
 
 ## [1.3.5] 2021-08-27
 
