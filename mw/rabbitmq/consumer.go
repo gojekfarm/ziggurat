@@ -31,18 +31,15 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h zi
 			var event ziggurat.Event
 			err := json.Unmarshal(bb, &event)
 			if err != nil {
-				ogl.Error("error rejecting message:", err)
+				ogl.Error("amqp unmarshal error", err)
 				return msg.Reject(true)
 			}
-			ogl.Info("amqp processing message", map[string]interface{}{"consumer": consumerName}, event.Metadata)
+			ogl.Info("amqp processing message", map[string]interface{}{"consumer": consumerName})
 			err = h.Handle(ctx, &event)
-			if isPublishFailed(err) {
-				return msg.Reject(true)
-			}
 			if err != nil {
-				ogl.Error("amqp message processing error", err)
+				ogl.Error("amqp message processing error", err, event.Metadata)
 			}
-			return msg.Ack(true)
+			return msg.Ack(false)
 		})),
 	)
 

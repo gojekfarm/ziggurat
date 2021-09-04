@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gojekfarm/ziggurat"
@@ -60,6 +61,9 @@ func AutoRetry(qc []QueueConfig, opts ...Opts) *autoRetry {
 	}
 
 	for _, c := range qc {
+		if c.ConsumerCount < 1 {
+			c.ConsumerCount = 1
+		}
 		r.queueConfig[c.QueueName] = c
 	}
 
@@ -128,7 +132,6 @@ func (r *autoRetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerF
 }
 
 func (r *autoRetry) InitPublishers(ctx context.Context) error {
-
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
@@ -172,38 +175,24 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	err = ch.Close()
 	r.ogLogger.Error("error closing channel", err)
 
-	consStopCh := make(chan struct{})
+	var wg sync.WaitGroup
 	for _, qc := range r.queueConfig {
-		go func(qc QueueConfig) {
-			cons, err := startConsumer(ctx, r.consumeDialer, qc, h, r.logger, r.ogLogger)
-			if err != nil {
-				r.ogLogger.Error("error starting consumer", err)
-			}
-			<-cons.NotifyClosed()
-			consStopCh <- struct{}{}
-			r.ogLogger.Info("shutting down consumer for", map[string]interface{}{"queue": qc.QueueName})
-		}(qc)
+		for i := 0; i < qc.ConsumerCount; i++ {
+			wg.Add(1)
+			go func(qc QueueConfig) {
+				cons, err := startConsumer(ctx, r.consumeDialer, qc, h, r.logger, r.ogLogger)
+				if err != nil {
+					r.ogLogger.Error("error starting consumer", err)
+				}
+				<-cons.NotifyClosed()
+				r.ogLogger.Info("shutting down consumer for", map[string]interface{}{"queue": qc.QueueName})
+				wg.Done()
+			}(qc)
+		}
 	}
 
-	for i := 0; i < len(r.queueConfig); i++ {
-		<-consStopCh
-	}
-	close(consStopCh)
+	wg.Wait()
 
-	done := make(chan struct{})
-
-	go func() {
-		<-r.publishDialer.NotifyClosed()
-		r.ogLogger.Info("stopped publisher dialer")
-		<-r.publishDialer.NotifyClosed()
-		r.ogLogger.Info("stopped consumer dialer")
-		done <- struct{}{}
-	}()
-
-	r.publishDialer.Close()
-	r.consumeDialer.Close()
-
-	<-done
 	return ErrCleanShutdown
 }
 

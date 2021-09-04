@@ -1,4 +1,5 @@
-//+build ignore
+//go:build ignore
+// +build ignore
 
 package main
 
@@ -34,6 +35,7 @@ func main() {
 			DelayExpirationInMS:   "1000",
 			RetryCount:            2,
 			ConsumerPrefetchCount: 10,
+			ConsumerCount:         10,
 		}},
 		rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
@@ -47,16 +49,16 @@ func main() {
 	kafkaStreams := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
-				BootstrapServers: "localhost:9092",
-				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "another_brick_in_the_wall",
+				BootstrapServers: "g-gojek-id-mainstream.golabs.io:6668",
+				OriginTopics:     "^.*-booking-log",
+				ConsumerGroupID:  "booking_log_consumer_go",
 				ConsumerCount:    2,
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/another_brick_in_the_wall/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("g-gojek-id-mainstream.golabs.io:6668/booking_log_consumer_go/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 		return ziggurat.Retry
 	}, "pt_retries"))
 

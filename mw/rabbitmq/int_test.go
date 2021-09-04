@@ -25,16 +25,13 @@ func newAutoRetry(qn string) *autoRetry {
 }
 
 func Test_RetryFlow(t *testing.T) {
-	ctx, cfn := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cfn := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cfn()
 	var callCount int32 = 0
-	var expectedCallCount int32 = 5
-	expectedValue := "foo"
+	publishCount := 20
+	expectedCallCount := int32(publishCount * 5)
 	queueName := "foo"
 
-	event := ziggurat.Event{
-		Value: []byte(expectedValue),
-	}
 	ar := newAutoRetry(queueName)
 	err := ar.InitPublishers(ctx)
 	if err != nil {
@@ -42,20 +39,18 @@ func Test_RetryFlow(t *testing.T) {
 	}
 	done := make(chan struct{})
 	go func() {
-		err := ar.Stream(ctx, ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
-			if string(event.Value) == expectedValue {
-				atomic.AddInt32(&callCount, 1)
-			}
+		err := ar.Stream(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+			atomic.AddInt32(&callCount, 1)
 			return ziggurat.Retry
-		}))
+		}, "foo"))
 		if !errors.Is(err, ErrCleanShutdown) {
 			t.Errorf("error running consumers: %v", err)
 		}
 		close(done)
 	}()
 
-	for i := 0; i < int(expectedCallCount); i++ {
-		err := ar.publish(ctx, &event, queueName)
+	for i := 0; i < publishCount; i++ {
+		err := ar.publish(ctx, &ziggurat.Event{Value: []byte(fmt.Sprintf("foo-%d", i))}, queueName)
 		if err != nil {
 			t.Errorf("error publishing: %v", err)
 		}
@@ -220,5 +215,4 @@ func Test_replay(t *testing.T) {
 
 		})
 	}
-
 }
