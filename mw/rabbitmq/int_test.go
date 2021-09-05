@@ -57,11 +57,10 @@ func Test_RetryFlow(t *testing.T) {
 		},
 	}
 
-	ctx, cfn := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cfn()
-
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
+			ctx, cfn := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cfn()
 			var callCount int32
 			expectedCallCount := int32(c.PublishCount * c.RetryCount)
 			ar := newAutoRetry(c.QueueName, c.RetryCount, c.ConsumerCount)
