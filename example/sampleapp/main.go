@@ -35,7 +35,7 @@ func main() {
 			DelayExpirationInMS:   "1000",
 			RetryCount:            2,
 			ConsumerPrefetchCount: 10,
-			ConsumerCount:         10,
+			ConsumerCount:         100,
 		}},
 		rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),

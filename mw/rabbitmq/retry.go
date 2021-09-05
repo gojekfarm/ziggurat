@@ -185,7 +185,6 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 					r.ogLogger.Error("error starting consumer", err)
 				}
 				<-cons.NotifyClosed()
-				r.ogLogger.Info("shutting down consumer for", map[string]interface{}{"queue": qc.QueueName})
 				wg.Done()
 			}(qc)
 		}
