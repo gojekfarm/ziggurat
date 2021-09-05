@@ -33,9 +33,9 @@ func main() {
 		{
 			QueueName:             "pt_retries",
 			DelayExpirationInMS:   "1000",
-			RetryCount:            2,
+			RetryCount:            5,
 			ConsumerPrefetchCount: 10,
-			ConsumerCount:         100,
+			ConsumerCount:         10,
 		}},
 		rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
