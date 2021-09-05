@@ -2,6 +2,7 @@ package logger
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/rs/zerolog"
 )
@@ -39,6 +40,7 @@ func NewLogger(level string, opts ...func(w *zerolog.ConsoleWriter)) *textLogger
 		w.FormatLevel = func(i interface{}) string {
 			return fmt.Sprintf("[%s]", i)
 		}
+		w.TimeFormat = time.RFC822
 		w.NoColor = true
 
 		for _, o := range opts {
