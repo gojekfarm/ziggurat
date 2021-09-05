@@ -11,12 +11,13 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
-func newAutoRetry(qn string) *autoRetry {
+func newAutoRetry(qn string, count int, consumerCount int) *autoRetry {
 	ar := AutoRetry(
 		[]QueueConfig{{
 			QueueName:           qn,
 			DelayExpirationInMS: "500",
-			RetryCount:          5,
+			RetryCount:          count,
+			ConsumerCount:       consumerCount,
 		}},
 		WithUsername("user"),
 		WithConnectionTimeout(5*time.Second),
@@ -25,45 +26,79 @@ func newAutoRetry(qn string) *autoRetry {
 }
 
 func Test_RetryFlow(t *testing.T) {
+
+	type test struct {
+		PublishCount  int
+		RetryCount    int
+		QueueName     string
+		Name          string
+		ConsumerCount int
+	}
+
+	cases := []test{
+		{
+			PublishCount: 20,
+			RetryCount:   5,
+			Name:         "handler is called for PublishCount * RetryCount times",
+			QueueName:    "foo",
+		},
+		{
+			PublishCount: 10,
+			RetryCount:   5,
+			Name:         "spawns one consumer when the count is 0",
+			QueueName:    "bar",
+		},
+		{
+			PublishCount:  10,
+			RetryCount:    2,
+			Name:          "expect handler to be called PublishCount*RetryCount times with multiple consumers",
+			QueueName:     "baz",
+			ConsumerCount: 25,
+		},
+	}
+
 	ctx, cfn := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cfn()
-	var callCount int32 = 0
-	publishCount := 20
-	expectedCallCount := int32(publishCount * 5)
-	queueName := "foo"
 
-	ar := newAutoRetry(queueName)
-	err := ar.InitPublishers(ctx)
-	if err != nil {
-		t.Errorf("could not init publishers %v", err)
-	}
-	done := make(chan struct{})
-	go func() {
-		err := ar.Stream(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-			atomic.AddInt32(&callCount, 1)
-			return ziggurat.Retry
-		}, "foo"))
-		if !errors.Is(err, ErrCleanShutdown) {
-			t.Errorf("error running consumers: %v", err)
-		}
-		close(done)
-	}()
+	for _, c := range cases {
+		t.Run(c.Name, func(t *testing.T) {
+			var callCount int32
+			expectedCallCount := int32(c.PublishCount * c.RetryCount)
+			ar := newAutoRetry(c.QueueName, c.RetryCount, c.ConsumerCount)
+			err := ar.InitPublishers(ctx)
+			if err != nil {
+				t.Errorf("could not init publishers %v", err)
+			}
+			done := make(chan struct{})
+			go func() {
+				err := ar.Stream(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+					atomic.AddInt32(&callCount, 1)
+					return ziggurat.Retry
+				}, c.QueueName))
+				if !errors.Is(err, ErrCleanShutdown) {
+					t.Errorf("error running consumers: %v", err)
+				}
+				close(done)
+			}()
 
-	for i := 0; i < publishCount; i++ {
-		err := ar.publish(ctx, &ziggurat.Event{Value: []byte(fmt.Sprintf("foo-%d", i))}, queueName)
-		if err != nil {
-			t.Errorf("error publishing: %v", err)
-		}
-	}
-	<-done
+			for i := 0; i < c.PublishCount; i++ {
+				err := ar.publish(ctx, &ziggurat.Event{Value: []byte(fmt.Sprintf("foo-%d", i))}, c.QueueName)
+				if err != nil {
+					t.Errorf("error publishing: %v", err)
+				}
+			}
+			<-done
 
-	if expectedCallCount != atomic.LoadInt32(&callCount) {
-		t.Errorf("expected %d got %d", expectedCallCount, callCount)
+			if expectedCallCount != atomic.LoadInt32(&callCount) {
+				t.Errorf("expected %d got %d", expectedCallCount, callCount)
+			}
+			err = ar.DeleteQueuesAndExchanges(context.Background(), c.QueueName)
+			if err != nil {
+				t.Errorf("error deleting queues:%v", err)
+			}
+		})
 	}
-	err = ar.DeleteQueuesAndExchanges(context.Background(), queueName)
-	if err != nil {
-		t.Errorf("error deleting queues:%v", err)
-	}
+
 }
 
 func Test_view(t *testing.T) {
@@ -109,7 +144,7 @@ func Test_view(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ar := newAutoRetry(c.qname)
+			ar := newAutoRetry(c.qname, 5, 1)
 			err := ar.InitPublishers(ctx)
 			if err != nil {
 				t.Errorf("error could not init publishers:%v", err)
@@ -183,7 +218,7 @@ func Test_replay(t *testing.T) {
 	defer cfn()
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			ar := newAutoRetry(tc.queueName)
+			ar := newAutoRetry(tc.queueName, 5, 1)
 			err := ar.InitPublishers(ctx)
 			if err != nil {
 				t.Errorf("couldn't start publishers:%v", err)
