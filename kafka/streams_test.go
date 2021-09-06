@@ -75,12 +75,9 @@ func Test_streams(t *testing.T) {
 				Topic:     &topic,
 				Partition: 0,
 			},
-			Value:         []byte("foo"),
-			Key:           []byte("foo"),
-			Timestamp:     time.Now(),
-			TimestampType: 0,
-			Opaque:        nil,
-			Headers:       nil,
+			Value:     []byte("foo"),
+			Key:       []byte("foo"),
+			Timestamp: time.Now(),
 		}, deliveryCh)
 		if err != nil {
 			t.Errorf("error producing:%v", err)

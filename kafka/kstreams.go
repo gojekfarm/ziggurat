@@ -60,9 +60,10 @@ func (k *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 }
 
 func (k *Streams) stop() {
-	for _, consumers := range k.routeConsumerMap {
+	for cg, consumers := range k.routeConsumerMap {
+		k.Logger.Info("kafka streams stopping consumer", map[string]interface{}{"consumer-group": cg})
 		for i := range consumers {
-			k.Logger.Error("kstreams: error stopping consumer", consumers[i].Close())
+			k.Logger.Error("kafka streams error", consumers[i].Close())
 		}
 	}
 }
