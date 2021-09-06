@@ -195,7 +195,7 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	return ErrCleanShutdown
 }
 
-func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool) ([]*ziggurat.Event, error) {
+func (r *autoRetry) view(ctx context.Context, qnameWithType string, count int, ack bool) ([]*ziggurat.Event, error) {
 	if count < 1 {
 		return []*ziggurat.Event{}, nil
 	}
@@ -213,8 +213,7 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool)
 
 	actualCount := count
 
-	qn := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
-	q, err := ch.QueueInspect(qn)
+	q, err := ch.QueueInspect(qnameWithType)
 	if err != nil {
 		return []*ziggurat.Event{}, nil
 	}
@@ -225,7 +224,7 @@ func (r *autoRetry) view(ctx context.Context, queue string, count int, ack bool)
 	events := make([]*ziggurat.Event, actualCount)
 	for i := 0; i < actualCount; i++ {
 
-		msg, _, err := ch.Get(qn, false)
+		msg, _, err := ch.Get(qnameWithType, false)
 		if err != nil {
 			return []*ziggurat.Event{}, err
 		}
@@ -260,7 +259,8 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		events, err := r.view(ctx, qname, count, false)
+		qn := fmt.Sprintf("%s_%s_%s", qname, "dlq", "queue")
+		events, err := r.view(ctx, qn, count, false)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("couldn't view messages from dlq: %v", err), http.StatusInternalServerError)
 			return

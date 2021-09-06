@@ -114,28 +114,28 @@ func Test_view(t *testing.T) {
 	cases := []test{
 		{
 			name:              "read exact number of messages as there are in the queue",
-			qname:             "foo_test",
+			qname:             "foo",
 			publishCount:      5,
 			viewCount:         5,
 			expectedViewCount: 5,
 		},
 		{
 			name:              "read excess number of messages than there are in the queue",
-			qname:             "bar_test",
+			qname:             "foo",
 			publishCount:      5,
 			viewCount:         10,
 			expectedViewCount: 5,
 		},
 		{
 			name:              "read negative number of messages",
-			qname:             "baz_test",
+			qname:             "foo",
 			publishCount:      5,
 			viewCount:         -1,
 			expectedViewCount: 0,
 		},
 		{
 			name:              "read zero messages",
-			qname:             "foo_test",
+			qname:             "foo",
 			viewCount:         0,
 			publishCount:      5,
 			expectedViewCount: 0,
@@ -157,7 +157,8 @@ func Test_view(t *testing.T) {
 					t.Errorf("error publishing to queue: %v", err)
 				}
 			}
-			events, err := ar.view(ctx, c.qname, c.viewCount, false)
+			queueName := fmt.Sprintf("%s_%s_%s", c.qname, "dlq", "queue")
+			events, err := ar.view(ctx, queueName, c.viewCount, false)
 			if err != nil {
 				t.Errorf("error viewing messages: %v", err)
 			}
@@ -249,4 +250,59 @@ func Test_replay(t *testing.T) {
 
 		})
 	}
+}
+
+func Test_MessageLoss(t *testing.T) {
+	retryCount := 100
+	consumerCount := 1
+	publishCount := 10
+	qname := "foo"
+	ctx, cfn := context.WithTimeout(context.Background(), time.Second*10)
+	defer cfn()
+	ar := newAutoRetry(qname, retryCount, consumerCount)
+
+	done := make(chan struct{})
+	go func() {
+		err := ar.Stream(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+			return ziggurat.Retry
+		}, qname))
+		if !errors.Is(err, ErrCleanShutdown) {
+			t.Errorf("exepcted error to be [%v] got [%v]", ErrCleanShutdown, err)
+		}
+		done <- struct{}{}
+	}()
+
+	err := ar.InitPublishers(ctx)
+
+	if err != nil {
+		t.Errorf("publisher init error:%v", err)
+	}
+
+	for i := 0; i < publishCount; i++ {
+		err := ar.publish(ctx, &ziggurat.Event{
+			Value: []byte(fmt.Sprintf("%s_%d", "foo", i)),
+		}, qname)
+		if err != nil {
+			t.Logf("publish error:%v", err)
+		}
+	}
+
+	<-done
+	viewCtx := context.Background()
+	time.Sleep(10 * time.Second)
+
+	evts, err := ar.view(viewCtx, fmt.Sprintf("%s_%s_%s", qname, "instant", "queue"), publishCount, false)
+	if err != nil {
+		t.Errorf("view error:%v", err)
+	}
+
+	if len(evts) != publishCount {
+		t.Errorf("expected events count to be [%d] but got [%d]", publishCount, len(evts))
+	}
+
+	err = ar.DeleteQueuesAndExchanges(viewCtx, qname)
+	if err != nil {
+		t.Errorf("error deleting queues:%v", err)
+	}
+
 }
