@@ -13,7 +13,7 @@ func main() {
 	var r kafka.Router
 
 	statsdPub := statsd.NewPublisher(statsd.WithDefaultTags(map[string]string{
-		"app_name": "sample_app",
+		"app_name": "{{.AppName}}",
 	}))
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
@@ -23,14 +23,14 @@ func main() {
 			{
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "text_consumer",
+				ConsumerGroupID:  "{{.AppName}}_consumer",
 				ConsumerCount:    1,
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/text_consumer/", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("localhost:9092/{{.AppName}}/", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 
