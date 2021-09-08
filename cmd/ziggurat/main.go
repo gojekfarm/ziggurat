@@ -11,7 +11,7 @@ import (
 
 func die(err error) {
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("command failed with an error:", err.Error())
 		os.Exit(127)
 	}
 
@@ -20,10 +20,12 @@ func die(err error) {
 //go:embed templates/*
 var res embed.FS
 
-var pathMap = func(basePath string) map[string]string {
+var definePaths = func(basePath string) map[string]string {
 	return map[string]string{
-		"main.go": fmt.Sprintf("%s/%s", basePath, "cmd"),
-		"go.mod":  fmt.Sprintf("%s", basePath),
+		"main.go":            fmt.Sprintf("%s/%s", basePath, "cmd"),
+		"go.mod":             basePath,
+		"docker-compose.yml": basePath,
+		"Makefile":           basePath,
 	}
 }
 
@@ -43,9 +45,7 @@ ziggurat new <app_name>`
 	d := Data{AppName: appName, Version: "v1.4.0"}
 	wd, err := os.Getwd()
 	die(err)
-	pathMap := pathMap(wd + "/" + appName)
-	//cmdPath := fmt.Sprintf("%s/%s/%s", wd, appName, "cmd")
-	//err = os.MkdirAll(cmdPath, 0755)
+	paths := definePaths(wd + "/" + appName)
 	die(err)
 
 	fmt.Printf("created [%s] directory\n", appName)
@@ -58,7 +58,7 @@ ziggurat new <app_name>`
 
 	for _, fi := range fileInfos {
 		fileName := strings.TrimSuffix(fi.Name(), ".tpl")
-		dirPath, ok := pathMap[fileName]
+		dirPath, ok := paths[fileName]
 		if !ok {
 			die(fmt.Errorf("path not found for [%s]", fileName))
 		}
