@@ -9,103 +9,74 @@ go get -v -u github.com/gojekfarm/ziggurat/cmd/...
 go install github.com/gojekfarm/ziggurat/cmd/...                                                                                                                                                     
 ```
 
-#### How to use
-
 ### create a new app using the `new` command
 
 ```shell
 ziggurat new <app_name>
+go mod tidy -v #cleans up dependencies
 ```
 
-### Main file
+#### How to use
 
 ```go
 package main
 
 import (
 	"context"
-	"fmt"
-	"github.com/gojekfarm/ziggurat/router"
-
-	"github.com/gojekfarm/ziggurat/mw/statsd"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
+	"github.com/gojekfarm/ziggurat/mw/statsd"
 )
 
 func main() {
 	var zig ziggurat.Ziggurat
-	var r = router.New()
+	var r kafka.Router
 
-	jsonLogger := logger.NewJSONLogger(logger.LevelInfo)
+	statsdPub := statsd.NewPublisher(statsd.WithDefaultTags(map[string]string{
+		"app_name": "sample_app",
+	}))
 	ctx := context.Background()
-	statsdPub := statsd.NewPublisher(
-		statsd.WithLogger(jsonLogger),
-		statsd.WithDefaultTags(statsd.StatsDTag{"app_name": "example_app"}),
-	)
+	l := logger.NewLogger(logger.LevelInfo)
 
-	kafkaStreams := kafka.Streams{
+	ar := rabbitmq.AutoRetry(rabbitmq.Queues{{
+		QueueName:             "pt_retries",
+		DelayExpirationInMS:   "1000",
+		RetryCount:            3,
+		ConsumerPrefetchCount: 10,
+		ConsumerCount:         10,
+	}}, rabbitmq.WithUsername("user"),
+		rabbitmq.WithLogger(l),
+		rabbitmq.WithPassword("bitnami"))
+
+	ks := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{
 			{
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "plain_text_consumer",
-				ConsumerCount:    1,
-				RouteGroup:       "pl-txt-log",
+				ConsumerGroupID:  "pt_consumer",
+				ConsumerCount:    2,
 			},
 		},
-		Logger: jsonLogger,
+		Logger: l,
 	}
 
-	r.HandleFunc("pl-txt-log", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Println("received message ", string(event.Value), " on partition 0")
-		return nil
-	})
-
-	r.HandleFunc("pl-txt-log", func(ctx context.Context, event *ziggurat.Event) error {
-		fmt.Println("received message ", string(event.Value), " on partition 1")
-		return nil
-	})
+	r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+		return ziggurat.Retry
+	}, "pt_retries"))
 
 	zig.StartFunc(func(ctx context.Context) {
-		jsonLogger.Error("error running statsd publisher", statsdPub.Run(ctx))
+		err := statsdPub.Run(ctx)
+		l.Error("statsd publisher error", err)
 	})
 
-	if runErr := zig.Run(ctx, &kafkaStreams, &r); runErr != nil {
-		jsonLogger.Error("could not start streams", runErr)
+	if runErr := zig.RunAll(ctx, &r, &ks, ar); runErr != nil {
+		l.Error("error running streams", runErr)
 	}
+
 }
-```
-
-### Using the kafka router to set up granular routing [ only for kafka streams ]
-
-Note: This might not work with other stream consumers
-```go
-package main
-
-import (
-	"context"
-	"github.com/gojekfarm/ziggurat/kafka"
-)
-
-// Declare a new router
-var router kafka.Router
-
-// HandleFunc accepts a path in the following format 
-// bootstrap_server/consumer_group/topic/partition
-// This pattern matches all topics that end with -text-log but only runs for partition 0
-r.HandleFunc("localhost:9092/plain_text_consumer/.*-text-log/0$", func (ctx context.Context, event *ziggurat.Event) error {
-	fmt.Println("received message ", string(event.Value), " on partition 0")
-	return nil
-})
-
-// This pattern matches all messages for foo_consumer
-r.HandleFunc("localhost:9092/foo_consumer/", func (ctx context.Context, event *ziggurat.Event) {
-	fmt.Println("received message ", string(event.Value), " for foo_consumer ")
-	return nil
-})
-// It does a longest prefix match in-order to pick the closest matching route
 ```
 
 ### Concepts
@@ -149,30 +120,49 @@ type Handler interface {
 #### How are messages retried?
 
 Stream A ----> Handler --Retry--> RabbitMQ <br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|_____ Stream B _____|                        
-- The rabbitmq auto retry implements the streamer interface.
-- The rabbitmq auto retry exposes a Wrap method in which the handlerFunc can be wrapped and provide the queue name to retry with.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|_____
+Stream B _____|
 
-#### Config 
+- The rabbitmq auto retry implements the streamer interface.
+- The rabbitmq auto retry exposes a Wrap method in which the handlerFunc can be wrapped and provide the queue name to
+  retry with.
+
+#### Config
+
 ```go
 rabbitmq.WithLogger(loggerImpl)
 rabbitmq.WithUsername("user")
 rabbitmq.WithHosts("localhost:15672", "localhost-2:15672") // provide multiple hosts to dial a cluster
 rabbitmq.WithPassword("bitnami")
+rabbitmq.WithConnectionTimeout(10*time.Duration) // times out the connection and returns an error
 ```
+
 Queue config
+
 ```go
 type QueueConfig struct {
-	QueueName             string  //queue to push the retried messages to 
-	DelayExpirationInMS   string //time to wait before being consumed again 
-	RetryCount            int   //number of times to retry the message
-	WorkerCount           int  //number of concurrent RabbitMQ processors
-	ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
+QueueName             string //queue to push the retried messages to 
+DelayExpirationInMS   string //time to wait before being consumed again 
+RetryCount            int    //number of times to retry the message
+ConsumerCount         int //number of concurrent RabbitMQ consumers
+ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
 }
 ```
+
 Example Usage
+
 ```go
-r.HandleFunc("localhost:9092/another_brick_in_the_wall/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-		return ziggurat.Retry
-	}, "pt_retries"))
+r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+return ziggurat.Retry
+}, "pt_retries"))
 ```
+
+### How are messages retried?
+
+- The handler function should be wrapped in the `Wrap` method provided by the Autoretry struct.
+- Always return the `ziggurat.Retry` error for a message to be retried.
+- Autoretry internally created 3 queues based on the `QueueName` in the `QueueConfig`.
+  - queue_name_delay_queue : messages always get published here first, and stay here for a given time determined by the `DelayExpirationInMS` config.
+  - queue_name_instant_queue : messages move to the instant queue once the delay has expired, waiting to be consumed. Once the messages are consumed they are processed by the handler.
+  - queue_name_dlq_queue : messages move here when the retry count is exhausted, `RetryCount` config.
+- You can have as many consumers as you wish, this value can be tweaked based on you throughput and your machine's capacity. This can be tweaked using the `ConsumerCount` config. 
