@@ -7,7 +7,6 @@ import (
 	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 	"github.com/gojekfarm/ziggurat/mw/statsd"
-	"time"
 )
 
 func main() {
@@ -27,7 +26,7 @@ func main() {
 		ConsumerPrefetchCount: 10,
 		ConsumerCount:         10,
 	}}, rabbitmq.WithUsername("user"),
-		rabbitmq.WithConnectionTimeout(10*time.Second),
+		rabbitmq.WithLogger(l),
 		rabbitmq.WithPassword("bitnami"))
 
 	ks := kafka.Streams{
@@ -35,14 +34,14 @@ func main() {
 			{
 				BootstrapServers: "localhost:9092",
 				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "text_consumer",
-				ConsumerCount:    1,
+				ConsumerGroupID:  "pt_consumer",
+				ConsumerCount:    2,
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/text_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 		return ziggurat.Retry
 	}, "pt_retries"))
 
