@@ -11,7 +11,7 @@ import (
 
 func die(err error) {
 	if err != nil {
-		fmt.Println("command failed with error(s)")
+		fmt.Println("command failed with error(s):")
 		fmt.Println(err.Error())
 		os.Exit(127)
 	}
@@ -38,7 +38,7 @@ type Data struct {
 func main() {
 	args := os.Args[1:]
 	usage := `USAGE:
-ziggurat new <app_name>`
+	ziggurat new <app_name>`
 	if len(args) < 2 {
 		die(errors.New(usage))
 	}
