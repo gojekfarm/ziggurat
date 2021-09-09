@@ -42,13 +42,11 @@ ziggurat new <app_name>`
 		die(errors.New(usage))
 	}
 	appName := args[1]
-	d := Data{AppName: appName, Version: "v1.4.0"}
+	d := Data{AppName: appName, Version: "v1.4.1"}
 	wd, err := os.Getwd()
 	die(err)
 	paths := definePaths(wd + "/" + appName)
 	die(err)
-
-	fmt.Printf("created [%s] directory\n", appName)
 
 	t, err := template.ParseFS(res, "templates/*")
 	die(err)
@@ -69,5 +67,4 @@ ziggurat new <app_name>`
 		err = t.ExecuteTemplate(f, fi.Name(), d)
 		die(err)
 	}
-
 }
