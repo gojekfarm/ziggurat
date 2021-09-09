@@ -68,4 +68,5 @@ func main() {
 		err = t.ExecuteTemplate(f, fi.Name(), d)
 		die(err)
 	}
+	fmt.Printf("[%s] created without errors!\n", appName)
 }
