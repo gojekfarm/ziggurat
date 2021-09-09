@@ -153,7 +153,7 @@ Example Usage
 
 ```go
 r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-return ziggurat.Retry
+    return ziggurat.Retry
 }, "pt_retries"))
 ```
 
