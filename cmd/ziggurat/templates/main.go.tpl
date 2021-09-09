@@ -30,7 +30,7 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/{{.AppName}}/", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("localhost:9092/{{.AppName}}_consumer/", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 

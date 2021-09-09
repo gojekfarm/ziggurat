@@ -17,13 +17,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - various bug fixes and panic fixes
 - more descriptive errors
 - RabbitMQ consumers do not use go-routine based workers
+- uses go embed to embed templates to render
+- RabbitMQ WorkerCount is removed from QueueConfig
+- Uses sync.Once to initialize publishers in the Wrap method
 
 
 # Added
 
 - integration tests for kafka streams and RabbitMQ
 - `ziggurat.Use` API to compose middleware
-- all packages use the `logger.Noop` as the default implementation
+- all packages use the `logger.Noop` as the default implementation for logging
 - `rabbitmq.WithConnectionTimeout` to specify a timeout for queue creation
 - Parallelize RabbitMQ consumption using the `ConsumerCount`
 

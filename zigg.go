@@ -146,7 +146,7 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 	}
 
 	if len(errs) > 0 {
-		return fmt.Errorf("multistreams run error: %s\n", strings.Join(errs, ","))
+		return fmt.Errorf("error in ziggurat.RunAll:%s", strings.Join(errs, ","))
 	}
 
 	return ErrCleanShutdown
