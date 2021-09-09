@@ -11,7 +11,8 @@ import (
 
 func die(err error) {
 	if err != nil {
-		fmt.Println("command failed with an error:", err.Error())
+		fmt.Println("command failed with error(s)")
+		fmt.Println(err.Error())
 		os.Exit(127)
 	}
 
