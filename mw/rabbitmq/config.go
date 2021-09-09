@@ -7,3 +7,5 @@ type QueueConfig struct {
 	ConsumerPrefetchCount int
 	ConsumerCount         int
 }
+
+type Queues []QueueConfig

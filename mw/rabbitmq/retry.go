@@ -34,6 +34,7 @@ type dsReplayResp struct {
 type autoRetry struct {
 	publishDialer *amqpextra.Dialer
 	consumeDialer *amqpextra.Dialer
+	once          sync.Once
 	hosts         []string
 	amqpURLs      []string
 	username      string
@@ -48,7 +49,7 @@ func constructAMQPURL(host, username, password string) string {
 	return fmt.Sprintf("amqp://%s:%s@%s", username, password, host)
 }
 
-func AutoRetry(qc []QueueConfig, opts ...Opts) *autoRetry {
+func AutoRetry(qc Queues, opts ...Opts) *autoRetry {
 	r := &autoRetry{
 		publishDialer: nil,
 		hosts:         []string{"localhost:5672"},
@@ -118,6 +119,13 @@ func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue st
 
 func (r *autoRetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc {
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
+		// start the publishers once only
+		r.once.Do(func() {
+			err := r.InitPublishers(ctx)
+			if err != nil {
+				panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
+			}
+		})
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
 			pubErr := r.publish(ctx, event, queue)
