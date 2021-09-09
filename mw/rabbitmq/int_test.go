@@ -253,9 +253,9 @@ func Test_replay(t *testing.T) {
 }
 
 func Test_MessageLoss(t *testing.T) {
-	retryCount := 100
+	retryCount := 1000
 	consumerCount := 1
-	publishCount := 10
+	publishCount := 1
 	qname := "foo"
 	ctx, cfn := context.WithTimeout(context.Background(), time.Second*10)
 	defer cfn()
