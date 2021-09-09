@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.4.0] 2021-08-31
+## [1.4.1] 2021-09-09
 
 # Breaking changes
 
@@ -16,11 +16,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - uses `go v1.17`
 - various bug fixes and panic fixes
 - more descriptive errors
-- RabbitMQ consumers do not use go-routine based workers
+- RabbitMQ's consumers do not use go-routine based workers anymore
 - uses go embed to embed templates to render
 - RabbitMQ WorkerCount is removed from QueueConfig
 - Uses sync.Once to initialize publishers in the Wrap method
-
 
 # Added
 
