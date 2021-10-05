@@ -115,7 +115,7 @@ type Handler interface {
 ### Using the RabbitMQ auto retry middleware
 
 - Starting from ziggurat `v1.3.1` a new rabbitMQ retry middleware is included.
-- Messages can be auto-retried in case of processing errors/failures
+- Messages can be auto-retried in case of processing errors/failures.
 
 #### How are messages retried?
 
@@ -141,11 +141,11 @@ Queue config
 
 ```go
 type QueueConfig struct {
-    QueueName             string //queue to push the retried messages to 
-    DelayExpirationInMS   string //time to wait before being consumed again 
+    QueueName             string   //queue to push the retried messages to 
+    DelayExpirationInMS   string  //time to wait before being consumed again 
     RetryCount            int    //number of times to retry the message
-    ConsumerCount         int //number of concurrent RabbitMQ consumers
-    ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
+    ConsumerCount         int   //number of concurrent RabbitMQ consumers
+    ConsumerPrefetchCount int  //max number of messages to be sent in parallel to consumers
 }
 ```
 

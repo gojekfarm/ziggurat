@@ -34,6 +34,7 @@ func main() {
 		return nil
 	})
 
+
 	zig.StartFunc(func(ctx context.Context) {
 		err := statsdPub.Run(ctx)
 		l.Error("statsd publisher error", err)
