@@ -142,10 +142,10 @@ Queue config
 ```go
 type QueueConfig struct {
     QueueName             string   //queue to push the retried messages to 
-    DelayExpirationInMS   string  //time to wait before being consumed again 
-    RetryCount            int    //number of times to retry the message
-    ConsumerCount         int   //number of concurrent RabbitMQ consumers
-    ConsumerPrefetchCount int  //max number of messages to be sent in parallel to consumers
+    DelayExpirationInMS   string   //time to wait before being consumed again 
+    RetryCount            int      //number of times to retry the message
+    ConsumerCount         int      //number of concurrent RabbitMQ consumers
+    ConsumerPrefetchCount int      //max number of messages to be sent in parallel to consumers
 }
 ```
 
