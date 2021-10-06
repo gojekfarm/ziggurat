@@ -56,15 +56,10 @@ func (s *Client) Run(ctx context.Context) error {
 		return clientErr
 	}
 	s.client = client
-	s.logger.Info("starting go-routine publisher", map[string]interface{}{"publish-interval": "10s"})
 	go func() {
-		done := ctx.Done()
-		<-done
-		if s.client != nil {
-			s.logger.Error("error closing statsd client", s.client.Close())
-		}
+		<-ctx.Done()
+		s.logger.Error("error closing statsd client", s.client.Close())
 	}()
-	go goRoutinePublisher(ctx, 10*time.Second, s)
 	return nil
 }
 
