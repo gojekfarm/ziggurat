@@ -1,3 +1,5 @@
+//+build ignore
+
 package main
 
 import (
@@ -37,12 +39,13 @@ func main() {
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "pt_consumer",
 				ConsumerCount:    2,
+				RouteGroup:       "plain-text-messages",
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("plain-text-messages/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 		return ziggurat.Retry
 	}, "pt_retries"))
 
