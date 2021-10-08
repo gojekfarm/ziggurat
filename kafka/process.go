@@ -16,8 +16,8 @@ const (
 	EventType       = "kafka"
 )
 
-func constructPath(bs string, cg string, topic string, part int32) string {
-	return fmt.Sprintf("%s/%s/%s/%d", bs, cg, topic, part)
+func constructPath(rg string, topic string, part int32) string {
+	return fmt.Sprintf("%s/%s/%d", rg, topic, part)
 }
 
 func getStrValFromCfgMap(cfgMap kafka.ConfigMap, prop string) string {
@@ -37,13 +37,7 @@ func processMessage(ctx context.Context,
 	c *kafka.Consumer,
 	h ziggurat.Handler,
 	l ziggurat.StructuredLogger,
-	cfgMap kafka.ConfigMap,
 	route string) {
-
-	//we ignore the errors as createConsumer panics if
-	// bootstrap.servers is not present
-	bs := getStrValFromCfgMap(cfgMap, "bootstrap.servers")
-	cg := getStrValFromCfgMap(cfgMap, "group.id")
 
 	//copy kvs into new slices
 	key := make([]byte, len(msg.Key))
@@ -61,7 +55,7 @@ func processMessage(ctx context.Context,
 		Key:               key,
 		Path:              route,
 		Metadata:          map[string]interface{}{},
-		RoutingPath:       constructPath(bs, cg, *msg.TopicPartition.Topic, msg.TopicPartition.Partition),
+		RoutingPath:       constructPath(route, *msg.TopicPartition.Topic, msg.TopicPartition.Partition),
 		ProducerTimestamp: msg.Timestamp,
 		ReceivedTimestamp: time.Now(),
 		EventType:         EventType,

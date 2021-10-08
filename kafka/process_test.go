@@ -19,10 +19,7 @@ func Test_processMessage(t *testing.T) {
 		return nil
 	}
 	topic := "bar"
-	cfmMap := kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
-		"group.id":          "foo",
-	}
+
 	part := 1
 	wantPath := "localhost:9092/foo/bar/1"
 
@@ -38,6 +35,6 @@ func Test_processMessage(t *testing.T) {
 		}
 		return nil
 	})
-	processMessage(context.Background(), &msg, &kafka.Consumer{}, h, dl, cfmMap, "")
+	processMessage(context.Background(), &msg, &kafka.Consumer{}, h, dl, "")
 
 }
