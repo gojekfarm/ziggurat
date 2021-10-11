@@ -156,3 +156,7 @@ func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 	}
 	return ziggurat.HandlerFunc(f)
 }
+
+func (s *Client) PublishGoRoutineCount(ctx context.Context, internal time.Duration) error {
+	return publishGoRoutines(ctx, internal, s)
+}
