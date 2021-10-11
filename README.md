@@ -58,12 +58,13 @@ func main() {
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "pt_consumer",
 				ConsumerCount:    2,
+				RouteGroup:       "plain-text-group",
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("plain-text-group/*", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 		return ziggurat.Retry
 	}, "pt_retries"))
 
@@ -141,11 +142,11 @@ Queue config
 
 ```go
 type QueueConfig struct {
-    QueueName             string   //queue to push the retried messages to 
-    DelayExpirationInMS   string   //time to wait before being consumed again 
-    RetryCount            int      //number of times to retry the message
-    ConsumerCount         int      //number of concurrent RabbitMQ consumers
-    ConsumerPrefetchCount int      //max number of messages to be sent in parallel to consumers
+QueueName             string //queue to push the retried messages to 
+DelayExpirationInMS   string //time to wait before being consumed again 
+RetryCount            int    //number of times to retry the message
+ConsumerCount         int //number of concurrent RabbitMQ consumers
+ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
 }
 ```
 
@@ -153,7 +154,7 @@ Example Usage
 
 ```go
 r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-    return ziggurat.Retry
+return ziggurat.Retry
 }, "pt_retries"))
 ```
 
@@ -162,7 +163,10 @@ r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, ev
 - The handler function should be wrapped in the `Wrap` method provided by the Autoretry struct.
 - Always return the `ziggurat.Retry` error for a message to be retried.
 - Autoretry internally created 3 queues based on the `QueueName` in the `QueueConfig`.
-  - queue_name_delay_queue : messages always get published here first, and stay here for a given time determined by the `DelayExpirationInMS` config.
-  - queue_name_instant_queue : messages move to the instant queue once the delay has expired, waiting to be consumed. Once the messages are consumed they are processed by the handler.
-  - queue_name_dlq_queue : messages move here when the retry count is exhausted, `RetryCount` config.
-- You can have as many consumers as you wish, this value can be tweaked based on you throughput and your machine's capacity. This can be tweaked using the `ConsumerCount` config. 
+    - queue_name_delay_queue : messages always get published here first, and stay here for a given time determined by
+      the `DelayExpirationInMS` config.
+    - queue_name_instant_queue : messages move to the instant queue once the delay has expired, waiting to be consumed.
+      Once the messages are consumed they are processed by the handler.
+    - queue_name_dlq_queue : messages move here when the retry count is exhausted, `RetryCount` config.
+- You can have as many consumers as you wish, this value can be tweaked based on you throughput and your machine's
+  capacity. This can be tweaked using the `ConsumerCount` config. 
