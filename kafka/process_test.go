@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
@@ -19,9 +20,10 @@ func Test_processMessage(t *testing.T) {
 		return nil
 	}
 	topic := "bar"
+	route := "baz"
 
 	part := 1
-	wantPath := "localhost:9092/foo/bar/1"
+	wantPath := fmt.Sprintf("%s/%s/%d", route, topic, part)
 
 	msg := kafka.Message{
 		TopicPartition: kafka.TopicPartition{
@@ -35,6 +37,6 @@ func Test_processMessage(t *testing.T) {
 		}
 		return nil
 	})
-	processMessage(context.Background(), &msg, &kafka.Consumer{}, h, dl, "")
+	processMessage(context.Background(), &msg, &kafka.Consumer{}, h, dl, route)
 
 }
