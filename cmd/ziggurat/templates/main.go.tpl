@@ -25,12 +25,13 @@ func main() {
 				OriginTopics:     "plain-text-log",
 				ConsumerGroupID:  "{{.AppName}}_consumer",
 				ConsumerCount:    1,
+				RouteGroup:       "plain-text-group"
 			},
 		},
 		Logger: l,
 	}
 
-	r.HandleFunc("localhost:9092/{{.AppName}}_consumer/", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("plain-text-group/*", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 
