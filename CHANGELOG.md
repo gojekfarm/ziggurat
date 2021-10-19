@@ -5,9 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] 2021-10-19
+
 # Breaking changes
 
-- kafka messages now use the route group to route messages, <route_group>/<topic>/<partition>. Usage of <bootstrap_server>/<consumer_group>/<topic>/<partition> is deprecated
+- kafka messages now use the route group to route messages, `<route_group>/<topic>/<partition>`. Usage of `<bootstrap_server>/<consumer_group>/<topic>/<partition>` is deprecated
 as this makes the path very long and routes become difficult to configure.
 
 ## [1.4.1] 2021-09-09
