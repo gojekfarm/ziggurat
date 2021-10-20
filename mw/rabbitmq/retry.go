@@ -225,6 +225,8 @@ func (r *autoRetry) view(ctx context.Context, qnameWithType string, count int, a
 	if err != nil {
 		return []*ziggurat.Event{}, nil
 	}
+	
+	defer ch.Close()
 
 	if actualCount > q.Messages {
 		actualCount = q.Messages
@@ -313,12 +315,12 @@ func (r *autoRetry) replay(ctx context.Context, queue string, count int) (int, e
 	if err != nil {
 		return replayCount, err
 	}
-
+	defer d.Close()
 	ch, err := getChannelFromDialer(ctx, d, r.connTimeout)
 	if err != nil {
 		return replayCount, fmt.Errorf("error getting channel:%w", err)
 	}
-
+	defer ch.Close()
 	srcQueue := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
 	q, err := ch.QueueInspect(srcQueue)
 	if err != nil {
@@ -330,6 +332,7 @@ func (r *autoRetry) replay(ctx context.Context, queue string, count int) (int, e
 	}
 
 	p, err := d.Publisher()
+	defer p.Close()
 	if err != nil {
 		return replayCount, fmt.Errorf("error getting publiser:%w", err)
 	}
