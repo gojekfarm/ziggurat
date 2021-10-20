@@ -225,7 +225,7 @@ func (r *autoRetry) view(ctx context.Context, qnameWithType string, count int, a
 	if err != nil {
 		return []*ziggurat.Event{}, nil
 	}
-	
+
 	defer ch.Close()
 
 	if actualCount > q.Messages {
