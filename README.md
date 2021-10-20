@@ -170,3 +170,9 @@ return ziggurat.Retry
     - queue_name_dlq_queue : messages move here when the retry count is exhausted, `RetryCount` config.
 - You can have as many consumers as you wish, this value can be tweaked based on you throughput and your machine's
   capacity. This can be tweaked using the `ConsumerCount` config. 
+
+### I have a lot of messages in my dlq queue what do I do with them ?
+
+- The AutoRetry struct exposes two http handlers, the `DSViewHandler` and the `DSReplayHandler`. 
+- The above handler conform to the `http.Handler` interface and can be used with any router of your choice.
+- The `DSViewHandler` allows you to peek into messages without consuming them, whereas the `DSReplay` moves messages from `dlq` to `instant` queue ready to be consumed.
