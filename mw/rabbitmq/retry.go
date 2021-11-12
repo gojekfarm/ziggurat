@@ -19,7 +19,6 @@ import (
 
 var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not initialized, please call the InitPublisher method")
 var ErrCleanShutdown = errors.New("clean shutdown of rabbitmq streams")
-var errRabbitMQPublish = errors.New("autoretry.Wrap error")
 
 type dsViewResp struct {
 	Events []*ziggurat.Event `json:"events"`

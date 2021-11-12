@@ -20,6 +20,7 @@ type Client struct {
 }
 
 const publishErrMsg = "statsd client: error publishing metric"
+const defaultPrefix = "ziggurat_statsd"
 
 func fixRoutingPath(rp string) string {
 	return strings.ReplaceAll(rp, ":", "_")
@@ -32,7 +33,7 @@ func fixRoutingPath(rp string) string {
 func NewPublisher(opts ...func(c *Client)) *Client {
 	c := &Client{}
 
-	c.prefix = "ziggurat_statsd"
+	c.prefix = defaultPrefix
 	c.host = "localhost:8125"
 	c.logger = logger.NOOP
 	c.defaultTags = map[string]string{}

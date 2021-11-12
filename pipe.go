@@ -21,6 +21,7 @@ var pipe = func(h Handler, fs ...Middleware) Handler {
 	return HandlerFunc(f)
 }
 
+// Use takes a ziggurat.Handler and wraps it with Middleware
 func Use(h Handler, fs ...Middleware) Handler {
 	return pipe(h, fs...)
 }
