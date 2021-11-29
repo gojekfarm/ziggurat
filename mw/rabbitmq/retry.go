@@ -20,6 +20,12 @@ import (
 var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not initialized, please call the InitPublisher method")
 var ErrCleanShutdown = errors.New("clean shutdown of rabbitmq streams")
 
+const (
+	QueueDL      = "dead_letter"
+	QueueInstant = "instant"
+	QueueDelay   = "delay"
+)
+
 type dsViewResp struct {
 	Events []*ziggurat.Event `json:"events"`
 	Count  int               `json:"count"`
@@ -91,10 +97,14 @@ func (r *autoRetry) publish(ctx context.Context, event *ziggurat.Event, queue st
 	return err
 }
 
+//Publish can be called from anywhere and messages can be sent to any queue
 func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
-	if r.publishDialer == nil {
-		return ErrPublisherNotInit
-	}
+	r.once.Do(func() {
+		err := r.InitPublishers(ctx)
+		if err != nil {
+			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
+		}
+	})
 	exchange := fmt.Sprintf("%s_%s_%s", queue, queueType, "exchange")
 	p, err := getPublisher(ctx, r.publishDialer, r.logger)
 	defer p.Close()
@@ -110,6 +120,7 @@ func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue st
 		Publishing: amqp.Publishing{
 			Expiration: expirationInMS,
 			Body:       eb,
+			Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
 		},
 	}
 	defer p.Close()

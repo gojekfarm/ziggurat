@@ -44,6 +44,7 @@ func publishInternal(p *publisher.Publisher, queue string, retryCount int, delay
 		Publishing: amqp.Publishing{
 			Expiration: expiration,
 			Body:       eb,
+			Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
 		},
 	}
 
