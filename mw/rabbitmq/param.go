@@ -7,13 +7,13 @@ import (
 )
 
 func validateQueryParams(req *http.Request) (string, int, error) {
-	qparams := req.URL.Query()
-	queueNameValues, ok := qparams["queue"]
+	queryParams := req.URL.Query()
+	queueNameValues, ok := queryParams["queue"]
 	if !ok {
 		return "", 0, fmt.Errorf("expected query param: queue")
 	}
 
-	c, ok := qparams["count"]
+	c, ok := queryParams["count"]
 	if !ok {
 		return "", 0, fmt.Errorf("expected query param: count")
 	}
