@@ -18,7 +18,7 @@ type Event struct {
 	Key      []byte                 `json:"key"`
 	// Path can be a single key
 	Path string `json:"path"`
-	// RoutingPath can be an actual path like string separated by a delimiter, this was added to maintain
+	// RoutingPath can be an actual path like a string separated by a delimiter, this was added to maintain
 	// backwards compatibility
 	RoutingPath       string    `json:"routing_path"`
 	ProducerTimestamp time.Time `json:"producer_timestamp"`
