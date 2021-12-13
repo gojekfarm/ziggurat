@@ -38,7 +38,7 @@ type Data struct {
 func main() {
 	args := os.Args[1:]
 	usage := `USAGE:
-	ziggurat new <app_name>`
+  ziggurat new <app_name>`
 	if len(args) < 2 {
 		die(errors.New(usage))
 	}
