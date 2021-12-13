@@ -2,12 +2,11 @@ package statsd
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"time"
 )
 
-func publishGoRoutines(ctx context.Context, interval time.Duration, s *Client) error {
+var publishGoRoutines = func(ctx context.Context, interval time.Duration, s *Client) {
 	done := ctx.Done()
 	t := time.NewTicker(interval)
 	tickerChan := t.C
@@ -16,9 +15,11 @@ func publishGoRoutines(ctx context.Context, interval time.Duration, s *Client) e
 		select {
 		case <-done:
 			t.Stop()
-			return fmt.Errorf("stopped goroutine publisher: %w", ctx.Err())
+			s.logger.Error("stopping go-routine publisher", ctx.Err())
 		case <-tickerChan:
-			s.logger.Error("error publishing go-routine count", s.Gauge("num_goroutine", int64(runtime.NumGoroutine()), nil))
+			s.logger.Error(
+				"error publishing go-routine count",
+				s.Gauge("num_goroutine", int64(runtime.NumGoroutine()), nil))
 		}
 	}
 }

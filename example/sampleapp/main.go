@@ -1,4 +1,5 @@
-//+build ignore
+//go:build ignore
+// +build ignore
 
 package main
 
@@ -52,6 +53,10 @@ func main() {
 	zig.StartFunc(func(ctx context.Context) {
 		err := statsdPub.Run(ctx)
 		l.Error("statsd publisher error", err)
+	})
+
+	zig.StopFunc(func() {
+		statsdPub.Close()
 	})
 
 	if runErr := zig.RunAll(ctx, &r, &ks, ar); runErr != nil {

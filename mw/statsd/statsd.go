@@ -32,7 +32,6 @@ func fixRoutingPath(rp string) string {
 // use statsd.WithHost to specify a custom host:port string, defaults to localhost:8125
 func NewPublisher(opts ...func(c *Client)) *Client {
 	c := &Client{}
-
 	c.prefix = defaultPrefix
 	c.host = "localhost:8125"
 	c.logger = logger.NOOP
@@ -47,7 +46,7 @@ func NewPublisher(opts ...func(c *Client)) *Client {
 
 // Run methods runs the publisher and starts up the go-routine publisher in the background
 // the go-routine publisher publishes the go-routine count every 10 seconds
-func (s *Client) Run(ctx context.Context) error {
+func (s *Client) Run(ctx context.Context, opts ...func(r *runOpts)) error {
 	config := &statsd.ClientConfig{
 		Prefix:  s.prefix,
 		Address: s.host,
@@ -56,11 +55,19 @@ func (s *Client) Run(ctx context.Context) error {
 	if clientErr != nil {
 		return clientErr
 	}
+
+	r := &runOpts{
+		goPublishInterval: 10 * time.Second,
+	}
+	for _, o := range opts {
+		o(r)
+	}
+
+	if r.goPublishInterval > 0 {
+		go publishGoRoutines(ctx, r.goPublishInterval, s)
+	}
+
 	s.client = client
-	go func() {
-		<-ctx.Done()
-		s.logger.Error("error closing statsd client", s.client.Close())
-	}()
 	return nil
 }
 
@@ -158,6 +165,12 @@ func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(f)
 }
 
+//PublishGoRoutineCount publishes go-routine count manually
 func (s *Client) PublishGoRoutineCount(ctx context.Context, internal time.Duration) error {
-	return publishGoRoutines(ctx, internal, s)
+	publishGoRoutines(ctx, internal, s)
+	return nil
+}
+
+func (s *Client) Close() error {
+	return s.client.Close()
 }
