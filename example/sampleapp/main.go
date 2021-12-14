@@ -1,10 +1,9 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
@@ -47,7 +46,16 @@ func main() {
 	}
 
 	r.HandleFunc("plain-text-messages/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-		return ziggurat.Retry
+		val := string(event.Value)
+		s := strings.Split(val, "_")
+		num, err := strconv.Atoi(s[1])
+		if err != nil {
+			return err
+		}
+		if num%2 == 0 {
+			return ziggurat.Retry
+		}
+		return nil
 	}, "pt_retries"))
 
 	zig.StartFunc(func(ctx context.Context) {
