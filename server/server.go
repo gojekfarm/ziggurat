@@ -11,13 +11,20 @@ import (
 var defaultAddr = "localhost:8080"
 
 type DefaultHttpServer struct {
-	server *http.Server
-	router *httprouter.Router
+	server  *http.Server
+	router  *httprouter.Router
+	handler http.Handler
 }
 
 func WithAddr(addr string) func(s *DefaultHttpServer) {
 	return func(s *DefaultHttpServer) {
 		s.server.Addr = addr
+	}
+}
+
+func WithHandler(h http.Handler) func(s *DefaultHttpServer) {
+	return func(s *DefaultHttpServer) {
+		s.handler = h
 	}
 }
 
@@ -64,12 +71,14 @@ func (s *DefaultHttpServer) Run(ctx context.Context) error {
 // ConfigureHTTPEndpoints lets you configure your http endpoints
 // a configuration function must be passed which will receive the
 // router instance as an argument
+// Deprecated: use `WithHandler` to configure an HTTPHandler
 func (s *DefaultHttpServer) ConfigureHTTPEndpoints(f func(r *httprouter.Router)) {
 	f(s.router)
 }
 
 // ConfigureHandler lets you configure the embedded handler/router
 // use this to add common middleware on the http router
+// Deprecated: use `WithHandler` to configure an HTTPHandler
 func (s *DefaultHttpServer) ConfigureHandler(f func(r *httprouter.Router) http.Handler) {
 	s.server.Handler = f(s.router)
 }
