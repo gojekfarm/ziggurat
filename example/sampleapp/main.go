@@ -27,7 +27,7 @@ func main() {
 		DelayExpirationInMS:   "1000",
 		RetryCount:            3,
 		ConsumerPrefetchCount: 10,
-		ConsumerCount:         10,
+		ConsumerCount:         2,
 	}}, rabbitmq.WithUsername("user"),
 		rabbitmq.WithLogger(l),
 		rabbitmq.WithPassword("bitnami"))
