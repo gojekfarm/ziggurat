@@ -40,6 +40,8 @@ func NewHTTPServer(opts ...func(s *DefaultHttpServer)) *DefaultHttpServer {
 	return s
 }
 
+// Run method blocks until the server closes
+// invoke it in a goroutine to run multiple servers concurrently
 func (s *DefaultHttpServer) Run(ctx context.Context) error {
 	errorChan := make(chan error)
 	go func(server *http.Server) {
