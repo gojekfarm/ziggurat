@@ -8,7 +8,7 @@ require (
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/makasim/amqpextra v0.16.4
 	github.com/prometheus/client_golang v1.10.0
-	github.com/rs/zerolog v1.19.0
+	github.com/rs/zerolog v1.26.0
 	github.com/streadway/amqp v1.0.1-0.20200716223359-e6b33f460591
 )
 
@@ -20,7 +20,7 @@ require (
 	github.com/prometheus/client_model v0.2.0 // indirect
 	github.com/prometheus/common v0.18.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
-	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2 // indirect
+	golang.org/x/sys v0.0.0-20210809222454-d867a43fc93e // indirect
 	google.golang.org/protobuf v1.23.0 // indirect
 )
 
