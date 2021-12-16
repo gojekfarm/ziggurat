@@ -13,6 +13,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Adds a `WithHandler` option function inside the server package to pass in custom handlers
 - Adds a deprecation comment for `ConfigureHandler` and `ConfigureHTTPEndpoints` as this is implementation specific
 - Internal code refactoring
+- Exposes a close method on the statsd client to prevent early closes due to context cancellation
+- StatsD Run method takes in an Option to configure the goroutine publish interval. a negative value will not publish goroutines 
 
 ## [1.4.3] 2021-10-20
 
