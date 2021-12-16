@@ -11,7 +11,7 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
-func newAutoRetry(qn string, count int, consumerCount int) *autoRetry {
+func newAutoRetry(qn string, count int, consumerCount int) *ARetry {
 	ar := AutoRetry(
 		[]QueueConfig{{
 			QueueName:           qn,

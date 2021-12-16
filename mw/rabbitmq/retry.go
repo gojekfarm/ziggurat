@@ -36,7 +36,7 @@ type dsReplayResp struct {
 	ErrorCount  int `json:"error_count"`
 }
 
-type autoRetry struct {
+type ARetry struct {
 	publishDialer *amqpextra.Dialer
 	consumeDialer *amqpextra.Dialer
 	once          sync.Once
@@ -54,8 +54,8 @@ func constructAMQPURL(host, username, password string) string {
 	return fmt.Sprintf("amqp://%s:%s@%s", username, password, host)
 }
 
-func AutoRetry(qc Queues, opts ...Opts) *autoRetry {
-	r := &autoRetry{
+func AutoRetry(qc Queues, opts ...Opts) *ARetry {
+	r := &ARetry{
 		publishDialer: nil,
 		hosts:         []string{"localhost:5672"},
 		username:      "guest",
@@ -83,7 +83,7 @@ func AutoRetry(qc Queues, opts ...Opts) *autoRetry {
 	return r
 }
 
-func (r *autoRetry) publish(ctx context.Context, event *ziggurat.Event, queue string) error {
+func (r *ARetry) publish(ctx context.Context, event *ziggurat.Event, queue string) error {
 	if r.publishDialer == nil {
 		return ErrPublisherNotInit
 	}
@@ -98,7 +98,7 @@ func (r *autoRetry) publish(ctx context.Context, event *ziggurat.Event, queue st
 }
 
 //Publish can be called from anywhere and messages can be sent to any queue
-func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
+func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
 	r.once.Do(func() {
 		err := r.InitPublishers(ctx)
 		if err != nil {
@@ -127,7 +127,7 @@ func (r *autoRetry) Publish(ctx context.Context, event *ziggurat.Event, queue st
 	return p.Publish(msg)
 }
 
-func (r *autoRetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc {
+func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc {
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
 		// start the publishers once only
 		r.once.Do(func() {
@@ -149,7 +149,7 @@ func (r *autoRetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerF
 	return hf
 }
 
-func (r *autoRetry) InitPublishers(ctx context.Context) error {
+func (r *ARetry) InitPublishers(ctx context.Context) error {
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
@@ -172,7 +172,7 @@ func (r *autoRetry) InitPublishers(ctx context.Context) error {
 	return nil
 }
 
-func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
+func (r *ARetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
@@ -213,7 +213,7 @@ func (r *autoRetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	return ErrCleanShutdown
 }
 
-func (r *autoRetry) view(ctx context.Context, qnameWithType string, count int, ack bool) ([]*ziggurat.Event, error) {
+func (r *ARetry) view(ctx context.Context, qnameWithType string, count int, ack bool) ([]*ziggurat.Event, error) {
 	if count < 1 {
 		return []*ziggurat.Event{}, nil
 	}
@@ -272,7 +272,7 @@ func (r *autoRetry) view(ctx context.Context, qnameWithType string, count int, a
 /*DSViewHandler allows you to peek into
   the rabbitMQ dead-set queue.
 */
-func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
+func (r *ARetry) DSViewHandler(ctx context.Context) http.Handler {
 	f := func(w http.ResponseWriter, req *http.Request) {
 		qname, count, err := validateQueryParams(req)
 		if err != nil {
@@ -301,7 +301,7 @@ func (r *autoRetry) DSViewHandler(ctx context.Context) http.Handler {
 	return http.HandlerFunc(f)
 }
 
-func (r *autoRetry) DeleteQueuesAndExchanges(ctx context.Context, queueName string) error {
+func (r *ARetry) DeleteQueuesAndExchanges(ctx context.Context, queueName string) error {
 	d, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return fmt.Errorf("error getting dialer:%w", err)
@@ -317,7 +317,7 @@ func (r *autoRetry) DeleteQueuesAndExchanges(ctx context.Context, queueName stri
 	return err
 }
 
-func (r *autoRetry) replay(ctx context.Context, queue string, count int) (int, error) {
+func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, error) {
 	var replayCount int
 
 	actualCount := count
@@ -369,7 +369,7 @@ func (r *autoRetry) replay(ctx context.Context, queue string, count int) (int, e
 	return replayCount, nil
 }
 
-func (r *autoRetry) DSReplayHandler(ctx context.Context) http.Handler {
+func (r *ARetry) DSReplayHandler(ctx context.Context) http.Handler {
 	f := func(w http.ResponseWriter, req *http.Request) {
 		qname, count, err := validateQueryParams(req)
 		if err != nil {
