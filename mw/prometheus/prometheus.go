@@ -2,15 +2,11 @@ package prometheus
 
 import (
 	"context"
-	"net/http"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"time"
 
 	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/server"
 	"github.com/prometheus/client_golang/prometheus"
-
-	"github.com/julienschmidt/httprouter"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const (
@@ -58,16 +54,7 @@ var HandlerDurationHistogram = prometheus.NewHistogramVec(
 
 // StartMonitoringServer - starts a monitoring server for prometheus
 func StartMonitoringServer(ctx context.Context, port string) error {
-	httpServer := server.NewHTTPServer(server.WithAddr(":" + port))
-	httpServer.ConfigureHTTPEndpoints(func(r *httprouter.Router) {
-		r.Handler(http.MethodGet, "/metrics", promhttp.Handler())
-	})
-
-	if err := httpServer.Run(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return startMonitoringServer(ctx, port, promhttp.Handler())
 }
 
 // Register - Registers the Prometheus metrics
