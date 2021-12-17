@@ -2,8 +2,10 @@ package prometheus
 
 import (
 	"context"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/gojekfarm/ziggurat"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,6 +20,14 @@ const (
 	// RouteLabel - Key for route label
 	RouteLabel = "route"
 )
+
+type ServerOpts func(*http.Server)
+
+func WithAddr(addr string) ServerOpts {
+	return func(s *http.Server) {
+		s.Addr = addr
+	}
+}
 
 // HandlerEventsCounter - Prometheus counter for handled events
 var HandlerEventsCounter = prometheus.NewCounterVec(
@@ -53,8 +63,8 @@ var HandlerDurationHistogram = prometheus.NewHistogramVec(
 )
 
 // StartMonitoringServer - starts a monitoring server for prometheus
-func StartMonitoringServer(ctx context.Context, port string) error {
-	return startMonitoringServer(ctx, port, promhttp.Handler())
+func StartMonitoringServer(ctx context.Context, opts ...ServerOpts) error {
+	return startMonitoringServer(ctx, promhttp.Handler(), opts...)
 }
 
 // Register - Registers the Prometheus metrics

@@ -8,20 +8,18 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gojekfarm/ziggurat/mw/prometheus"
+
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
 	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
-	"github.com/gojekfarm/ziggurat/mw/statsd"
 )
 
 func main() {
 	var zig ziggurat.Ziggurat
 	var r kafka.Router
 
-	statsdPub := statsd.NewPublisher(statsd.WithDefaultTags(map[string]string{
-		"app_name": "sample_app",
-	}))
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
 
@@ -61,17 +59,20 @@ func main() {
 		return nil
 	}, "pt_retries"))
 
+	wait := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {
-		err := statsdPub.Run(ctx)
-		l.Error("statsd publisher error", err)
+		go func() {
+			err := prometheus.StartMonitoringServer(ctx)
+			l.Error("error running prom server", err)
+			wait <- struct{}{}
+		}()
 	})
 
-	zig.StopFunc(func() {
-		statsdPub.Close()
-	})
+	h := ziggurat.Use(&r, prometheus.PublishHandlerMetrics)
 
-	if runErr := zig.RunAll(ctx, &r, &ks, ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 
+	<-wait
 }
