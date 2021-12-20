@@ -31,7 +31,7 @@ func getStrValFromCfgMap(cfgMap kafka.ConfigMap, prop string) string {
 }
 
 // processMessage executes the handler for every message that is received
-// all metadata is serialized to strings and set in headers
+// all metadata is serialized to string and set in headers
 func processMessage(ctx context.Context,
 	msg *kafka.Message,
 	c *kafka.Consumer,
@@ -51,10 +51,13 @@ func processMessage(ctx context.Context,
 			HeaderPartition: strconv.Itoa(int(msg.TopicPartition.Partition)),
 			HeaderTopic:     *msg.TopicPartition.Topic,
 		},
-		Value:             value,
-		Key:               key,
-		Path:              route,
-		Metadata:          map[string]interface{}{},
+		Value: value,
+		Key:   key,
+		Path:  route,
+		Metadata: map[string]interface{}{
+			"kafka-topic":     *msg.TopicPartition.Topic,
+			"kafka-partition": msg.TopicPartition.Partition,
+		},
 		RoutingPath:       constructPath(route, *msg.TopicPartition.Topic, msg.TopicPartition.Partition),
 		ProducerTimestamp: msg.Timestamp,
 		ReceivedTimestamp: time.Now(),
