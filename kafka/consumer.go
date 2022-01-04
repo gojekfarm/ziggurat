@@ -46,7 +46,7 @@ var startConsumer = func(
 				switch e := ev.(type) {
 				case *kafka.Message:
 					// blocks until process returns
-					processMessage(ctx, e, consumer, h, l, route)
+					processMessage(ctx, e, h, l, route)
 				case kafka.Error:
 					l.Error("kafka poll error", e)
 				default:

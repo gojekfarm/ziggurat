@@ -38,6 +38,6 @@ func Test_processMessage(t *testing.T) {
 		}
 		return nil
 	})
-	processMessage(context.Background(), &msg, &kafka.Consumer{}, h, dl, route)
+	processMessage(context.Background(), &msg, h, dl, route)
 
 }

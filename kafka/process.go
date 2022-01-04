@@ -20,24 +20,9 @@ func constructPath(rg string, topic string, part int32) string {
 	return fmt.Sprintf("%s/%s/%d", rg, topic, part)
 }
 
-func getStrValFromCfgMap(cfgMap kafka.ConfigMap, prop string) string {
-	//we ignore the error as the createConsumer panics if
-	// bootstrap.servers is not present
-	v, _ := cfgMap.Get(prop, "")
-	if s, ok := v.(string); ok {
-		return s
-	}
-	return ""
-}
-
 // processMessage executes the handler for every message that is received
 // all metadata is serialized to string and set in headers
-func processMessage(ctx context.Context,
-	msg *kafka.Message,
-	c *kafka.Consumer,
-	h ziggurat.Handler,
-	l ziggurat.StructuredLogger,
-	route string) {
+func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler, l ziggurat.StructuredLogger, route string) {
 
 	//copy kvs into new slices
 	key := make([]byte, len(msg.Key))
@@ -63,8 +48,6 @@ func processMessage(ctx context.Context,
 		ReceivedTimestamp: time.Now(),
 		EventType:         EventType,
 	}
-	l.Info("processing message", map[string]interface{}{"consumer": c.String()})
 	l.Error("kafka processing error", h.Handle(ctx, &event))
-	err := storeOffsets(c, msg.TopicPartition)
-	l.Error("kafka offset error", err)
+
 }

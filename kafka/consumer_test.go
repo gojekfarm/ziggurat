@@ -11,11 +11,9 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/rs/zerolog"
 )
 
 func TestMain(m *testing.M) {
-	zerolog.SetGlobalLevel(zerolog.Disabled)
 	os.Exit(m.Run())
 }
 

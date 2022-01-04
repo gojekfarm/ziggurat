@@ -23,7 +23,7 @@ var signals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2, sysc
 // Ziggurat serves as a container for streams to run in
 // can be used without initialization
 // var z ziggurat.Ziggurat
-// z.Run(ctx context.Context,s ziggurat.Streamer,h ziggurat.Handler)
+// z.run(ctx context.Context,s ziggurat.Streamer,h ziggurat.Handler)
 type Ziggurat struct {
 	handler      Handler
 	Logger       StructuredLogger
