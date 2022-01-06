@@ -18,6 +18,7 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 	autoCommitInterval := 15000
 	debugLevel := "consumer"
 	autoOffsetReset := "earliest"
+
 	if c.AutoCommitInterval > 0 {
 		autoCommitInterval = c.AutoCommitInterval
 	}

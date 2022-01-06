@@ -38,18 +38,3 @@ var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition
 var pollEvent = func(c *kafka.Consumer, pollTimeout int) kafka.Event {
 	return c.Poll(pollTimeout)
 }
-
-// NewConsumerConfig returns a new kafka consumer config map
-func NewConsumerConfig(bootstrapServers string, groupID string) *kafka.ConfigMap {
-	return &kafka.ConfigMap{
-		"bootstrap.servers":        bootstrapServers,
-		"group.id":                 groupID,
-		"auto.offset.reset":        "earliest",
-		"enable.auto.commit":       true,
-		"auto.commit.interval.ms":  15000,
-		"debug":                    "consumer,broker",
-		"go.logs.channel.enable":   true,
-		"enable.auto.offset.store": false,
-		//disable for at-least once delivery
-	}
-}
