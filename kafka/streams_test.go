@@ -24,7 +24,8 @@ func makeRandString() string {
 }
 
 func Test_streams(t *testing.T) {
-	c, cfn := context.WithTimeout(context.Background(), 5000*time.Millisecond)
+	c, cfn := context.WithCancel(context.Background())
+	time.AfterFunc(time.Millisecond*3000, func() { cfn() })
 	defer cfn()
 	var expectedMessageCount int32 = 5
 	topic := makeRandString()
