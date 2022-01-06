@@ -1,7 +1,5 @@
 package kafka
 
-//go:generate go run ./librdgen/gen.go
-
 import (
 	"context"
 	"errors"
@@ -30,15 +28,15 @@ func (s *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 		s.Logger = logger.NOOP
 	}
 	for _, consConf := range s.StreamConfig {
-		groupID := consConf.GroupId
-		config := NewConsumerConfig(consConf.BootstrapServers, consConf.GroupId)
+		groupID := consConf.GroupID
 		topics := strings.Split(consConf.Topics, ",")
 		s.workers[groupID] = make([]*worker, consConf.ConsumerCount)
 		for i := 0; i < consConf.ConsumerCount; i++ {
-			consumer := createConsumer(config, s.Logger, topics)
+			confMap := consConf.toConfigMap()
+			consumer := createConsumer(&confMap, s.Logger, topics)
 			workerID := fmt.Sprintf("%s_%d", groupID, i)
 			pollTimeout := 1000
-			if consConf.PollTimeout > 0 {
+			if consConf.PollTimeout > 0 || consConf.PollTimeout == -1 {
 				pollTimeout = consConf.PollTimeout
 			}
 			w := worker{

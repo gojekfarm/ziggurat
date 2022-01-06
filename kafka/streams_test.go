@@ -32,7 +32,7 @@ func Test_streams(t *testing.T) {
 	ks := Streams{
 		StreamConfig: StreamConfig{{
 			BootstrapServers: "localhost:9092",
-			GroupId:          topic + "_consumer",
+			GroupID:          topic + "_consumer",
 			ConsumerCount:    1,
 			Topics:           topic,
 		}},

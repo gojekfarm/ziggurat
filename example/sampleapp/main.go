@@ -1,6 +1,3 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
@@ -37,8 +34,8 @@ func main() {
 		StreamConfig: kafka.StreamConfig{
 			{
 				BootstrapServers: "localhost:9092",
-				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "pt_consumer",
+				Topics:           "plain-text-log",
+				GroupID:          "pt_consumer",
 				ConsumerCount:    2,
 				RouteGroup:       "plain-text-messages",
 			},

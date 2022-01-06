@@ -5,7 +5,6 @@ TOPIC_PLAIN_TEXT="plain-text-log"
 TEST_PACKAGES=$(shell go list ./... | grep -v -E 'cmd|logger|example|mock|mw|kafka')
 TEST_PACKAGES_INTEGRATION=$(shell go list ./... | grep -E 'mw/rabbitmq|kafka')
 EXAMPLE_BUILD_PKG="./example/sampleapp/main.go"
-CONF_GEN = go generate -x
 
 docker.start:
 	docker-compose down
@@ -18,11 +17,9 @@ docker.start:
 
 
 tidy:
-	$(CONF_GEN)
 	go mod tidy -v
 
 format:
-	$(CONF_GEN)
 	@goimports -l -w ./
 
 docker.start-metrics:
@@ -31,20 +28,17 @@ docker.start-metrics:
 	sleep 10
 
 lib.build:
-	$(CONF_GEN)
 	go build .
 
 app.start:
-	$(CONF_GEN)
 	go build -o sample_app $(EXAMPLE_BUILD_PKG)
 	./sample_app
 
 lib.test:
-	$(CONF_GEN)
 	go test -count 1 -v $(TEST_PACKAGES)
 
 app.start-race:
-	$(CONF_GEN)
+	
 	go build -race -o sample_app $(EXAMPLE_BUILD_PKG)
 	./sample_app
 
@@ -58,20 +52,16 @@ docker.kafka-produce:
 	./scripts/produce_messages
 
 pkg.release:
-	$(CONF_GEN)
 	./scripts/release.sh ${VERSION}
 
 lib.test-coverage-html:
-	$(CONF_GEN)
 	go test -count 1 -v $(TEST_PACKAGES) -coverprofile cp.out
 	go tool cover -html=cp.out
 
 lib.test-coverage:
-	$(CONF_GEN)
 	go test -count 1 -v $(TEST_PACKAGES) -coverprofile cp.out
 	go tool cover -func=cp.out
 
 lib.test-integration:
-	$(CONF_GEN)
 	go test -count 1 -v $(TEST_PACKAGES_INTEGRATION)
 
