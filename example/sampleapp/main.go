@@ -34,15 +34,13 @@ func main() {
 		rabbitmq.WithPassword("bitnami"))
 
 	ks := kafka.Streams{
-		StreamConfig: kafka.StreamConfig{
-			{
-				BootstrapServers: "localhost:9092",
-				Topics:           "plain-text-log",
-				GroupID:          "pt_consumer",
-				ConsumerCount:    2,
-				RouteGroup:       "plain-text-messages",
-			},
-		},
+		StreamConfig: kafka.StreamConfig{{
+			BootstrapServers: "localhost:9092",
+			Topics:           "plain-text-log",
+			GroupID:          "pt_consumer",
+			ConsumerCount:    2,
+			RouteGroup:       "plain-text-messages",
+		}},
 		Logger: l,
 	}
 

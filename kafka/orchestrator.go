@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/logger"
 	"strings"
 	"sync"
+
+	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/logger"
 )
 
 var ErrCleanShutdown = errors.New("error: clean shutdown of kafka consumers")

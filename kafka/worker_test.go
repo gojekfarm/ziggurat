@@ -3,11 +3,12 @@ package kafka
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/logger"
-	"testing"
-	"time"
 )
 
 func TestWorker(t *testing.T) {

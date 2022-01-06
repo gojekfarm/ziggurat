@@ -5,10 +5,11 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 
 	"github.com/gojekfarm/ziggurat"
 )
