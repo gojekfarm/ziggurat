@@ -38,7 +38,6 @@ func main() {
 			BootstrapServers: "localhost:9092",
 			Topics:           "plain-text-log",
 			GroupID:          "pt_consumer",
-			DebugLevel:       "consumer,broker",
 			ConsumerCount:    2,
 			RouteGroup:       "plain-text-messages",
 		}},
