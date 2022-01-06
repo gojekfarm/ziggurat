@@ -36,7 +36,9 @@ func (s *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 			confMap := consConf.toConfigMap()
 			consumer := createConsumer(&confMap, s.Logger, topics)
 			workerID := fmt.Sprintf("%s_%d", groupID, i)
-			pollTimeout := 1000
+			// sets default pollTimeout of 100ms
+			pollTimeout := 100
+			// allow a PollTimeout of -1
 			if consConf.PollTimeout > 0 || consConf.PollTimeout == -1 {
 				pollTimeout = consConf.PollTimeout
 			}

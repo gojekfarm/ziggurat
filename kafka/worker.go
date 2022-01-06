@@ -64,7 +64,7 @@ func (w *worker) run(ctx context.Context) {
 					w.err = e
 					run = false
 				}
-				// handle case `kakfa.Stats`
+				// handle case `kafka.Stats`
 			default:
 				// do nothing
 			}
