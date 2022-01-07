@@ -22,8 +22,8 @@ func main() {
 		StreamConfig: kafka.StreamConfig{
 			{
 				BootstrapServers: "localhost:9092",
-				OriginTopics:     "plain-text-log",
-				ConsumerGroupID:  "{{.AppName}}_consumer",
+				Topics:           "plain-text-log",
+				GroupID:          "{{.AppName}}_consumer",
 				ConsumerCount:    1,
 				RouteGroup:       "plain-text-group"
 			},

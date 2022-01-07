@@ -43,7 +43,7 @@ func main() {
 		die(errors.New(usage))
 	}
 	appName := args[1]
-	d := Data{AppName: appName, Version: "v1.4.4"}
+	d := Data{AppName: appName, Version: "v1.5.0"}
 	wd, err := os.Getwd()
 	die(err)
 	paths := definePaths(wd + "/" + appName)
