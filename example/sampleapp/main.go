@@ -1,10 +1,8 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -13,7 +11,6 @@ import (
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 )
 
 func main() {
@@ -22,16 +19,6 @@ func main() {
 
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
-
-	ar := rabbitmq.AutoRetry(rabbitmq.Queues{{
-		QueueName:             "pt_retries",
-		DelayExpirationInMS:   "1000",
-		RetryCount:            3,
-		ConsumerPrefetchCount: 10,
-		ConsumerCount:         2,
-	}}, rabbitmq.WithUsername("user"),
-		rabbitmq.WithLogger(l),
-		rabbitmq.WithPassword("bitnami"))
 
 	ks := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{{
@@ -44,7 +31,7 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("plain-text-messages/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandleFunc("plain-text-messages/", func(ctx context.Context, event *ziggurat.Event) error {
 		val := string(event.Value)
 		s := strings.Split(val, "_")
 		num, err := strconv.Atoi(s[1])
@@ -52,10 +39,10 @@ func main() {
 			return err
 		}
 		if num%2 == 0 {
-			return ziggurat.Retry
+			return fmt.Errorf("%d is even", num)
 		}
 		return nil
-	}, "pt_retries"))
+	})
 
 	wait := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {
@@ -68,7 +55,7 @@ func main() {
 
 	h := ziggurat.Use(&r, prometheus.PublishHandlerMetrics)
 
-	if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &ks); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 
