@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] 2022-01-07
+
+# Changes
+- Kafka consumer default `PollTimeout` is `100 ms`
+- `ConsumerGroupID` is renamed to `GroupID` and `OriginTopics` is renamed to `Topics` to keep it consistent with kafka terminology
+- The run loop for kafka consumer polling has been restructured.
+
+# Removed
+- The server package only exposes a Run method which orchestrates an HTTP Server rather than providing a full web server implementation
+- `httprouter` dependency has been removed
+
 ## [1.4.5] 2021-12-16
 
 # Changes
