@@ -63,6 +63,7 @@ func (s *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 	var causes string
 	for _, ws := range s.workers {
 		for _, w := range ws {
+			// okay to use a copy as we are not modifying the worker struct
 			if w.err != context.Canceled && w.err != nil {
 				err := fmt.Errorf("%s worker failed with error: %w\n", w.id, w.err)
 				causes = causes + err.Error()
