@@ -31,21 +31,21 @@ func (s *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 	for _, consConf := range s.StreamConfig {
 		groupID := consConf.GroupID
 		topics := strings.Split(consConf.Topics, ",")
+		confMap := consConf.toConfigMap()
+		// sets default pollTimeout of 100ms
+		pollTimeout := 100
+		// allow a PollTimeout of -1
+		if consConf.PollTimeout > 0 || consConf.PollTimeout == -1 {
+			pollTimeout = consConf.PollTimeout
+		}
 		s.workers[groupID] = make([]*worker, consConf.ConsumerCount)
 		for i := 0; i < consConf.ConsumerCount; i++ {
-			confMap := consConf.toConfigMap()
-			consumer := createConsumer(&confMap, s.Logger, topics)
 			workerID := fmt.Sprintf("%s_%d", groupID, i)
-			// sets default pollTimeout of 100ms
-			pollTimeout := 100
-			// allow a PollTimeout of -1
-			if consConf.PollTimeout > 0 || consConf.PollTimeout == -1 {
-				pollTimeout = consConf.PollTimeout
-			}
 			w := worker{
 				handler:     handler,
 				logger:      s.Logger,
-				consumer:    consumer,
+				topics:      topics,
+				confMap:     &confMap,
 				routeGroup:  consConf.RouteGroup,
 				pollTimeout: pollTimeout,
 				killSig:     make(chan struct{}),
