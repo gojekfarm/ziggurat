@@ -142,11 +142,11 @@ Queue config
 
 ```go
 type QueueConfig struct {
-QueueName             string //queue to push the retried messages to 
-DelayExpirationInMS   string //time to wait before being consumed again 
-RetryCount            int    //number of times to retry the message
-ConsumerCount         int //number of concurrent RabbitMQ consumers
-ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
+	QueueName             string //queue to push the retried messages to 
+	DelayExpirationInMS   string //time to wait before being consumed again 
+	RetryCount            int    //number of times to retry the message
+	ConsumerCount         int //number of concurrent RabbitMQ consumers
+	ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
 }
 ```
 
@@ -154,7 +154,7 @@ Example Usage
 
 ```go
 r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-return ziggurat.Retry
+	return ziggurat.Retry
 }, "pt_retries"))
 ```
 
