@@ -124,7 +124,7 @@ Stream A ----> Handler --Retry--> RabbitMQ <br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|_____
 Stream B _____|
 
-- The rabbitmq auto retry implements the streamer interface.
+- The rabbitmq auto retry implements the streamer interface. This means ziggurat will push the messages from RabbitMQ to and execute you handlers for every mesasge.
 - The rabbitmq auto retry exposes a Wrap method in which the handlerFunc can be wrapped and provide the queue name to
   retry with.
 
@@ -172,7 +172,15 @@ r.HandleFunc("localhost:9092/pt_consumer/", ar.Wrap(func(ctx context.Context, ev
   capacity. This can be tweaked using the `ConsumerCount` config. 
 
 ### I have a lot of messages in my dlq queue what do I do with them ?
-
 - The AutoRetry struct exposes two http handlers, the `DSViewHandler` and the `DSReplayHandler`. 
 - The above handler conform to the `http.Handler` interface and can be used with any router of your choice.
 - The `DSViewHandler` allows you to peek into messages without consuming them, whereas the `DSReplay` moves messages from `dlq` to `instant` queue ready to be consumed.
+
+```golang
+ar := rabbitmq.AutoRetry(...)
+ctx := context.Background()
+router := someRouter.New()
+router.POST("/rabbitmq/dead_set/view",ar.DSViewHandler(ctx))
+router.POST("/rabbitmq/dead_set/replay",ar.DSReplayHandler(ctx))
+// pass this on to your HTTP server
+```
