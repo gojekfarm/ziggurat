@@ -97,5 +97,5 @@ func TestWorker_Kill(t *testing.T) {
 }
 
 func TestWorkerMapAccess(t *testing.T) {
-	
+
 }
