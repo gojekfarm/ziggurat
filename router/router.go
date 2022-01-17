@@ -36,7 +36,6 @@ func (dr *defaultRouter) Handle(ctx context.Context, event *ziggurat.Event) erro
 }
 
 // New creates a new router
-// router stores handlers in a map[string]ziggurat.Handler
 // the route received in the event header is matched against the entries in the map
 // and the corresponding handler is executed
 func New(opts ...func(dr *defaultRouter)) *defaultRouter {
