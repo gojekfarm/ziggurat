@@ -25,12 +25,11 @@ var signals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2, sysc
 // var z ziggurat.Ziggurat
 // z.run(ctx context.Context,s ziggurat.Streamer,h ziggurat.Handler)
 type Ziggurat struct {
-	handler      Handler
-	Logger       StructuredLogger
-	startFunc    StartFunction
-	stopFunc     StopFunction
-	streams      Streamer
-	multiStreams []Streamer
+	handler   Handler
+	Logger    StructuredLogger
+	startFunc StartFunction
+	stopFunc  StopFunction
+	streams   Streamer
 }
 
 // Run method runs the provided streams and blocks on it until an error is encountered
