@@ -98,6 +98,9 @@ func (z *Ziggurat) StopFunc(function StopFunction) {
 // The streams are started concurrently and the handler is executed for
 // all the streams.
 func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
+	parentCtx, cancelFunc := signal.NotifyContext(ctx, signals...)
+	defer cancelFunc()
+
 	if z.Logger == nil {
 		z.Logger = logger.NOOP
 	}
@@ -109,13 +112,9 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		panic("error: handler cannot be nil")
 	}
 
-	parentCtx, cancelFunc := signal.NotifyContext(ctx, signals...)
-
 	if z.startFunc != nil {
 		z.startFunc(parentCtx)
 	}
-
-	defer cancelFunc()
 
 	var wg sync.WaitGroup
 	wg.Add(len(streams))
