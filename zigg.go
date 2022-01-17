@@ -119,7 +119,7 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 	var wg sync.WaitGroup
 	wg.Add(len(streams))
 	errChan := make(chan error, len(streams))
-	for i, _ := range streams {
+	for i := range streams {
 		go func(i int) {
 			err := streams[i].Stream(parentCtx, handler)
 			errChan <- err
