@@ -95,4 +95,3 @@ func TestWorker_Kill(t *testing.T) {
 		t.Errorf("expected error to be [%v] got [%v]", killErr, e)
 	}
 }
-
