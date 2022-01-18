@@ -34,7 +34,7 @@ func (w *worker) run(ctx context.Context) {
 	w.consumer = createConsumer(w.confMap, w.logger, w.topics)
 
 	defer func() {
-		err := w.consumer.Close()
+		err := closeConsumer(w.consumer)
 		w.logger.Error("error closing kafka consumer", err, map[string]interface{}{"Worker-ID": w.id})
 	}()
 
