@@ -25,12 +25,11 @@ var signals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2, sysc
 // var z ziggurat.Ziggurat
 // z.run(ctx context.Context,s ziggurat.Streamer,h ziggurat.Handler)
 type Ziggurat struct {
-	handler      Handler
-	Logger       StructuredLogger
-	startFunc    StartFunction
-	stopFunc     StopFunction
-	streams      Streamer
-	multiStreams []Streamer
+	handler   Handler
+	Logger    StructuredLogger
+	startFunc StartFunction
+	stopFunc  StopFunction
+	streams   Streamer
 }
 
 // Run method runs the provided streams and blocks on it until an error is encountered
@@ -98,6 +97,9 @@ func (z *Ziggurat) StopFunc(function StopFunction) {
 // The streams are started concurrently and the handler is executed for
 // all the streams.
 func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
+	parentCtx, cancelFunc := signal.NotifyContext(ctx, signals...)
+	defer cancelFunc()
+
 	if z.Logger == nil {
 		z.Logger = logger.NOOP
 	}
@@ -109,18 +111,14 @@ func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Strea
 		panic("error: handler cannot be nil")
 	}
 
-	parentCtx, cancelFunc := signal.NotifyContext(ctx, signals...)
-
 	if z.startFunc != nil {
 		z.startFunc(parentCtx)
 	}
 
-	defer cancelFunc()
-
 	var wg sync.WaitGroup
 	wg.Add(len(streams))
 	errChan := make(chan error, len(streams))
-	for i, _ := range streams {
+	for i := range streams {
 		go func(i int) {
 			err := streams[i].Stream(parentCtx, handler)
 			errChan <- err
