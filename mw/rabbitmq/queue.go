@@ -7,30 +7,33 @@ import (
 	"github.com/streadway/amqp"
 )
 
-var queueTypes = []string{"delay", "instant", "dlq"}
+var queueTypes = []string{QueueDelay, QueueInstant, QueueDL}
 
-func createAndBindQueue(ch *amqp.Channel, queueName string, args amqp.Table) error {
-	if err := ch.ExchangeDeclare(queueName+"_exchange", amqp.ExchangeFanout, false, false, false, false, amqp.Table{}); err != nil {
+func createAndBindQueue(ch *amqp.Channel, queueName string, queueType string, args amqp.Table) error {
+	queueWithType := fmt.Sprintf("%s_%s_%s", queueName, queueType, "queue")
+	if _, err := ch.QueueDeclare(queueWithType, true, false, false, false, args); err != nil {
 		return err
 	}
-	if _, err := ch.QueueDeclare(queueName+"_queue", true, false, false, false, args); err != nil {
-		return err
-	}
-	if err := ch.QueueBind(queueName+"_queue", "", queueName+"_exchange", false, amqp.Table{}); err != nil {
+	if err := ch.QueueBind(queueWithType, queueType, queueName+"_exchange", false, amqp.Table{}); err != nil {
 		return err
 	}
 	return nil
 }
 
 func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggurat.StructuredLogger) error {
+	if err := ch.ExchangeDeclare(queueName+"_exchange", amqp.ExchangeDirect, false, false, false, false, amqp.Table{}); err != nil {
+		return err
+	}
 	for _, qt := range queueTypes {
 		args := amqp.Table{}
-		qnameWithType := fmt.Sprintf("%s_%s", queueName, qt)
-		logger.Info("creating queue", map[string]interface{}{"queue": qnameWithType})
+		logger.Info("creating queue", map[string]interface{}{"queue": queueName})
 		if qt == "delay" {
-			args = amqp.Table{"x-dead-letter-exchange": fmt.Sprintf("%s_%s_%s", queueName, "instant", "exchange")}
+			args = amqp.Table{
+				"x-dead-letter-exchange":    fmt.Sprintf("%s_%s", queueName, "exchange"),
+				"x-dead-letter-routing-key": QueueInstant,
+			}
 		}
-		if err := createAndBindQueue(ch, qnameWithType, args); err != nil {
+		if err := createAndBindQueue(ch, queueName, qt, args); err != nil {
 			return err
 		}
 	}

@@ -26,12 +26,12 @@ func Test_publish(t *testing.T) {
 	cases := []test{{
 		name:                 "ARetry count",
 		input:                &ziggurat.Event{},
-		expectedExchangeName: "foo_delay_exchange",
+		expectedExchangeName: "foo_exchange",
 		retryCount:           1,
 	}, {
 		name:                 "ARetry count exceeded",
 		input:                &ziggurat.Event{},
-		expectedExchangeName: "foo_dlq_exchange",
+		expectedExchangeName: "foo_exchange",
 		retryCount:           0,
 	}}
 

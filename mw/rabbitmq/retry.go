@@ -21,7 +21,7 @@ var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not in
 var ErrCleanShutdown = errors.New("clean shutdown of rabbitmq streams")
 
 const (
-	QueueDL      = "dead_letter"
+	QueueDL      = "dlq"
 	QueueInstant = "instant"
 	QueueDelay   = "delay"
 )
@@ -105,7 +105,7 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queue strin
 			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
 		}
 	})
-	exchange := fmt.Sprintf("%s_%s_%s", queue, queueType, "exchange")
+	exchange := fmt.Sprintf("%s_%s", queue, "exchange")
 	p, err := getPublisher(ctx, r.publishDialer, r.logger)
 	defer p.Close()
 	if err != nil {
@@ -117,6 +117,7 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queue strin
 	}
 	msg := publisher.Message{
 		Exchange: exchange,
+		Key:      queueType,
 		Publishing: amqp.Publishing{
 			Expiration: expirationInMS,
 			Body:       eb,
