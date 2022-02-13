@@ -5,9 +5,13 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
+	"github.com/gojekfarm/ziggurat/server"
 
 	"github.com/gojekfarm/ziggurat/mw/prometheus"
 
@@ -34,7 +38,20 @@ func main() {
 		Logger: l,
 	}
 
-	r.HandleFunc("plain-text-messages/", func(ctx context.Context, event *ziggurat.Event) error {
+	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{
+		{
+			QueueKey:              "plain_text_messages_retry",
+			DelayExpirationInMS:   "5000",
+			RetryCount:            5,
+			ConsumerPrefetchCount: 1,
+			ConsumerCount:         1,
+		},
+	}, rabbitmq.WithLogger(l),
+		rabbitmq.WithUsername("user"),
+		rabbitmq.WithPassword("bitnami"),
+		rabbitmq.WithConnectionTimeout(3*time.Second))
+
+	r.HandleFunc("plain-text-messages/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 		val := string(event.Value)
 		s := strings.Split(val, "_")
 		num, err := strconv.Atoi(s[1])
@@ -42,23 +59,26 @@ func main() {
 			return err
 		}
 		if num%2 == 0 {
-			return fmt.Errorf("%d is even", num)
+			return ziggurat.Retry
 		}
 		return nil
-	})
+	}, "plain_text_messages_retry"))
+
+	mux := http.NewServeMux()
+	mux.Handle("/dead_set", ar.DSReplayHandler(ctx))
+	s := http.Server{Addr: ":8080", Handler: mux}
 
 	wait := make(chan struct{})
 	zig.StartFunc(func(ctx context.Context) {
 		go func() {
-			err := prometheus.StartMonitoringServer(ctx)
-			l.Error("error running prom server", err)
+			server.Run(ctx, &s)
 			wait <- struct{}{}
 		}()
 	})
 
 	h := ziggurat.Use(&r, prometheus.PublishHandlerMetrics)
 
-	if runErr := zig.RunAll(ctx, h, &ks); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 

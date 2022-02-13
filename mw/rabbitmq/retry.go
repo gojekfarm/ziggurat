@@ -67,10 +67,11 @@ func AutoRetry(qc Queues, opts ...Opts) *ARetry {
 	}
 
 	for _, c := range qc {
+
 		if c.ConsumerCount < 1 {
 			c.ConsumerCount = 1
 		}
-		r.queueConfig[c.QueueName] = c
+		r.queueConfig[c.QueueKey] = c
 	}
 
 	for _, o := range opts {
@@ -98,14 +99,14 @@ func (r *ARetry) publish(ctx context.Context, event *ziggurat.Event, queue strin
 }
 
 //Publish can be called from anywhere and messages can be sent to any queue
-func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queue string, queueType string, expirationInMS string) error {
+func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey string, queueType string, expirationInMS string) error {
 	r.once.Do(func() {
 		err := r.InitPublishers(ctx)
 		if err != nil {
 			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
 		}
 	})
-	exchange := fmt.Sprintf("%s_%s", queue, "exchange")
+	exchange := fmt.Sprintf("%s_%s", queueKey, "exchange")
 	p, err := getPublisher(ctx, r.publishDialer, r.logger)
 	defer p.Close()
 	if err != nil {
@@ -128,7 +129,7 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queue strin
 	return p.Publish(msg)
 }
 
-func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc {
+func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerFunc {
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
 		// start the publishers once only
 		r.once.Do(func() {
@@ -139,7 +140,7 @@ func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queue string) ziggurat.HandlerFunc
 		})
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
-			pubErr := r.publish(ctx, event, queue)
+			pubErr := r.publish(ctx, event, queueKey)
 			r.ogLogger.Error("AR publishInternal error", pubErr)
 			// return the original error
 			return err
@@ -163,7 +164,7 @@ func (r *ARetry) InitPublishers(ctx context.Context) error {
 	}
 
 	for _, qc := range r.queueConfig {
-		if err := createQueuesAndExchanges(ch, qc.QueueName, r.ogLogger); err != nil {
+		if err := createQueuesAndExchanges(ch, qc.QueueKey, r.ogLogger); err != nil {
 			r.ogLogger.Error("error creating queues and exchanges", err)
 			return fmt.Errorf("error iniitializing publishers:%w", err)
 		}
@@ -186,7 +187,7 @@ func (r *ARetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 	}
 
 	for _, qc := range r.queueConfig {
-		if err := createQueuesAndExchanges(ch, qc.QueueName, r.ogLogger); err != nil {
+		if err := createQueuesAndExchanges(ch, qc.QueueKey, r.ogLogger); err != nil {
 			r.ogLogger.Error("error creating queues and exchanges", err)
 			return fmt.Errorf("error iniitializing publishers:%w", err)
 		}
@@ -280,7 +281,7 @@ func (r *ARetry) DSViewHandler(ctx context.Context) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		qn := fmt.Sprintf("%s_%s_%s", qname, "dlq", "queue")
+		qn := fmt.Sprintf("%s_%s_%s", qname, QueueDL, "queue")
 		events, err := r.view(ctx, qn, count, false)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("couldn't view messages from dlq: %v", err), http.StatusInternalServerError)
@@ -332,7 +333,7 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 		return replayCount, fmt.Errorf("error getting channel:%w", err)
 	}
 	defer ch.Close()
-	srcQueue := fmt.Sprintf("%s_%s_%s", queue, "dlq", "queue")
+	srcQueue := fmt.Sprintf("%s_%s_%s", queue, QueueDL, "queue")
 	q, err := ch.QueueInspect(srcQueue)
 	if err != nil {
 		return replayCount, fmt.Errorf("error inspecting queue:%w", err)
@@ -353,7 +354,8 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 			return replayCount, fmt.Errorf("error getting message from queue:%w", err)
 		}
 		err = p.Publish(publisher.Message{
-			Exchange: fmt.Sprintf("%s_%s_%s", queue, "instant", "exchange"),
+			Key:      QueueInstant,
+			Exchange: fmt.Sprintf("%s_%s", queue, "exchange"),
 			Publishing: amqp.Publishing{
 				Body: m.Body,
 			},

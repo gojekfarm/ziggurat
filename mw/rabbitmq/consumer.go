@@ -19,8 +19,8 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h zi
 		pfc = c.ConsumerPrefetchCount
 	}
 
-	qname := fmt.Sprintf("%s_%s_%s", c.QueueName, "instant", "queue")
-	consumerName := fmt.Sprintf("%s_consumer", c.QueueName)
+	qname := fmt.Sprintf("%s_%s_%s", c.QueueKey, QueueInstant, "queue")
+	consumerName := fmt.Sprintf("%s_consumer", c.QueueKey)
 	cons, err := d.Consumer(
 		consumer.WithContext(ctx),
 		consumer.WithQueue(qname),
