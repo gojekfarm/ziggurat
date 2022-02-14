@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.6.0] 2022-02-13
+# Changes
+
+- changes internal retry structure for RabbitMQ
+
+# Breaking Changes
+
+- The RabbitMQ `QueueConfig` now uses `QueueKey` instead of `QueueName`
+
 
 ## [1.5.1] 2022-01-28
 
