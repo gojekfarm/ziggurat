@@ -26,12 +26,12 @@ func Test_publish(t *testing.T) {
 	cases := []test{{
 		name:                 "ARetry count",
 		input:                &ziggurat.Event{},
-		expectedExchangeName: "foo_delay_exchange",
+		expectedExchangeName: "foo_exchange",
 		retryCount:           1,
 	}, {
 		name:                 "ARetry count exceeded",
 		input:                &ziggurat.Event{},
-		expectedExchangeName: "foo_dlq_exchange",
+		expectedExchangeName: "foo_exchange",
 		retryCount:           0,
 	}}
 
@@ -43,7 +43,7 @@ func Test_publish(t *testing.T) {
 			}
 			return nil
 		}
-		publishInternal(&p, "foo", c.retryCount, "100", c.input)
+		_ = publishInternal(&p, "foo", c.retryCount, "100", c.input)
 	}
 }
 
@@ -82,7 +82,7 @@ func Test_publish_retries(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			e := ziggurat.Event{}
 			for i := 0; i < c.publishIterations; i++ {
-				publishInternal(&p, "", c.retryCount, "", &e)
+				_ = publishInternal(&p, "", c.retryCount, "", &e)
 			}
 			if c.expectedCount != e.Metadata[KeyRetryCount] {
 				t.Errorf("expected %v got %v", c.expectedCount, e.Metadata[KeyRetryCount])

@@ -23,12 +23,12 @@ func publishInternal(p *publisher.Publisher, queue string, retryCount int, delay
 	}
 
 	newCount := getRetryCount(event) + 1
-
-	exchange := fmt.Sprintf("%s_%s_%s", queue, "delay", "exchange")
+	exchange := fmt.Sprintf("%s_%s", queue, "exchange")
+	routingKey := QueueDelay
 
 	if newCount > retryCount {
 		event.Metadata[KeyRetryCount] = retryCount
-		exchange = fmt.Sprintf("%s_%s_%s", queue, "dlq", "exchange")
+		routingKey = QueueDL
 		expiration = ""
 	} else {
 		event.Metadata[KeyRetryCount] = newCount
@@ -41,6 +41,7 @@ func publishInternal(p *publisher.Publisher, queue string, retryCount int, delay
 
 	msg := publisher.Message{
 		Exchange: exchange,
+		Key:      routingKey,
 		Publishing: amqp.Publishing{
 			Expiration: expiration,
 			Body:       eb,

@@ -1,7 +1,7 @@
 package rabbitmq
 
 type QueueConfig struct {
-	QueueName             string
+	QueueKey              string
 	DelayExpirationInMS   string
 	RetryCount            int
 	ConsumerPrefetchCount int

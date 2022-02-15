@@ -1,6 +1,6 @@
 ### Ziggurat Golang
 
-Stream Processing made easy
+Stream Orchestration made easy
 
 ### Install the ziggurat CLI
 
@@ -32,6 +32,7 @@ import (
 )
 
 func main() {
+	
 	var zig ziggurat.Ziggurat
 	var r kafka.Router
 
@@ -143,11 +144,11 @@ Queue config
 
 ```go
 type QueueConfig struct {
-QueueName             string //queue to push the retried messages to 
-DelayExpirationInMS   string //time to wait before being consumed again 
-RetryCount            int    //number of times to retry the message
-ConsumerCount         int //number of concurrent RabbitMQ consumers
-ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
+    QueueName             string //queue to push the retried messages to 
+    DelayExpirationInMS   string //time to wait before being consumed again 
+    RetryCount            int    //number of times to retry the message
+    ConsumerCount         int //number of concurrent RabbitMQ consumers
+    ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
 }
 ```
 

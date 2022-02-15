@@ -14,7 +14,7 @@ import (
 func newAutoRetry(qn string, count int, consumerCount int) *ARetry {
 	ar := AutoRetry(
 		[]QueueConfig{{
-			QueueName:           qn,
+			QueueKey:            qn,
 			DelayExpirationInMS: "500",
 			RetryCount:          count,
 			ConsumerCount:       consumerCount,
