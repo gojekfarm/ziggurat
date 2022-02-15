@@ -18,7 +18,7 @@ type ConsumerConfig struct {
 func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 	autoCommitInterval := 15000
 	debugLevel := "consumer"
-	autoOffsetReset := "earliest"
+	autoOffsetReset := "latest"
 	partitionAssignment := "range,roundrobin"
 
 	if c.AutoCommitInterval > 0 {

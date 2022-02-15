@@ -78,7 +78,7 @@ func main() {
 
 	h := ziggurat.Use(&r, prometheus.PublishHandlerMetrics)
 
-	if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &ks); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 

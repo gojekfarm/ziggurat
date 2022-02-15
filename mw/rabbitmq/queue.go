@@ -21,7 +21,7 @@ func createAndBindQueue(ch *amqp.Channel, queueName string, queueType string, ar
 }
 
 func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggurat.StructuredLogger) error {
-	if err := ch.ExchangeDeclare(queueName+"_exchange", amqp.ExchangeDirect, false, false, false, false, amqp.Table{}); err != nil {
+	if err := ch.ExchangeDeclare(queueName+"_exchange", amqp.ExchangeDirect, true, false, false, false, amqp.Table{}); err != nil {
 		return err
 	}
 	for _, qt := range queueTypes {
