@@ -64,11 +64,15 @@ func (w *worker) run(ctx context.Context) {
 			switch e := ev.(type) {
 			case *kafka.Message:
 				processMessage(ctx, e, w.handler, w.logger, w.routeGroup)
+				if err := storeOffsets(w.consumer, e.TopicPartition); err != nil {
+					w.logger.Error("error storing offsets locally", err)
+				}
 			case kafka.Error:
 				if e.IsFatal() {
 					w.err = e
 					run = false
 				}
+				w.logger.Error("kafka poll error", e)
 				// handle case `kafka.Stats`
 			default:
 				// do nothing
