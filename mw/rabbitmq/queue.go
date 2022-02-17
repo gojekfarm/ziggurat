@@ -7,7 +7,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-var queueTypes = []string{QueueDelay, QueueInstant, QueueDL}
+var queueTypes = []string{QueueTypeDelay, QueueTypeInstant, QueueTypeDL}
 
 func createAndBindQueue(ch *amqp.Channel, queueName string, queueType string, args amqp.Table) error {
 	queueWithType := fmt.Sprintf("%s_%s_%s", queueName, queueType, "queue")
@@ -30,7 +30,7 @@ func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggura
 		if qt == "delay" {
 			args = amqp.Table{
 				"x-dead-letter-exchange":    fmt.Sprintf("%s_%s", queueName, "exchange"),
-				"x-dead-letter-routing-key": QueueInstant,
+				"x-dead-letter-routing-key": QueueTypeInstant,
 			}
 		}
 		if err := createAndBindQueue(ch, queueName, qt, args); err != nil {

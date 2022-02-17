@@ -21,9 +21,9 @@ var ErrPublisherNotInit = errors.New("auto retry publish error: publisher not in
 var ErrCleanShutdown = errors.New("clean shutdown of rabbitmq streams")
 
 const (
-	QueueDL      = "dlq"
-	QueueInstant = "instant"
-	QueueDelay   = "delay"
+	QueueTypeDL      = "dlq"
+	QueueTypeInstant = "instant"
+	QueueTypeDelay   = "delay"
 )
 
 type dsViewResp struct {
@@ -127,6 +127,16 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 	}
 	defer p.Close()
 	return p.Publish(msg)
+}
+
+func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey string) error {
+	r.once.Do(func() {
+		err := r.InitPublishers(ctx)
+		if err != nil {
+			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
+		}
+	})
+	return r.publish(ctx, event, queueKey)
 }
 
 func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerFunc {
@@ -281,7 +291,7 @@ func (r *ARetry) DSViewHandler(ctx context.Context) http.Handler {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		qn := fmt.Sprintf("%s_%s_%s", qname, QueueDL, "queue")
+		qn := fmt.Sprintf("%s_%s_%s", qname, QueueTypeDL, "queue")
 		events, err := r.view(ctx, qn, count, false)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("couldn't view messages from dlq: %v", err), http.StatusInternalServerError)
@@ -333,7 +343,7 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 		return replayCount, fmt.Errorf("error getting channel:%w", err)
 	}
 	defer ch.Close()
-	srcQueue := fmt.Sprintf("%s_%s_%s", queue, QueueDL, "queue")
+	srcQueue := fmt.Sprintf("%s_%s_%s", queue, QueueTypeDL, "queue")
 	q, err := ch.QueueInspect(srcQueue)
 	if err != nil {
 		return replayCount, fmt.Errorf("error inspecting queue:%w", err)
@@ -354,7 +364,7 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 			return replayCount, fmt.Errorf("error getting message from queue:%w", err)
 		}
 		err = p.Publish(publisher.Message{
-			Key:      QueueInstant,
+			Key:      QueueTypeInstant,
 			Exchange: fmt.Sprintf("%s_%s", queue, "exchange"),
 			Publishing: amqp.Publishing{
 				Body: m.Body,

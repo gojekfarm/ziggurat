@@ -6,7 +6,7 @@ import (
 
 const KeyRetryCount = "rabbitmqAutoRetryCount"
 
-func getRetryCount(e *ziggurat.Event) int {
+func GetRetryCount(e *ziggurat.Event) int {
 	if e.Metadata == nil {
 		return 0
 	}

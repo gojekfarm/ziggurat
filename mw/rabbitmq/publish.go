@@ -22,13 +22,13 @@ func publishInternal(p *publisher.Publisher, queue string, retryCount int, delay
 		event.Metadata = map[string]interface{}{KeyRetryCount: 0}
 	}
 
-	newCount := getRetryCount(event) + 1
+	newCount := GetRetryCount(event) + 1
 	exchange := fmt.Sprintf("%s_%s", queue, "exchange")
-	routingKey := QueueDelay
+	routingKey := QueueTypeDelay
 
 	if newCount > retryCount {
 		event.Metadata[KeyRetryCount] = retryCount
-		routingKey = QueueDL
+		routingKey = QueueTypeDL
 		expiration = ""
 	} else {
 		event.Metadata[KeyRetryCount] = newCount
