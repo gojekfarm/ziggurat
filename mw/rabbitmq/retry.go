@@ -342,7 +342,13 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 	if err != nil {
 		return replayCount, fmt.Errorf("error getting channel:%w", err)
 	}
-	defer ch.Close()
+
+	defer func() {
+		if err := ch.Close(); err != nil {
+			r.ogLogger.Error("error closing channel", err)
+		}
+	}()
+
 	srcQueue := fmt.Sprintf("%s_%s_%s", queue, QueueTypeDL, "queue")
 	q, err := ch.QueueInspect(srcQueue)
 	if err != nil {
