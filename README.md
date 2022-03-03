@@ -1,4 +1,3 @@
-
 ### Ziggurat Golang
 
 Stream Orchestration made easy
@@ -23,61 +22,61 @@ go mod tidy -v #cleans up dependencies
 package main
 
 import (
-	"context"
+    "context"
 
-	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/kafka"
-	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
-	"github.com/gojekfarm/ziggurat/mw/statsd"
+    "github.com/gojekfarm/ziggurat"
+    "github.com/gojekfarm/ziggurat/kafka"
+    "github.com/gojekfarm/ziggurat/logger"
+    "github.com/gojekfarm/ziggurat/mw/rabbitmq"
+    "github.com/gojekfarm/ziggurat/mw/statsd"
 )
 
 func main() {
-	
-	var zig ziggurat.Ziggurat
-	var r kafka.Router
 
-	statsdPub := statsd.NewPublisher(statsd.WithDefaultTags(map[string]string{
-		"app_name": "sample_app",
-	}))
-	ctx := context.Background()
-	l := logger.NewLogger(logger.LevelInfo)
+    var zig ziggurat.Ziggurat
+    var r kafka.Router
 
-	ar := rabbitmq.AutoRetry(rabbitmq.Queues{{
-		QueueName:             "pt_retries",
-		DelayExpirationInMS:   "1000",
-		RetryCount:            3,
-		ConsumerPrefetchCount: 10,
-		ConsumerCount:         10,
-	}}, rabbitmq.WithUsername("user"),
-		rabbitmq.WithLogger(l),
-		rabbitmq.WithPassword("bitnami"))
+    statsdPub := statsd.NewPublisher(statsd.WithDefaultTags(map[string]string{
+        "app_name": "sample_app",
+    }))
+    ctx := context.Background()
+    l := logger.NewLogger(logger.LevelInfo)
 
-	ks := kafka.Streams{
-		StreamConfig: kafka.StreamConfig{
-			{
-				BootstrapServers: "localhost:9092",
-				Topics:           "plain-text-log",
-				GroupID:          "pt_consumer",
-				ConsumerCount:    2,
-				RouteGroup:       "plain-text-group",
-			},
-		},
-		Logger: l,
-	}
+    ar := rabbitmq.AutoRetry(rabbitmq.Queues{{
+        QueueKey:              "pt_retries",
+        DelayExpirationInMS:   "1000",
+        RetryCount:            3,
+        ConsumerPrefetchCount: 10,
+        ConsumerCount:         10,
+    }}, rabbitmq.WithUsername("user"),
+        rabbitmq.WithLogger(l),
+        rabbitmq.WithPassword("bitnami"))
 
-	r.HandleFunc("plain-text-group/*", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-		return ziggurat.Retry
-	}, "pt_retries"))
+    ks := kafka.Streams{
+        StreamConfig: kafka.StreamConfig{
+            {
+                BootstrapServers: "localhost:9092",
+                Topics:           "plain-text-log",
+                GroupID:          "pt_consumer",
+                ConsumerCount:    2,
+                RouteGroup:       "plain-text-group",
+            },
+        },
+        Logger: l,
+    }
 
-	zig.StartFunc(func(ctx context.Context) {
-		err := statsdPub.Run(ctx)
-		l.Error("statsd publisher error", err)
-	})
+    r.HandleFunc("plain-text-group/*", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+        return ziggurat.Retry
+    }, "pt_retries"))
 
-	if runErr := zig.RunAll(ctx, &r, &ks, ar); runErr != nil {
-		l.Error("error running streams", runErr)
-	}
+    zig.StartFunc(func(ctx context.Context) {
+        err := statsdPub.Run(ctx)
+        l.Error("statsd publisher error", err)
+    })
+
+    if runErr := zig.RunAll(ctx, &r, &ks, ar); runErr != nil {
+        l.Error("error running streams", runErr)
+    }
 
 }
 ```
@@ -94,7 +93,7 @@ package ziggurat
 import "context"
 
 type Streamer interface {
-	Stream(ctx context.Context, handler Handler) error
+    Stream(ctx context.Context, handler Handler) error
 }
 
 // Any type can implement the Streamer interface to stream data from any source
@@ -108,7 +107,7 @@ package ziggurat
 import "context"
 
 type Handler interface {
-	Handle(ctx context.Context, event *Event) error
+    Handle(ctx context.Context, event *Event) error
 }
 
 // The Handler interface is very similar to the http.Handler interface
@@ -145,11 +144,11 @@ Queue config
 
 ```go
 type QueueConfig struct {
-    QueueName             string //queue to push the retried messages to 
-    DelayExpirationInMS   string //time to wait before being consumed again 
-    RetryCount            int    //number of times to retry the message
-    ConsumerCount         int //number of concurrent RabbitMQ consumers
-    ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
+QueueName             string //queue to push the retried messages to 
+DelayExpirationInMS   string //time to wait before being consumed again 
+RetryCount            int    //number of times to retry the message
+ConsumerCount         int //number of concurrent RabbitMQ consumers
+ConsumerPrefetchCount int //max number of messages to be sent in parallel to consumers
 }
 ```
 
