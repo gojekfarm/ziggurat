@@ -59,12 +59,13 @@ func Test_RetryFlow(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.Name, func(t *testing.T) {
-			ctx, cfn := context.WithTimeout(context.Background(), 5*time.Second)
+			ctx, cfn := context.WithTimeout(context.Background(), 5000*time.Millisecond)
 			defer cfn()
 			var callCount int32
 			expectedCallCount := int32(c.PublishCount * c.RetryCount)
 			ar := newAutoRetry(c.QueueName, c.RetryCount, c.ConsumerCount)
 			err := ar.InitPublishers(ctx)
+			t.Logf("publishers init successful")
 			if err != nil {
 				t.Errorf("could not init publishers %v", err)
 			}
@@ -81,11 +82,12 @@ func Test_RetryFlow(t *testing.T) {
 			}()
 
 			for i := 0; i < c.PublishCount; i++ {
-				err := ar.publish(ctx, &ziggurat.Event{Value: []byte(fmt.Sprintf("foo-%d", i))}, c.QueueName)
+				err := ar.publish(&ziggurat.Event{Value: []byte(fmt.Sprintf("foo-%d", i))}, c.QueueName)
 				if err != nil {
 					t.Errorf("error publishing: %v", err)
 				}
 			}
+
 			<-done
 
 			if expectedCallCount != atomic.LoadInt32(&callCount) {
@@ -279,7 +281,7 @@ func Test_MessageLoss(t *testing.T) {
 	}
 
 	for i := 0; i < publishCount; i++ {
-		err := ar.publish(ctx, &ziggurat.Event{
+		err := ar.publish(&ziggurat.Event{
 			Value: []byte(fmt.Sprintf("%s_%d", "foo", i)),
 		}, qname)
 		if err != nil {

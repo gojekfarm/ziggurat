@@ -48,6 +48,7 @@ type ARetry struct {
 	connTimeout   time.Duration
 	ogLogger      ziggurat.StructuredLogger
 	queueConfig   map[string]QueueConfig
+	publisherPool *publisherPool
 }
 
 func constructAMQPURL(host, username, password string) string {
@@ -84,17 +85,15 @@ func AutoRetry(qc Queues, opts ...Opts) *ARetry {
 	return r
 }
 
-func (r *ARetry) publish(ctx context.Context, event *ziggurat.Event, queue string) error {
+func (r *ARetry) publish(event *ziggurat.Event, queue string) error {
 	if r.publishDialer == nil {
 		return ErrPublisherNotInit
 	}
-	pub, err := getPublisher(ctx, r.publishDialer, r.logger)
-	if err != nil {
-		return err
-	}
 
+	pub := r.publisherPool.get()
+	defer r.publisherPool.put(pub)
+	var err error
 	err = publishInternal(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
-	pub.Close()
 	return err
 }
 
@@ -106,9 +105,10 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
 		}
 	})
+	var err error
 	exchange := fmt.Sprintf("%s_%s", queueKey, "exchange")
-	p, err := getPublisher(ctx, r.publishDialer, r.logger)
-	defer p.Close()
+	p := r.publisherPool.get()
+	defer r.publisherPool.put(p)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,6 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 			Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
 		},
 	}
-	defer p.Close()
 	return p.Publish(msg)
 }
 
@@ -136,7 +135,7 @@ func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey stri
 			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
 		}
 	})
-	return r.publish(ctx, event, queueKey)
+	return r.publish(event, queueKey)
 }
 
 func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerFunc {
@@ -150,7 +149,7 @@ func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerF
 		})
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
-			pubErr := r.publish(ctx, event, queueKey)
+			pubErr := r.publish(event, queueKey)
 			r.ogLogger.Error("AR publishInternal error", pubErr)
 			// return the original error
 			return err
@@ -167,6 +166,10 @@ func (r *ARetry) InitPublishers(ctx context.Context) error {
 		return err
 	}
 	r.publishDialer = dialer
+	r.publisherPool, err = newCPool(ctx, 10, dialer, r.logger)
+	if err != nil {
+		return err
+	}
 
 	ch, err := getChannelFromDialer(ctx, r.publishDialer, r.connTimeout)
 	if err != nil {

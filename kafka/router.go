@@ -49,7 +49,7 @@ func (r *Router) match(path string) (ziggurat.Handler, string) {
 
 func sortAndAppend(s []routerEntry, e routerEntry) []routerEntry {
 	n := len(s)
-	// Get the insert position
+	// get the insert position
 	// We are sorting all the patterns by len in descending order
 	i := sort.Search(n, func(i int) bool {
 		return len(e.pattern) > len(s[i].pattern)
