@@ -100,6 +100,7 @@ func (r *ARetry) publish(event *ziggurat.Event, queue string) error {
 //Publish can be called from anywhere and messages can be sent to any queue
 func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey string, queueType string, expirationInMS string) error {
 	r.once.Do(func() {
+		r.ogLogger.Info("[amqp] init from publish")
 		err := r.InitPublishers(ctx)
 		if err != nil {
 			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
@@ -130,6 +131,7 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 
 func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey string) error {
 	r.once.Do(func() {
+		r.ogLogger.Info("[amqp] running init function from retry")
 		err := r.InitPublishers(ctx)
 		if err != nil {
 			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
@@ -142,6 +144,7 @@ func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerF
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
 		// start the publishers once only
 		r.once.Do(func() {
+			r.ogLogger.Info("[amqp] init from wrap")
 			err := r.InitPublishers(ctx)
 			if err != nil {
 				panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
@@ -199,6 +202,7 @@ func (r *ARetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 		return err
 	}
 
+	// twice called
 	for _, qc := range r.queueConfig {
 		if err := createQueuesAndExchanges(ch, qc.QueueKey, r.ogLogger); err != nil {
 			r.ogLogger.Error("error creating queues and exchanges", err)

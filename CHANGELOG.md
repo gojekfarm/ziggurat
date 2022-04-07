@@ -1,4 +1,3 @@
-
 # Changelog
 
 All notable changes to this project will be documented in this file.
@@ -14,6 +13,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   manual assertions
 
 ## [1.6.0] 2022-02-13
+
 # Changes
 
 - changes internal retry structure for RabbitMQ
@@ -22,26 +22,32 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - The RabbitMQ `QueueConfig` now uses `QueueKey` instead of `QueueName`
 
-
 ## [1.5.1] 2022-01-28
 
 # Added
-- consumer config now takes in a new option called `PartititionAssignment` which is used to configure how kafka partitions are assigned to a consumer
+
+- consumer config now takes in a new option called `PartititionAssignment` which is used to configure how kafka
+  partitions are assigned to a consumer
 
 ## [1.5.0] 2022-01-07
 
 # Changes
+
 - Kafka consumer default `PollTimeout` is `100 ms`
-- `ConsumerGroupID` is renamed to `GroupID` and `OriginTopics` is renamed to `Topics` to keep it consistent with kafka terminology
+- `ConsumerGroupID` is renamed to `GroupID` and `OriginTopics` is renamed to `Topics` to keep it consistent with kafka
+  terminology
 - The run loop for kafka consumer polling has been restructured.
 
 # Removed
-- The server package only exposes a Run method which orchestrates an HTTP Server rather than providing a full web server implementation
+
+- The server package only exposes a Run method which orchestrates an HTTP Server rather than providing a full web server
+  implementation
 - `httprouter` dependency has been removed
 
 ## [1.4.5] 2021-12-16
 
 # Changes
+
 - Exposes the ARetry struct from RabbitMQ
 
 ## [1.4.4] 2021-12-16
@@ -53,7 +59,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Adds a deprecation comment for `ConfigureHandler` and `ConfigureHTTPEndpoints` as this is implementation specific
 - Internal code refactoring
 - Exposes a close method on the statsd client to prevent early closes due to context cancellation
-- StatsD Run method takes in an Option to configure the goroutine publish interval. a negative value will not publish goroutines 
+- StatsD Run method takes in an Option to configure the goroutine publish interval. a negative value will not publish
+  goroutines
 
 ## [1.4.3] 2021-10-20
 
@@ -65,8 +72,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # Breaking changes
 
-- kafka messages now use the route group to route messages, `<route_group>/<topic>/<partition>`. Usage of `<bootstrap_server>/<consumer_group>/<topic>/<partition>` is deprecated
-as this makes the path very long and routes become difficult to configure.
+- kafka messages now use the route group to route messages, `<route_group>/<topic>/<partition>`. Usage
+  of `<bootstrap_server>/<consumer_group>/<topic>/<partition>` is deprecated as this makes the path very long and routes
+  become difficult to configure.
 
 ## [1.4.1] 2021-09-09
 

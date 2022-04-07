@@ -1,6 +1,3 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
@@ -10,14 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
-	"github.com/gojekfarm/ziggurat/server"
-
-	"github.com/gojekfarm/ziggurat/mw/prometheus"
-
 	"github.com/gojekfarm/ziggurat"
 	"github.com/gojekfarm/ziggurat/kafka"
 	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
 )
 
 func main() {
@@ -34,6 +27,12 @@ func main() {
 			GroupID:          "pt_consumer",
 			ConsumerCount:    2,
 			RouteGroup:       "plain-text-messages",
+		}, {
+			BootstrapServers: "g-gojek-id-mainstream.golabs.io:6668",
+			Topics:           "driver-location-ping-3",
+			GroupID:          "dlr_pings_go_ziggurat_02",
+			ConsumerCount:    2,
+			RouteGroup:       "dlr_ping",
 		}},
 		Logger: l,
 	}
@@ -45,6 +44,13 @@ func main() {
 			RetryCount:            5,
 			ConsumerPrefetchCount: 1,
 			ConsumerCount:         1,
+		},
+		{
+			QueueKey:              "dlr_ping_retry",
+			DelayExpirationInMS:   "500",
+			ConsumerPrefetchCount: 5,
+			ConsumerCount:         20,
+			RetryCount:            2,
 		},
 	}, rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
@@ -64,24 +70,28 @@ func main() {
 		return nil
 	}, "plain_text_messages_retry"))
 
-	mux := http.NewServeMux()
-	mux.Handle("/dead_set", ar.DSReplayHandler(ctx))
-	s := http.Server{Addr: ":8080", Handler: mux}
-
-	wait := make(chan struct{})
-	zig.StartFunc(func(ctx context.Context) {
-		prometheus.StartMonitoringServer(ctx, prometheus.WithAddr("8080"))
-		go func() {
-			server.Run(ctx, &s)
-			wait <- struct{}{}
-		}()
+	r.HandleFunc("dlr_ping", func(ctx context.Context, event *ziggurat.Event) error {
+		return ar.Retry(ctx, event, "dlr_ping_retry")
 	})
 
-	h := ziggurat.Use(&r, prometheus.PublishHandlerMetrics)
+	mux := http.NewServeMux()
+	mux.Handle("/dead_set", ar.DSReplayHandler(ctx))
+	//s := http.Server{Addr: ":8080", Handler: mux}
+
+	//wait := make(chan struct{})
+	//zig.StartFunc(func(ctx context.Context) {
+	//    prometheus.StartMonitoringServer(ctx, prometheus.WithAddr("8080"))
+	//    go func() {
+	//        server.Run(ctx, &s)
+	//        wait <- struct{}{}
+	//    }()
+	//})
+
+	h := ziggurat.Use(&r)
 
 	if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 
-	<-wait
+	//<-wait
 }
