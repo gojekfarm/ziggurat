@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
@@ -10,6 +11,8 @@ import (
 
 type publisherPool struct {
 	pool chan *publisher.Publisher
+	d    *amqpextra.Dialer
+	l    logger.Logger
 }
 
 func newPubPool(ctx context.Context, size int, d *amqpextra.Dialer, logger logger.Logger) (*publisherPool, error) {
@@ -24,10 +27,20 @@ func newPubPool(ctx context.Context, size int, d *amqpextra.Dialer, logger logge
 	return pubPool, nil
 }
 
-func (c *publisherPool) get() *publisher.Publisher {
-	return <-c.pool
+func (c *publisherPool) get(ctx context.Context) (*publisher.Publisher, error) {
+	select {
+	case pub := <-c.pool:
+		return pub, nil
+	default:
+		pub, err := getPublisher(ctx, c.d, c.l)
+		return pub, fmt.Errorf("could not get a channel from publisher pool:%v\n", err)
+	}
 }
 
 func (c *publisherPool) put(p *publisher.Publisher) {
-	c.pool <- p
+	select {
+	case c.pool <- p:
+	default:
+		// drop the channel
+	}
 }

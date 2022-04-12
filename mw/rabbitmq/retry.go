@@ -85,14 +85,16 @@ func AutoRetry(qc Queues, opts ...Opts) *ARetry {
 	return r
 }
 
-func (r *ARetry) publish(event *ziggurat.Event, queue string) error {
+func (r *ARetry) publish(c context.Context, event *ziggurat.Event, queue string) error {
 	if r.publishDialer == nil {
 		return ErrPublisherNotInit
 	}
 
-	pub := r.publisherPool.get()
+	pub, err := r.publisherPool.get(c)
+	if err != nil {
+		return err
+	}
 	defer r.publisherPool.put(pub)
-	var err error
 	err = publishInternal(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
 	return err
 }
@@ -108,7 +110,10 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 	})
 	var err error
 	exchange := fmt.Sprintf("%s_%s", queueKey, "exchange")
-	p := r.publisherPool.get()
+	p, err := r.publisherPool.get(ctx)
+	if err != nil {
+		return err
+	}
 	defer r.publisherPool.put(p)
 	if err != nil {
 		return err
@@ -137,7 +142,7 @@ func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey stri
 			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
 		}
 	})
-	return r.publish(event, queueKey)
+	return r.publish(ctx, event, queueKey)
 }
 
 func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerFunc {
@@ -152,7 +157,7 @@ func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerF
 		})
 		err := f(ctx, event)
 		if err == ziggurat.Retry {
-			pubErr := r.publish(event, queueKey)
+			pubErr := r.publish(ctx, event, queueKey)
 			r.ogLogger.Error("AR publishInternal error", pubErr)
 			// return the original error
 			return err

@@ -75,7 +75,10 @@ func Test_PoolGetPut(t *testing.T) {
 			}
 			var lastItem *publisher.Publisher
 			for i := 0; i < c.GetOps; i++ {
-				lastItem = cpool.get()
+				lastItem, err = cpool.get(context.Background())
+				if err != nil {
+					t.Fatalf("could not get a publisher from pool:%v\n", err)
+				}
 			}
 			for i := 0; i < c.PutOps; i++ {
 				cpool.put(lastItem)

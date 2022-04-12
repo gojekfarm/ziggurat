@@ -82,7 +82,7 @@ func Test_RetryFlow(t *testing.T) {
 			}()
 
 			for i := 0; i < c.PublishCount; i++ {
-				err := ar.publish(&ziggurat.Event{Value: []byte(fmt.Sprintf("foo-%d", i))}, c.QueueName)
+				err := ar.publish(ctx, &ziggurat.Event{Value: []byte(fmt.Sprintf("foo-%d", i))}, c.QueueName)
 				if err != nil {
 					t.Errorf("error publishing: %v", err)
 				}
@@ -281,7 +281,7 @@ func Test_MessageLoss(t *testing.T) {
 	}
 
 	for i := 0; i < publishCount; i++ {
-		err := ar.publish(&ziggurat.Event{
+		err := ar.publish(ctx, &ziggurat.Event{
 			Value: []byte(fmt.Sprintf("%s_%d", "foo", i)),
 		}, qname)
 		if err != nil {
