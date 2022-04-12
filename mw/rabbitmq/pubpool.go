@@ -16,14 +16,7 @@ type publisherPool struct {
 }
 
 func newPubPool(ctx context.Context, size int, d *amqpextra.Dialer, logger logger.Logger) (*publisherPool, error) {
-	pubPool := &publisherPool{pool: make(chan *publisher.Publisher, size)}
-	for i := 0; i < size; i++ {
-		p, err := getPublisher(ctx, d, logger)
-		if err != nil {
-			return nil, err
-		}
-		pubPool.put(p)
-	}
+	pubPool := &publisherPool{pool: make(chan *publisher.Publisher, size), d: d, l: logger}
 	return pubPool, nil
 }
 
@@ -33,7 +26,10 @@ func (c *publisherPool) get(ctx context.Context) (*publisher.Publisher, error) {
 		return pub, nil
 	default:
 		pub, err := getPublisher(ctx, c.d, c.l)
-		return pub, fmt.Errorf("could not get a channel from publisher pool:%v\n", err)
+		if err != nil {
+			return nil, fmt.Errorf("could not get a channel from publisher pool:%v\n", err)
+		}
+		return pub, nil
 	}
 }
 
@@ -41,6 +37,7 @@ func (c *publisherPool) put(p *publisher.Publisher) {
 	select {
 	case c.pool <- p:
 	default:
-		// drop the channel
+		//close and drop the channel
+		p.Close()
 	}
 }
