@@ -15,7 +15,7 @@ type publisherPool struct {
 	l    logger.Logger
 }
 
-func newPubPool(ctx context.Context, size int, d *amqpextra.Dialer, logger logger.Logger) (*publisherPool, error) {
+func newPubPool(size int, d *amqpextra.Dialer, logger logger.Logger) (*publisherPool, error) {
 	pubPool := &publisherPool{pool: make(chan *publisher.Publisher, size), d: d, l: logger}
 	return pubPool, nil
 }
