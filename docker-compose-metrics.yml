@@ -1,16 +1,6 @@
-influxdb:
-  image: influxdb:latest
-  container_name: influxdb
-  ports:
-    - "8083:8083"
-    - "8086:8086"
-    - "8090:8090"
-
 telegraf:
   image: telegraf:latest
   container_name: telegraf
-  links:
-    - influxdb
   ports:
     - "8125:8125/udp"
     - "9273:9273"
@@ -24,7 +14,6 @@ grafana:
     - "3000:3000"
   user: "0"
   links:
-    - influxdb
     - prometheus
   volumes:
     - ./data/grafana/data:/grafana
@@ -35,7 +24,6 @@ prometheus:
   ports:
     - "9090:9090"
   links:
-    - influxdb
     - telegraf
   volumes:
     - ./prom_conf.yml:/etc/prometheus/prometheus.yml:ro
