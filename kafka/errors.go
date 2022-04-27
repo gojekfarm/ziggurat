@@ -5,5 +5,5 @@ import (
 )
 
 var (
-	ErrOffsetCommit = errors.New("cannot commit errored message")
+	ErrPart = errors.New("error in partition")
 )

@@ -25,7 +25,7 @@ var closeConsumer = func(c *kafka.Consumer) error {
 // offsets are stored in memory and are later flushed by the auto-commit timer
 var storeOffsets = func(consumer *kafka.Consumer, partition kafka.TopicPartition) error {
 	if partition.Error != nil {
-		return ErrOffsetCommit
+		return ErrPart
 	}
 	offsets := []kafka.TopicPartition{partition}
 	offsets[0].Offset++
