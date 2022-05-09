@@ -1,7 +1,11 @@
+//go:build ignore
+// +build ignore
+
 package main
 
 import (
     "context"
+    "github.com/gojekfarm/ziggurat/mw/statsd"
     "strconv"
     "strings"
     "time"
@@ -18,6 +22,10 @@ func main() {
 
     ctx := context.Background()
     l := logger.NewLogger(logger.LevelInfo)
+
+    statsClient := statsd.NewPublisher(statsd.WithLogger(l),
+        statsd.WithDefaultTags(statsd.StatsDTag{"ziggurat-version": "v162"}),
+        statsd.WithPrefix("ziggurat_v162"))
 
     ks := kafka.Streams{
         StreamConfig: kafka.StreamConfig{{
@@ -42,7 +50,7 @@ func main() {
         rabbitmq.WithPassword("bitnami"),
         rabbitmq.WithConnectionTimeout(3*time.Second))
 
-    r.HandleFunc("plain-text-messages/", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+    r.HandleFunc("plain-text-messages/", func(ctx context.Context, event *ziggurat.Event) error {
         val := string(event.Value)
         s := strings.Split(val, "_")
         num, err := strconv.Atoi(s[1])
@@ -50,12 +58,12 @@ func main() {
             return err
         }
         if num%2 == 0 {
-            return ziggurat.Retry
+            return ar.Retry(ctx, event, "plain_text_messages_retry")
         }
         return nil
-    }, "plain_text_messages_retry"))
+    })
 
-    h := ziggurat.Use(&r)
+    h := ziggurat.Use(&r, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
 
     if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
         l.Error("error running streams", runErr)
