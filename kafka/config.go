@@ -25,8 +25,8 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 		"debug":                    "consumer",
 		"go.logs.channel.enable":   true,
 		"enable.auto.offset.store": false,
-		"auto.commit.interval.ms":  15000,
-		"auto.offset.reset":        "earliest",
+		"auto.commit.interval.ms":  5000,
+		"auto.offset.reset":        "latest",
 	}
 	if c.AutoOffsetReset != "" {
 		kafkaConfMap["auto.offset.reset"] = c.AutoOffsetReset
