@@ -22,7 +22,6 @@ var publishGoRoutines = func(ctx context.Context, interval time.Duration, s *Cli
 			s.logger.Error(
 				"error publishing go-routine count",
 				s.Gauge("num_goroutine", int64(runtime.NumGoroutine()), nil))
-			run = false
 		}
 	}
 }
