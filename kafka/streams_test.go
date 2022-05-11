@@ -14,6 +14,8 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
+// try with an existing topic
+
 func makeRandString() string {
 	bb := make([]byte, 5)
 	_, err := rand.Read(bb)
@@ -37,6 +39,7 @@ func Test_streams(t *testing.T) {
 			GroupID:          topic + "_consumer",
 			ConsumerCount:    1,
 			Topics:           topic,
+			AutoOffsetReset:  "earliest",
 		}},
 	}
 	go func() {

@@ -3,17 +3,18 @@ package kafka
 import "github.com/confluentinc/confluent-kafka-go/kafka"
 
 type ConsumerConfig struct {
-	BootstrapServers    string
-	DebugLevel          string
-	GroupID             string
-	Topics              string
-	AutoCommitInterval  int
-	ConsumerCount       int
-	PollTimeout         int
-	RouteGroup          string
-	AutoOffsetReset     string
-	PartitionAssignment string
-	MaxPollIntervalMS   int
+	BootstrapServers      string
+	DebugLevel            string
+	GroupID               string
+	Topics                string
+	AutoCommitInterval    int
+	ConsumerCount         int
+	PollTimeout           int
+	RouteGroup            string
+	AutoOffsetReset       string
+	PartitionAssignment   string
+	MaxPollIntervalMS     int
+	AllowAutoCreateTopics bool
 }
 
 func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
@@ -47,6 +48,8 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 	if c.MaxPollIntervalMS > 0 {
 		kafkaConfMap["max.poll.interval.ms"] = c.MaxPollIntervalMS
 	}
+
+	kafkaConfMap["allow.auto.create.topics"] = c.AllowAutoCreateTopics
 
 	return kafkaConfMap
 }
