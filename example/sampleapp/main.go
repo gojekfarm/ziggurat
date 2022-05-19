@@ -1,12 +1,8 @@
-//go:build ignore
-// +build ignore
-
 package main
 
 import (
 	"context"
-	"strconv"
-	"strings"
+	"math/rand"
 	"time"
 
 	"github.com/gojekfarm/ziggurat/mw/statsd"
@@ -30,11 +26,11 @@ func main() {
 
 	ks := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{{
-			BootstrapServers: "localhost:9092",
-			Topics:           "plain-text-log",
-			GroupID:          "ziggurat_consumer",
+			BootstrapServers: "g-gojek-id-mainstream.golabs.io:6668",
+			Topics:           "ziggurat_channel_pool_test",
+			GroupID:          "ziggurat_consumer_local",
 			ConsumerCount:    2,
-			RouteGroup:       "plain-text-messages"}},
+			RouteGroup:       "cpool"}},
 		Logger: l,
 	}
 
@@ -42,31 +38,32 @@ func main() {
 		{
 			QueueKey:              "plain_text_messages_retry",
 			DelayExpirationInMS:   "500",
-			ConsumerPrefetchCount: 5,
-			ConsumerCount:         100,
-			RetryCount:            2,
+			ConsumerPrefetchCount: 1,
+			ConsumerCount:         1,
+			RetryCount:            1,
 		},
 	}, rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
 		rabbitmq.WithPassword("bitnami"),
 		rabbitmq.WithConnectionTimeout(3*time.Second))
 
-	r.HandleFunc("plain-text-messages/", func(ctx context.Context, event *ziggurat.Event) error {
-		val := string(event.Value)
-		s := strings.Split(val, "_")
-		num, err := strconv.Atoi(s[1])
-		if err != nil {
+	r.HandleFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) error {
+		if rand.Intn(1000)%2 == 0 {
+			l.Info("retrying")
+			err := ar.Retry(ctx, event, "plain_text_messages_retry")
+			l.Info("retrying finished")
 			return err
-		}
-		if num%2 == 0 {
-			return ar.Retry(ctx, event, "plain_text_messages_retry")
 		}
 		return nil
 	})
 
+	zig.StartFunc(func(ctx context.Context) {
+		statsClient.Run(ctx)
+	})
+
 	h := ziggurat.Use(&r, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
 
-	if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &ks); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 

@@ -14,6 +14,7 @@ var newDialer = func(ctx context.Context, AMQPURLs []string, l logger.Logger) (*
 	dialer, err := amqpextra.NewDialer(
 		amqpextra.WithContext(ctx),
 		amqpextra.WithLogger(l),
+		amqpextra.WithConnectionProperties(amqp.Table{"connection_name": "ziggurat_go"}),
 		amqpextra.WithURL(AMQPURLs...))
 	if err != nil {
 		return nil, err

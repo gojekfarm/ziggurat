@@ -60,6 +60,7 @@ func (s *Streams) Stream(ctx context.Context, handler ziggurat.Handler) error {
 		}
 	}
 	s.wg.Wait()
+	s.Logger.Info("kafka worker wait complete")
 	var causes string
 	for _, ws := range s.workers {
 		for _, w := range ws {
