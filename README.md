@@ -65,9 +65,9 @@ func main() {
         Logger: l,
     }
 
-    r.HandleFunc("plain-text-group/*", ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-        return ziggurat.Retry
-    }, "pt_retries"))
+    r.HandleFunc("plain-text-group/*", func(ctx context.Context, event *ziggurat.Event) error {
+        return ar.Retry(ctx,event,"pt_retries")
+    })
 
     zig.StartFunc(func(ctx context.Context) {
         err := statsdPub.Run(ctx)
