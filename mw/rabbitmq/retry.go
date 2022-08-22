@@ -100,7 +100,7 @@ func (r *ARetry) publish(c context.Context, event *ziggurat.Event, queue string)
 }
 
 //Publish can be called from anywhere and messages can be sent to any queue
-func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey string, queueType string, expirationInMS string) error {
+func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey string, queueType string, expirationMS string) error {
 	r.once.Do(func() {
 		r.ogLogger.Info("[amqp] init from publish")
 		err := r.InitPublishers(ctx)
@@ -126,7 +126,7 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 		Exchange: exchange,
 		Key:      queueType,
 		Publishing: amqp.Publishing{
-			Expiration: expirationInMS,
+			Expiration: expirationMS,
 			Body:       eb,
 			Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
 		},
