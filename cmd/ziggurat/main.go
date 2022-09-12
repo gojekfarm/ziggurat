@@ -44,11 +44,11 @@ func main() {
 		die(errors.New(usage))
 	}
 	appName := args[1]
-	d := Data{AppName: appName, Version: "v1.6.4"}
+	d := Data{AppName: appName, Version: "v1.7.1"}
 	wd, err := os.Getwd()
 	die(err)
+
 	paths := definePaths(wd + "/" + appName)
-	die(err)
 
 	t, err := template.ParseFS(res, "templates/*")
 	die(err)
