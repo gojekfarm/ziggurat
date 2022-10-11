@@ -25,7 +25,7 @@ func main() {
 				Topics:           "plain-text-log",
 				GroupID:          "{{.AppName}}_consumer",
 				ConsumerCount:    1,
-				RouteGroup:       "plain-text-group"
+				RouteGroup:       "plain-text-group",
 			},
 		},
 		Logger: l,
