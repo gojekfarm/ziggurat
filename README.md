@@ -5,8 +5,7 @@ Stream Orchestration made easy
 ### Install the ziggurat CLI
 
 ```shell script
-go get -v -u github.com/gojekfarm/ziggurat/cmd/...
-go install github.com/gojekfarm/ziggurat/cmd/...                                                                                                                                                     
+go install github.com/gojekfarm/ziggurat/cmd/ziggurat@latest                                                                                                                                                    
 ```
 
 ### create a new app using the `new` command
