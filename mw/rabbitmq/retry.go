@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -52,7 +53,9 @@ type ARetry struct {
 }
 
 func constructAMQPURL(host, username, password string) string {
-	return fmt.Sprintf("amqp://%s:%s@%s", username, password, host)
+	escapedUser := url.QueryEscape(username)
+	escapedPass := url.QueryEscape(password)
+	return fmt.Sprintf("amqp://%s:%s@%s", escapedUser, escapedPass, host)
 }
 
 func AutoRetry(qc Queues, opts ...Opts) *ARetry {
@@ -99,7 +102,7 @@ func (r *ARetry) publish(c context.Context, event *ziggurat.Event, queue string)
 	return err
 }
 
-//Publish can be called from anywhere and messages can be sent to any queue
+// Publish can be called from anywhere and messages can be sent to any queue
 func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey string, queueType string, expirationMS string) error {
 	r.once.Do(func() {
 		r.ogLogger.Info("[amqp] init from publish")
@@ -293,8 +296,10 @@ func (r *ARetry) view(ctx context.Context, qnameWithType string, count int, ack 
 	return events, nil
 }
 
-/*DSViewHandler allows you to peek into
-  the rabbitMQ dead-set queue.
+/*
+DSViewHandler allows you to peek into
+
+	the rabbitMQ dead-set queue.
 */
 func (r *ARetry) DSViewHandler(ctx context.Context) http.Handler {
 	f := func(w http.ResponseWriter, req *http.Request) {
