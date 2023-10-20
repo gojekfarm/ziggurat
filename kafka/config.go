@@ -1,6 +1,6 @@
 package kafka
 
-import "github.com/confluentinc/confluent-kafka-go/kafka"
+import "github.com/confluentinc/confluent-kafka-go/v2/kafka"
 
 type ConsumerConfig struct {
 	BootstrapServers      string
