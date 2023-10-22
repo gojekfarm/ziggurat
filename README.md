@@ -143,7 +143,7 @@ Queue config
 
 ```go
 type QueueConfig struct {
-QueueName             string //queue to push the retried messages to 
+QueueKey             string //queue to push the retried messages to 
 DelayExpirationInMS   string //time to wait before being consumed again 
 RetryCount            int    //number of times to retry the message
 ConsumerCount         int //number of concurrent RabbitMQ consumers
@@ -163,7 +163,7 @@ return ziggurat.Retry
 
 - The handler function should be wrapped in the `Wrap` method provided by the Autoretry struct.
 - Always return the `ziggurat.Retry` error for a message to be retried.
-- Autoretry internally created 3 queues based on the `QueueName` in the `QueueConfig`.
+- Autoretry internally creates 3 queues based on the `QueueKey` in the `QueueConfig`.
     - queue_name_delay_queue : messages always get published here first, and stay here for a given time determined by
       the `DelayExpirationInMS` config.
     - queue_name_instant_queue : messages move to the instant queue once the delay has expired, waiting to be consumed.
