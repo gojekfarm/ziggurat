@@ -25,6 +25,7 @@ const (
 	QueueTypeDL      = "dlq"
 	QueueTypeInstant = "instant"
 	QueueTypeDelay   = "delay"
+	QueueTypeWorker  = "worker"
 )
 
 type dsViewResp struct {
@@ -188,6 +189,13 @@ func (r *ARetry) InitPublishers(ctx context.Context) error {
 	}
 
 	for _, qc := range r.queueConfig {
+
+		if qc.Type == WorkerQueue {
+			if err := createWorkerQueue(ch, qc.QueueKey, r.ogLogger); err != nil {
+				return fmt.Errorf("error iniitializing publishers:%w", err)
+			}
+		}
+
 		if err := createQueuesAndExchanges(ch, qc.QueueKey, r.ogLogger); err != nil {
 			r.ogLogger.Error("error creating queues and exchanges", err)
 			return fmt.Errorf("error iniitializing publishers:%w", err)

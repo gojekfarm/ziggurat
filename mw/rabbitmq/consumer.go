@@ -20,7 +20,17 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h zi
 	}
 
 	qname := fmt.Sprintf("%s_%s_%s", c.QueueKey, QueueTypeInstant, "queue")
+
+	if c.Type == WorkerQueue {
+		qname = fmt.Sprintf("%s_%s_%s", c.QueueKey, QueueTypeWorker, "queue")
+	}
+
 	consumerName := fmt.Sprintf("%s_consumer", c.QueueKey)
+	rejectCorruptMessage := true
+	if c.DiscardCorruptMessage {
+		rejectCorruptMessage = false
+	}
+
 	cons, err := d.Consumer(
 		consumer.WithContext(ctx),
 		consumer.WithQueue(qname),
@@ -30,9 +40,10 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h zi
 			bb := msg.Body
 			var event ziggurat.Event
 			err := json.Unmarshal(bb, &event)
+
 			if err != nil {
 				ogl.Error("amqp unmarshal error", err)
-				return msg.Reject(true)
+				return msg.Reject(rejectCorruptMessage)
 			}
 			ogl.Info("amqp processing message", map[string]interface{}{"consumer": consumerName})
 			err = h.Handle(ctx, &event)

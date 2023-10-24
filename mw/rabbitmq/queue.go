@@ -27,6 +27,7 @@ func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggura
 	for _, qt := range queueTypes {
 		args := amqp.Table{}
 		logger.Info("creating queue", map[string]interface{}{"queue": queueName, "type": qt})
+
 		if qt == "delay" {
 			args = amqp.Table{
 				"x-dead-letter-exchange":    fmt.Sprintf("%s_%s", queueName, "exchange"),
@@ -36,6 +37,19 @@ func createQueuesAndExchanges(ch *amqp.Channel, queueName string, logger ziggura
 		if err := createAndBindQueue(ch, queueName, qt, args); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func createWorkerQueue(ch *amqp.Channel, queueName string, logger ziggurat.StructuredLogger) error {
+	if err := ch.ExchangeDeclare(queueName+"_exchange", amqp.ExchangeDirect, true, false, false, false, amqp.Table{}); err != nil {
+		return err
+	}
+	qt := QueueTypeWorker
+	args := amqp.Table{}
+	logger.Info("creating queue", map[string]interface{}{"queue": queueName, "type": qt})
+	if err := createAndBindQueue(ch, queueName, qt, args); err != nil {
+		return err
 	}
 	return nil
 }

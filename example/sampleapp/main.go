@@ -42,6 +42,11 @@ func main() {
 			ConsumerCount:         1,
 			RetryCount:            1,
 		},
+		{
+			QueueKey:      "bulk_cons",
+			ConsumerCount: 10,
+			Type:          rabbitmq.WorkerQueue,
+		},
 	}, rabbitmq.WithLogger(l),
 		rabbitmq.WithUsername("user"),
 		rabbitmq.WithPassword("bitnami"),
@@ -54,7 +59,8 @@ func main() {
 			l.Info("retrying finished")
 			return err
 		}
-		return nil
+		return ar.Publish(ctx, event, "bulk_cons", rabbitmq.QueueTypeWorker, "")
+
 	})
 
 	zig.StartFunc(func(ctx context.Context) {
