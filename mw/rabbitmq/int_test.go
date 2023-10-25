@@ -37,16 +37,18 @@ func Test_RetryFlow(t *testing.T) {
 
 	cases := []test{
 		{
-			PublishCount: 20,
-			RetryCount:   5,
-			Name:         "handler is called for PublishCount * RetryCount times",
-			QueueName:    "foo",
+			PublishCount:  20,
+			RetryCount:    5,
+			Name:          "handler is called for PublishCount * RetryCount times",
+			QueueName:     "foo",
+			ConsumerCount: 1,
 		},
 		{
-			PublishCount: 10,
-			RetryCount:   5,
-			Name:         "spawns one consumer when the count is 0",
-			QueueName:    "bar",
+			PublishCount:  10,
+			RetryCount:    5,
+			Name:          "spawns one consumer when the count is 0",
+			QueueName:     "bar",
+			ConsumerCount: 1,
 		},
 		{
 			PublishCount:  10,

@@ -30,7 +30,6 @@ var getChannelFromDialer = func(ctx context.Context, d *amqpextra.Dialer, timeou
 		<-done
 		cfn()
 	}()
-
 	conn, err := d.Connection(timeoutCtx)
 	if err != nil {
 		return nil, err

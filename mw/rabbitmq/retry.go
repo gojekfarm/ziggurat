@@ -73,9 +73,8 @@ func AutoRetry(qc Queues, opts ...Opts) *ARetry {
 
 	for _, c := range qc {
 
-		if c.ConsumerCount < 1 {
-			c.ConsumerCount = 1
-		}
+		// we allow for zero consumers so that they can be run
+		// separately
 		r.queueConfig[c.QueueKey] = c
 	}
 
@@ -149,6 +148,10 @@ func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey stri
 	return r.publish(ctx, event, queueKey)
 }
 
+func (r *ARetry) SendToWorker(ctx context.Context, event *ziggurat.Event, queueKey string) error {
+	return r.Publish(ctx, event, queueKey, QueueTypeWorker, "")
+}
+
 func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerFunc {
 	hf := func(ctx context.Context, event *ziggurat.Event) error {
 		// start the publishers once only
@@ -172,7 +175,7 @@ func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerF
 	return hf
 }
 
-func (r *ARetry) InitPublishers(ctx context.Context) error {
+func (r *ARetry) initPubPool(ctx context.Context) error {
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
@@ -182,18 +185,21 @@ func (r *ARetry) InitPublishers(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	ch, err := getChannelFromDialer(ctx, r.publishDialer, r.connTimeout)
+func (r *ARetry) initQueues(ctx context.Context, d *amqpextra.Dialer) error {
+	ch, err := getChannelFromDialer(ctx, d, r.connTimeout)
 	if err != nil {
 		return err
 	}
-
 	for _, qc := range r.queueConfig {
 
 		if qc.Type == WorkerQueue {
 			if err := createWorkerQueue(ch, qc.QueueKey, r.ogLogger); err != nil {
 				return fmt.Errorf("error iniitializing publishers:%w", err)
 			}
+			continue
 		}
 
 		if err := createQueuesAndExchanges(ch, qc.QueueKey, r.ogLogger); err != nil {
@@ -204,6 +210,15 @@ func (r *ARetry) InitPublishers(ctx context.Context) error {
 	err = ch.Close()
 	r.ogLogger.Error("error closing channel", err)
 	return nil
+}
+
+func (r *ARetry) InitPublishers(ctx context.Context) error {
+	err := r.initPubPool(ctx)
+	if err != nil {
+		return err
+	}
+
+	return r.initQueues(ctx, r.publishDialer)
 }
 
 func (r *ARetry) Stream(ctx context.Context, h ziggurat.Handler) error {
@@ -218,18 +233,19 @@ func (r *ARetry) Stream(ctx context.Context, h ziggurat.Handler) error {
 		return err
 	}
 
-	// twice called
-	for _, qc := range r.queueConfig {
-		if err := createQueuesAndExchanges(ch, qc.QueueKey, r.ogLogger); err != nil {
-			r.ogLogger.Error("error creating queues and exchanges", err)
-			return fmt.Errorf("error iniitializing publishers:%w", err)
-		}
-	}
 	err = ch.Close()
 	r.ogLogger.Error("error closing channel", err)
+	r.once.Do(func() {
+		r.ogLogger.Info("[amqp] init from stream")
+		err := r.initQueues(ctx, r.consumeDialer)
+		if err != nil {
+			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
+		}
+	})
 
 	var wg sync.WaitGroup
 	for _, qc := range r.queueConfig {
+		r.ogLogger.Info("starting consumer for", map[string]interface{}{"name": qc.QueueKey})
 		for i := 0; i < qc.ConsumerCount; i++ {
 			wg.Add(1)
 			go func(qc QueueConfig) {

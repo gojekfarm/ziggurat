@@ -26,8 +26,8 @@ func main() {
 
 	ks := kafka.Streams{
 		StreamConfig: kafka.StreamConfig{{
-			BootstrapServers: "g-gojek-id-mainstream.golabs.io:6668",
-			Topics:           "ziggurat_channel_pool_test",
+			BootstrapServers: "localhost:9092",
+			Topics:           "json-log",
 			GroupID:          "ziggurat_consumer_local",
 			ConsumerCount:    2,
 			RouteGroup:       "cpool"}},
@@ -59,7 +59,7 @@ func main() {
 			l.Info("retrying finished")
 			return err
 		}
-		return ar.Publish(ctx, event, "bulk_cons", rabbitmq.QueueTypeWorker, "")
+		return ar.SendToWorker(ctx, event, "bulk_cons")
 
 	})
 
@@ -69,7 +69,7 @@ func main() {
 
 	h := ziggurat.Use(&r, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
 
-	if runErr := zig.RunAll(ctx, h, &ks); runErr != nil {
+	if runErr := zig.RunAll(ctx, h, &ks, ar); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 
