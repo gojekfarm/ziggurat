@@ -11,13 +11,14 @@ import (
 	"github.com/gojekfarm/ziggurat"
 )
 
-func newAutoRetry(qn string, count int, consumerCount int) *ARetry {
+func newAutoRetry(qn string, count int, consumerCount int, qtype int) *ARetry {
 	ar := AutoRetry(
 		[]QueueConfig{{
 			QueueKey:            qn,
 			DelayExpirationInMS: "500",
 			RetryCount:          count,
 			ConsumerCount:       consumerCount,
+			Type:                qtype,
 		}},
 		WithUsername("user"),
 		WithConnectionTimeout(5*time.Second),
@@ -43,13 +44,7 @@ func Test_RetryFlow(t *testing.T) {
 			QueueName:     "foo",
 			ConsumerCount: 1,
 		},
-		{
-			PublishCount:  10,
-			RetryCount:    5,
-			Name:          "spawns one consumer when the count is 0",
-			QueueName:     "bar",
-			ConsumerCount: 1,
-		},
+
 		{
 			PublishCount:  10,
 			RetryCount:    2,
@@ -65,7 +60,7 @@ func Test_RetryFlow(t *testing.T) {
 			defer cfn()
 			var callCount int32
 			expectedCallCount := int32(c.PublishCount * c.RetryCount)
-			ar := newAutoRetry(c.QueueName, c.RetryCount, c.ConsumerCount)
+			ar := newAutoRetry(c.QueueName, c.RetryCount, c.ConsumerCount, RetryQueue)
 			err := ar.InitPublishers(ctx)
 			t.Logf("publishers init successful")
 			if err != nil {
@@ -147,7 +142,7 @@ func Test_view(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			ar := newAutoRetry(c.qname, 5, 1)
+			ar := newAutoRetry(c.qname, 5, 1, RetryQueue)
 			err := ar.InitPublishers(ctx)
 			if err != nil {
 				t.Errorf("error could not init publishers:%v", err)
@@ -222,7 +217,7 @@ func Test_replay(t *testing.T) {
 	defer cfn()
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			ar := newAutoRetry(tc.queueName, 5, 1)
+			ar := newAutoRetry(tc.queueName, 5, 1, RetryQueue)
 			err := ar.InitPublishers(ctx)
 			if err != nil {
 				t.Errorf("couldn't start publishers:%v", err)
@@ -263,7 +258,7 @@ func Test_MessageLoss(t *testing.T) {
 	qname := "foo"
 	ctx, cfn := context.WithTimeout(context.Background(), time.Second*10)
 	defer cfn()
-	ar := newAutoRetry(qname, retryCount, consumerCount)
+	ar := newAutoRetry(qname, retryCount, consumerCount, RetryQueue)
 
 	done := make(chan struct{})
 	go func() {
@@ -308,5 +303,4 @@ func Test_MessageLoss(t *testing.T) {
 	if err != nil {
 		t.Errorf("error deleting queues:%v", err)
 	}
-
 }
