@@ -19,25 +19,18 @@ jobs:
 
       - name: Build
         run: go build -v ./...
-        with:
-          go-version: 1.22
 
       - name: Test
         run: make lib.test
-        with:
-          go-version: 1.22
+
 
       - name: Test Integration
-        with:
-          go-version: 1.22
         run: |
           make docker.start
           sleep 30
           make lib.test-integration
 
       - name: Coverage
-        with:
-          go-version: 1.22
         run: make lib.test-coverage
 
       - name: Upload Coverage
