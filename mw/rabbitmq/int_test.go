@@ -71,7 +71,7 @@ func Test_RetryFlow(t *testing.T) {
 			}
 			done := make(chan struct{})
 			go func() {
-				err := ar.Stream(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+				err := ar.Consume(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 					atomic.AddInt32(&callCount, 1)
 					return ziggurat.Retry
 				}, c.QueueName))
@@ -265,7 +265,7 @@ func Test_MessageLoss(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		err := ar.Stream(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+		err := ar.Consume(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
 			return ziggurat.Retry
 		}, qname))
 		if !errors.Is(err, ErrCleanShutdown) {

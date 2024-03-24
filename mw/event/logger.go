@@ -10,14 +10,14 @@ func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat
 	return func(handler ziggurat.Handler) ziggurat.Handler {
 		f := func(ctx context.Context, event *ziggurat.Event) error {
 			kvs := map[string]interface{}{
-				"path":               event.Path,
+				"path":               event.RoutingPath,
 				"producer-timestamp": event.ProducerTimestamp,
 				"received-timestamp": event.ReceivedTimestamp,
 				"value-length":       len(event.Value),
 				"event-type":         event.EventType,
 			}
 
-			for k, v := range event.Headers {
+			for k, v := range event.Metadata {
 				kvs[k] = v
 			}
 

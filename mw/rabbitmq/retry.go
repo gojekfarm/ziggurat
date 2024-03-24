@@ -198,7 +198,7 @@ func (r *ARetry) InitPublishers(ctx context.Context) error {
 	return nil
 }
 
-func (r *ARetry) Stream(ctx context.Context, h ziggurat.Handler) error {
+func (r *ARetry) Consume(ctx context.Context, h ziggurat.Handler) error {
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err

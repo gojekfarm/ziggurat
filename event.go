@@ -1,8 +1,6 @@
 package ziggurat
 
-import (
-	"time"
-)
+import "time"
 
 // Event is a generic event
 // ReceivedTimestamp holds the timestamp of the message when it was received
@@ -12,12 +10,9 @@ import (
 // Headers can contain additional metadata about the message
 // Metadata is used to store metadata about the message
 type Event struct {
-	Headers  map[string]string      `json:"headers"`
-	Metadata map[string]interface{} `json:"meta"`
-	Value    []byte                 `json:"value"`
-	Key      []byte                 `json:"key"`
-	// Path can be a single key
-	Path string `json:"path"`
+	Metadata map[string]any `json:"meta"`
+	Value    []byte         `json:"value"`
+	Key      []byte         `json:"key"`
 	// RoutingPath can be an actual path like a string separated by a delimiter, this was added to maintain
 	// backwards compatibility
 	RoutingPath       string    `json:"routing_path"`

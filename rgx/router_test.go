@@ -1,11 +1,10 @@
-package kafka
+package rgx
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat"
 	"reflect"
 	"testing"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 func shouldPanic(t *testing.T, f func()) {
@@ -106,32 +105,32 @@ func Test_register(t *testing.T) {
 	cases := map[string]func(t *testing.T){
 		"should panic on empty pattern": func(t *testing.T) {
 			shouldPanic(t, func() {
-				router.HandleFunc("", h)
+				router.HandlerFunc("", h)
 			})
 		},
 		"should panic on nil handler": func(t *testing.T) {
 			shouldPanic(t, func() {
-				router.HandleFunc("/bar", nil)
+				router.HandlerFunc("/bar", nil)
 			})
 		},
 
 		"should panic on / as the pattern": func(t *testing.T) {
 			shouldPanic(t, func() {
-				router.HandleFunc("/", h)
+				router.HandlerFunc("/", h)
 			})
 		},
 
 		"should not allow multiple registrations of the same pattern": func(t *testing.T) {
 			shouldPanic(t, func() {
-				router.HandleFunc("/bar", h)
-				router.HandleFunc("/bar", h)
+				router.HandlerFunc("/bar", h)
+				router.HandlerFunc("/bar", h)
 			})
 		},
 		"sort and append should append the patterns in increasing order of len(s)": func(t *testing.T) {
 			var router Router
-			router.HandleFunc("/bar/baz", h)
-			router.HandleFunc("/bar", h)
-			router.HandleFunc("/foo/bar/0", h)
+			router.HandlerFunc("/bar/baz", h)
+			router.HandlerFunc("/bar", h)
+			router.HandlerFunc("/foo/bar/0", h)
 			want := []routerEntry{
 				{pattern: "/foo/bar/0", handler: h},
 				{pattern: "/bar/baz", handler: h},

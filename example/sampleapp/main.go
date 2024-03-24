@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/rgx"
 	"math/rand"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 
 func main() {
 	var zig ziggurat.Ziggurat
-	var r kafka.Router
+	var r rgx.Router
 
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
@@ -24,14 +25,22 @@ func main() {
 		statsd.WithDefaultTags(statsd.StatsDTag{"ziggurat-version": "v162"}),
 		statsd.WithPrefix("ziggurat_v162"))
 
-	ks := kafka.Streams{
-		StreamConfig: kafka.StreamConfig{{
-			BootstrapServers: "g-gojek-id-mainstream.golabs.io:6668",
-			Topics:           "ziggurat_channel_pool_test",
-			GroupID:          "ziggurat_consumer_local",
-			ConsumerCount:    2,
-			RouteGroup:       "cpool"}},
-		Logger: l,
+	kcg := kafka.ConsumerGroup{
+		Logger: nil,
+		GroupConfig: kafka.ConsumerConfig{
+			BootstrapServers:      "",
+			DebugLevel:            "",
+			GroupID:               "",
+			Topics:                "",
+			AutoCommitInterval:    0,
+			ConsumerCount:         0,
+			PollTimeout:           0,
+			RouteGroup:            "",
+			AutoOffsetReset:       "",
+			PartitionAssignment:   "",
+			MaxPollIntervalMS:     0,
+			AllowAutoCreateTopics: false,
+		},
 	}
 
 	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{
@@ -47,7 +56,7 @@ func main() {
 		rabbitmq.WithPassword("bitnami"),
 		rabbitmq.WithConnectionTimeout(3*time.Second))
 
-	r.HandleFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) error {
+	r.HandlerFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) error {
 		if rand.Intn(1000)%2 == 0 {
 			l.Info("retrying")
 			err := ar.Retry(ctx, event, "plain_text_messages_retry")
@@ -63,7 +72,7 @@ func main() {
 
 	h := ziggurat.Use(&r, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
 
-	if runErr := zig.RunAll(ctx, h, &ks); runErr != nil {
+	if runErr := zig.Run(ctx, h, &kcg); runErr != nil {
 		l.Error("error running streams", runErr)
 	}
 

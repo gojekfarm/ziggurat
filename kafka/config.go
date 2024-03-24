@@ -6,7 +6,7 @@ type ConsumerConfig struct {
 	BootstrapServers      string
 	DebugLevel            string
 	GroupID               string
-	Topics                string
+	Topics                []string
 	AutoCommitInterval    int
 	ConsumerCount         int
 	PollTimeout           int
@@ -53,5 +53,3 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
 	return kafkaConfMap
 }
-
-type StreamConfig = []ConsumerConfig

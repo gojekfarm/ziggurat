@@ -10,10 +10,8 @@ func TestPipeHandlers(t *testing.T) {
 	mw1 := func(next Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, messageEvent *Event) error {
 			me := Event{
-				Headers:           nil,
 				Value:             []byte("foo"),
 				Key:               nil,
-				Path:              "",
 				ProducerTimestamp: time.Time{},
 				ReceivedTimestamp: time.Time{},
 				EventType:         "",
@@ -26,10 +24,9 @@ func TestPipeHandlers(t *testing.T) {
 		return HandlerFunc(func(ctx context.Context, messageEvent *Event) error {
 			byteValue := append(messageEvent.Value, []byte("-bar")...)
 			me := Event{
-				Headers:           nil,
+				RoutingPath:       "",
 				Value:             byteValue,
 				Key:               nil,
-				Path:              "",
 				ProducerTimestamp: time.Time{},
 				ReceivedTimestamp: time.Time{},
 				EventType:         "",

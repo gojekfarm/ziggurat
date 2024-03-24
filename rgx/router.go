@@ -1,12 +1,11 @@
-package kafka
+package rgx
 
 import (
 	"context"
 	"fmt"
+	"github.com/gojekfarm/ziggurat"
 	"regexp"
 	"sort"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 /*
@@ -18,7 +17,7 @@ routerEntry {
 handlerEntry []string sorted by len of paths
 */
 
-//routerEntry contains the pattern and the path routerEntry
+// routerEntry contains the pattern and the path routerEntry
 type routerEntry struct {
 	handler ziggurat.Handler
 	pattern string
@@ -29,7 +28,7 @@ type Router struct {
 	es           []routerEntry
 }
 
-//match works by matching the shortest prefix that matches the path
+// match works by matching the shortest prefix that matches the path
 // it returns the matched path and the handler associated with it
 func (r *Router) match(path string) (ziggurat.Handler, string) {
 	if e, ok := r.handlerEntry[path]; ok {
@@ -60,7 +59,7 @@ func sortAndAppend(s []routerEntry, e routerEntry) []routerEntry {
 	return s
 }
 
-func (r *Router) HandleFunc(pattern string, h func(ctx context.Context, event *ziggurat.Event) error) {
+func (r *Router) HandlerFunc(pattern string, h func(ctx context.Context, event *ziggurat.Event) error) {
 	if pattern == "" {
 		panic(fmt.Errorf("kafka router:pattern cannot be [%q]", pattern))
 	}
@@ -98,5 +97,5 @@ func (r *Router) Handle(ctx context.Context, event *ziggurat.Event) error {
 	if h != nil {
 		return h.Handle(ctx, event)
 	}
-	return fmt.Errorf("kafka router:no pattern registered for [%s]", path)
+	return fmt.Errorf("rgx router:no pattern registered for [%s]", path)
 }

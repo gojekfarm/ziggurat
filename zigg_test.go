@@ -2,107 +2,100 @@ package ziggurat
 
 import (
 	"context"
-	"strings"
+	"errors"
+	"github.com/stretchr/testify/mock"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/gojekfarm/ziggurat/logger"
 )
 
-type mockStreams struct {
-	ConsumeFunc func(ctx context.Context, handler Handler) error
+type MockConsumer struct {
+	mock.Mock
 }
 
-func (m mockStreams) Stream(ctx context.Context, handler Handler) error {
-	return m.ConsumeFunc(ctx, handler)
-}
+func (m *MockConsumer) Consume(ctx context.Context, handler Handler) error {
+	args := m.Called(ctx, handler)
 
-func TestZigguratStartStop(t *testing.T) {
-	isStartCalled := false
-	isStopCalled := false
-	ctx, cfn := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cfn()
-	z := &Ziggurat{Logger: logger.NOOP}
-	z.StartFunc(func(ctx context.Context) {
-		isStartCalled = true
-	})
-	z.StopFunc(func() {
-		isStopCalled = true
-	})
+	keepAlive := true
 
-	streams := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
-		<-ctx.Done()
-		return ctx.Err()
-	}}
-
-	_ = z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event *Event) error { return nil }))
-
-	if !isStartCalled {
-		t.Error("expected start callback to be called")
+	for keepAlive {
+		select {
+		case <-ctx.Done():
+			keepAlive = false
+		default:
+			time.Sleep(200 * time.Millisecond)
+			_ = handler.Handle(ctx, &Event{})
+		}
 	}
-	if !isStopCalled {
-		t.Error("expected stop callback to be called")
-	}
+	return args.Error(0)
+
 }
 
 func TestZiggurat_Run(t *testing.T) {
-	z := &Ziggurat{Logger: logger.NOOP}
-	ctx, cfn := context.WithTimeout(context.Background(), 100*time.Millisecond)
-	defer cfn()
+	t.Run("clean shutdown error", func(t *testing.T) {
+		var zig Ziggurat
+		var msgCount int32
+		ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Millisecond)
+		defer cancel()
+		mc1 := MockConsumer{}
+		mc2 := MockConsumer{}
+		mc3 := MockConsumer{}
+		handler := HandlerFunc(func(ctx context.Context, event *Event) error {
+			atomic.AddInt32(&msgCount, 1)
+			return nil
+		})
 
-	streams := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
-		<-ctx.Done()
-		return nil
-	}}
+		mc1.On("Consume", mock.Anything, mock.Anything).Return(nil)
+		mc2.On("Consume", mock.Anything, mock.Anything).Return(nil)
+		mc3.On("Consume", mock.Anything, mock.Anything).Return(nil)
 
-	err := z.Run(ctx, streams, HandlerFunc(func(ctx context.Context, event *Event) error { return nil }))
-	if err != nil {
-		t.Errorf("expected error to be nil")
-	}
-}
-
-func TestZiggurat_RunAll(t *testing.T) {
-	var z Ziggurat
-	streamOne := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
-		<-ctx.Done()
-		return ctx.Err()
-	}}
-	streamTwo := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
-		<-ctx.Done()
-		return ctx.Err()
-	}}
-	ctx, cfn := context.WithTimeout(context.Background(), 500*time.Millisecond)
-	defer cfn()
-	err := z.RunAll(ctx, HandlerFunc(func(ctx context.Context, event *Event) error {
-		return nil
-	}), streamOne, streamTwo)
-
-	if err != nil && !strings.Contains(err.Error(), context.DeadlineExceeded.Error()) {
-		t.Errorf("expected error to contain %s got %s", context.DeadlineExceeded.Error(), err.Error())
-	}
-}
-
-func TestZiggurat_MultiStreamHandlerExec(t *testing.T) {
-	var z Ziggurat
-	var handlerCallCount int64
-	streamOne := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
-		return handler.Handle(ctx, &Event{EventType: "foo"})
-	}}
-
-	streamTwo := mockStreams{ConsumeFunc: func(ctx context.Context, handler Handler) error {
-		return handler.Handle(ctx, &Event{EventType: "bar"})
-	}}
-
-	_ = z.RunAll(context.Background(), HandlerFunc(func(ctx context.Context, event *Event) error {
-		if event.EventType == "foo" || event.EventType == "bar" {
-			atomic.AddInt64(&handlerCallCount, 1)
+		err := zig.Run(ctx, handler, &mc1, &mc2, &mc3)
+		if !errors.Is(err, ErrCleanShutdown) {
+			t.Errorf("expected %s got %s", ErrCleanShutdown.Error(), err.Error())
+			return
 		}
-		return nil
-	}), streamOne, streamTwo)
+		if atomic.LoadInt32(&msgCount) < 1 {
+			t.Error("handler not invoked")
+		}
+		t.Logf("message count:%d", msgCount)
+	})
 
-	if val := atomic.LoadInt64(&handlerCallCount); val < 2 {
-		t.Errorf("expected handler call count to be %d got %d", 2, val)
-	}
+	t.Run("one of the consumers error out", func(t *testing.T) {
+		var errorHandlerCalled atomic.Bool
+		var zig Ziggurat
+		zig.ErrorHandler = func(err error) {
+			t.Logf("error handler invoked with error:%s", err.Error())
+			errorHandlerCalled.Store(true)
+		}
+		var msgCount int32
+		ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Millisecond)
+		defer cancel()
+		mc1 := MockConsumer{}
+		mc2 := MockConsumer{}
+		mc3 := MockConsumer{}
+		handler := HandlerFunc(func(ctx context.Context, event *Event) error {
+			atomic.AddInt32(&msgCount, 1)
+			return nil
+		})
+
+		mc1.On("Consume", mock.Anything, mock.Anything).Return(nil)
+		mc2.On("Consume", mock.Anything, mock.Anything).Return(nil)
+		mc3.On("Consume", mock.Anything, mock.Anything).Return(errors.New("mc3 errored out"))
+
+		err := zig.Run(ctx, handler, &mc1, &mc2, &mc3)
+		if err == nil {
+			t.Error("expected error got nil")
+			return
+		}
+
+		if !errorHandlerCalled.Load() {
+			t.Error("error handler was never called")
+		}
+
+		if atomic.LoadInt32(&msgCount) < 1 {
+			t.Error("handler not invoked")
+		}
+		t.Logf("message count:%d", msgCount)
+	})
 
 }

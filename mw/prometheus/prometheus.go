@@ -83,7 +83,7 @@ func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
 		err := next.Handle(ctx, event)
 
 		labels := prometheus.Labels{
-			RouteLabel: event.Path,
+			RouteLabel: event.RoutingPath,
 		}
 
 		HandlerDurationHistogram.With(labels).Observe(time.Since(t1).Seconds())

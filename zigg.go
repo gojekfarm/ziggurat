@@ -3,150 +3,95 @@ package ziggurat
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
-	"os/signal"
-	"strings"
-	"sync"
-	"syscall"
-
 	"github.com/gojekfarm/ziggurat/logger"
+	"sync"
+	"time"
 )
 
-type StartFunction func(ctx context.Context)
-type StopFunction func()
+const defaultWaitTimeout = 5000 * time.Millisecond
 
 var ErrCleanShutdown = errors.New("clean shutdown of streams")
-
-var signals = []os.Signal{syscall.SIGINT, syscall.SIGTERM, syscall.SIGUSR2, syscall.SIGUSR1}
 
 // Ziggurat serves as a container for streams to run in
 // can be used without initialization
 // var z ziggurat.Ziggurat
-// z.run(ctx context.Context,s ziggurat.Streamer,h ziggurat.Handler)
+// z.run(ctx context.Context,s ziggurat.MessageConsumer,h ziggurat.Handler)
 type Ziggurat struct {
-	handler   Handler
-	Logger    StructuredLogger
-	startFunc StartFunction
-	stopFunc  StopFunction
-	streams   Streamer
+	handler      Handler
+	Logger       StructuredLogger
+	WaitTimeout  time.Duration
+	ErrorHandler func(err error)
 }
 
-// Run method runs the provided streams and blocks on it until an error is encountered
-// run multiple streams concurrently by wrapping the Run method in a go-routine
-// the context provided is notified on SIGINT and SIGTERM
-func (z *Ziggurat) Run(ctx context.Context, streams Streamer, handler Handler) error {
+func (z *Ziggurat) Run(ctx context.Context, handler Handler, consumers ...MessageConsumer) error {
 
-	if z.Logger == nil {
-		z.Logger = logger.NOOP
-	}
-
-	if streams == nil {
-		panic("`streams` cannot be nil")
-	}
-
-	if handler == nil {
-		panic("`handler` cannot be nil")
-	}
-
-	z.streams = streams
-	z.handler = handler
-
-	parentCtx, canceler := signal.NotifyContext(ctx, signals...)
-
-	err := z.start(parentCtx, z.startFunc)
-	z.Logger.Error("streams shutdown", err)
-	canceler()
-
-	z.stop(z.stopFunc)
-
-	return err
-}
-
-func (z *Ziggurat) start(ctx context.Context, startCallback StartFunction) error {
-	if startCallback != nil {
-		z.Logger.Info("invoking start function")
-		startCallback(ctx)
-	}
-
-	streamsStop := z.streams.Stream(ctx, z.handler)
-	return streamsStop
-}
-
-func (z *Ziggurat) stop(stopFunc StopFunction) {
-	if stopFunc != nil {
-		z.Logger.Info("invoking stop function")
-		stopFunc()
-	}
-}
-
-// StartFunc is used to start additional application states the
-// context remains consistent between
-// your streams and other additional application states like database(s) and REST API client(s)
-func (z *Ziggurat) StartFunc(function StartFunction) {
-	z.startFunc = function
-}
-
-// StopFunc is immediately called after streams are shutdown
-// is used to perform cleanup operations
-func (z *Ziggurat) StopFunc(function StopFunction) {
-	z.stopFunc = function
-}
-
-// RunAll takes in a handler and multiple streams.
-// The streams are started concurrently and the handler is executed for
-// all the streams.
-func (z *Ziggurat) RunAll(ctx context.Context, handler Handler, streams ...Streamer) error {
-	parentCtx, cancelFunc := signal.NotifyContext(ctx, signals...)
-	defer cancelFunc()
-
-	if z.Logger == nil {
-		z.Logger = logger.NOOP
-	}
-	if len(streams) < 1 {
-		panic("error: at least one streamer implementation should be provided")
-	}
-
-	if handler == nil {
-		panic("error: handler cannot be nil")
-	}
-
-	if z.startFunc != nil {
-		z.startFunc(parentCtx)
-	}
+	z.mustInit(consumers, handler)
 
 	var wg sync.WaitGroup
-	wg.Add(len(streams))
-	errChan := make(chan error, len(streams))
-	for i := range streams {
+	wg.Add(len(consumers))
+	errChan := make(chan error)
+	for i := range consumers {
 		go func(i int) {
-			err := streams[i].Stream(parentCtx, handler)
-			errChan <- err
+			err := consumers[i].Consume(ctx, handler)
+			if err != nil {
+				errChan <- err
+			}
 			wg.Done()
 		}(i)
 	}
 
 	go func() {
-		wg.Wait()
+		if timeout := waitWithTimeout(&wg, z.WaitTimeout); timeout {
+			z.Logger.Warn("wait timed out")
+		}
 		close(errChan)
 	}()
 
-	errs := make([]string, 0, len(streams))
-
-	for err := range errChan {
-		if err != nil {
-			errs = append(errs, err.Error())
+	var allErrs []error
+	for consErr := range errChan {
+		if z.ErrorHandler != nil {
+			z.ErrorHandler(consErr)
 		}
+		allErrs = append(allErrs, consErr)
 	}
 
-	if z.stopFunc != nil {
-		z.stopFunc()
-	}
-
-	if len(errs) > 0 {
-		return fmt.Errorf("error in ziggurat.RunAll:%s", strings.Join(errs, ","))
+	if len(allErrs) > 0 {
+		return errors.Join(allErrs...)
 	}
 
 	return ErrCleanShutdown
 
+}
+
+func (z *Ziggurat) mustInit(consumers []MessageConsumer, handler Handler) {
+	if z.Logger == nil {
+		z.Logger = logger.NOOP
+	}
+	if len(consumers) < 1 {
+		panic("error: at least one ziggurat.MessageConsumer implementation should be provided")
+	}
+
+	if handler == nil {
+		panic("error: handler cannot be nil")
+	}
+	if z.WaitTimeout == 0 {
+		z.WaitTimeout = defaultWaitTimeout
+	}
+
+}
+
+func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	timeoutAfter := time.After(timeout)
+	select {
+	case <-done:
+		return false
+	case <-timeoutAfter:
+		return true
+	}
 }

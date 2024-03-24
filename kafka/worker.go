@@ -19,22 +19,18 @@ func (e ErrorWorkerKilled) Error() string {
 type worker struct {
 	handler     ziggurat.Handler
 	logger      ziggurat.StructuredLogger
-	consumer    *kafka.Consumer
+	consumer    confluentConsumer
 	routeGroup  string
 	pollTimeout int
 	killSig     chan struct{}
-	topics      []string
-	confMap     *kafka.ConfigMap
 	id          string
 	err         error
 }
 
 func (w *worker) run(ctx context.Context) {
 
-	w.consumer = createConsumer(w.confMap, w.logger, w.topics)
-
 	defer func() {
-		err := closeConsumer(w.consumer)
+		err := w.consumer.Close()
 		w.logger.Error("error closing kafka consumer", err, map[string]interface{}{"Worker-ID": w.id})
 	}()
 
@@ -60,7 +56,7 @@ func (w *worker) run(ctx context.Context) {
 			w.err = ErrorWorkerKilled{workerID: w.id}
 			run = false
 		default:
-			ev := pollEvent(w.consumer, w.pollTimeout)
+			ev := w.consumer.Poll(w.pollTimeout)
 			switch e := ev.(type) {
 			case *kafka.Message:
 				processMessage(ctx, e, w.handler, w.logger, w.routeGroup)
