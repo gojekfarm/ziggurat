@@ -104,10 +104,10 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		err := handler.Handle(ctx, event)
 		diff := time.Since(t1)
 		args := map[string]string{
-			"route": event.Path,
+			"route": event.RoutingPath,
 		}
 		//required for backwards compatibility
-		if event.Path == "" {
+		if event.RoutingPath == "" {
 			args["route"] = fixRoutingPath(event.RoutingPath)
 		}
 
@@ -146,15 +146,12 @@ func (s *Client) PublishKafkaLag(handler ziggurat.Handler) ziggurat.Handler {
 // PublishEventDelay publishes the event lag per topic in milliseconds
 func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 	f := func(ctx context.Context, event *ziggurat.Event) error {
-		headers := event.Headers
 		args := map[string]string{}
 
-		args["topic"] = headers["x-kafka-topic"]
-		args["partition"] = headers["x-kafka-partition"]
 		args["event-type"] = event.EventType
-		args["route"] = event.Path
+		args["route"] = event.RoutingPath
 
-		if event.Path == "" {
+		if event.RoutingPath == "" {
 			args["route"] = fixRoutingPath(event.RoutingPath)
 		}
 
@@ -165,7 +162,7 @@ func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 	return ziggurat.HandlerFunc(f)
 }
 
-//PublishGoRoutineCount publishes go-routine count manually
+// PublishGoRoutineCount publishes go-routine count manually
 func (s *Client) PublishGoRoutineCount(ctx context.Context, internal time.Duration) error {
 	publishGoRoutines(ctx, internal, s)
 	return nil
