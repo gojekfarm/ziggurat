@@ -28,18 +28,9 @@ func main() {
 	kcg := kafka.ConsumerGroup{
 		Logger: nil,
 		GroupConfig: kafka.ConsumerConfig{
-			BootstrapServers:      "",
-			DebugLevel:            "",
-			GroupID:               "",
-			Topics:                "",
-			AutoCommitInterval:    0,
-			ConsumerCount:         0,
-			PollTimeout:           0,
-			RouteGroup:            "",
-			AutoOffsetReset:       "",
-			PartitionAssignment:   "",
-			MaxPollIntervalMS:     0,
-			AllowAutoCreateTopics: false,
+			BootstrapServers: "localhost:9092",
+			GroupID:          "foo.id",
+			Topics:           []string{"foo"},
 		},
 	}
 
@@ -64,10 +55,6 @@ func main() {
 			return err
 		}
 		return nil
-	})
-
-	zig.StartFunc(func(ctx context.Context) {
-		statsClient.Run(ctx)
 	})
 
 	h := ziggurat.Use(&r, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
