@@ -13,8 +13,7 @@ type Event struct {
 	Metadata map[string]any `json:"meta"`
 	Value    []byte         `json:"value"`
 	Key      []byte         `json:"key"`
-	// RoutingPath can be an actual path like a string separated by a delimiter, this was added to maintain
-	// backwards compatibility
+	// RoutingPath can be an actual path like a string separated by a delimiter
 	RoutingPath       string    `json:"routing_path"`
 	ProducerTimestamp time.Time `json:"producer_timestamp"`
 	ReceivedTimestamp time.Time `json:"received_timestamp"`
