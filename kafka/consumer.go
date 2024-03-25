@@ -17,6 +17,7 @@ type ConsumerGroup struct {
 	Logger           ziggurat.StructuredLogger
 	GroupConfig      ConsumerConfig
 	wg               *sync.WaitGroup
+	c                confluentConsumer
 	consumerMakeFunc func(*kafka.ConfigMap, []string) confluentConsumer
 }
 
@@ -34,6 +35,7 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 
 	cm := cg.GroupConfig.toConfigMap()
 	confCons := cg.consumerMakeFunc(&cm, cg.GroupConfig.Topics)
+	cg.c = confCons
 	for i := 0; i < consConf.ConsumerCount; i++ {
 		workerID := fmt.Sprintf("%s_%d", groupID, i)
 		w := worker{
