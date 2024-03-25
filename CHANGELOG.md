@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.0.1] 2024-03-25
+## [v2.0.3] 2024-03-25
 
 # Removed
 
@@ -17,6 +17,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Internal interface changes for reliablity
 - Improved test cases
 - Smaller API surface area
+
+# Breaking changes
+
+- Streams struct is replaced by kafka.MessageConsumer
+- Streams interface is replaced by MessageConsumer interface
+- StatsD package has been removed
+- Go 1.22 is the min version required
+- ziggurat.RunAll has been removed
+- ziggurat.StartFunc and StopFunc have been removed
+- ziggurat.Event struct has been cleaned up
 
 ## [v1.7.4] 2023-11-01
 
