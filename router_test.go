@@ -1,8 +1,7 @@
-package rgx
+package ziggurat
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat"
 	"reflect"
 	"testing"
 )
@@ -99,7 +98,7 @@ func Test_sortAndAppend(t *testing.T) {
 
 func Test_register(t *testing.T) {
 	var router Router
-	var h ziggurat.HandlerFunc = func(ctx context.Context, event *ziggurat.Event) error {
+	var h HandlerFunc = func(ctx context.Context, event *Event) error {
 		return nil
 	}
 	cases := map[string]func(t *testing.T){

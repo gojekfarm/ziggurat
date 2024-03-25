@@ -1,9 +1,8 @@
-package rgx
+package ziggurat
 
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/ziggurat"
 	"regexp"
 	"sort"
 )
@@ -19,7 +18,7 @@ handlerEntry []string sorted by len of paths
 
 // routerEntry contains the pattern and the path routerEntry
 type routerEntry struct {
-	handler ziggurat.Handler
+	handler Handler
 	pattern string
 }
 
@@ -30,7 +29,7 @@ type Router struct {
 
 // match works by matching the shortest prefix that matches the path
 // it returns the matched path and the handler associated with it
-func (r *Router) match(path string) (ziggurat.Handler, string) {
+func (r *Router) match(path string) (Handler, string) {
 	if e, ok := r.handlerEntry[path]; ok {
 		return e.handler, path
 	}
@@ -59,17 +58,17 @@ func sortAndAppend(s []routerEntry, e routerEntry) []routerEntry {
 	return s
 }
 
-func (r *Router) HandlerFunc(pattern string, h func(ctx context.Context, event *ziggurat.Event) error) {
+func (r *Router) HandlerFunc(pattern string, h func(ctx context.Context, event *Event) error) {
 	if pattern == "" {
 		panic(fmt.Errorf("kafka router:pattern cannot be [%q]", pattern))
 	}
 	if h == nil {
 		panic("kafka router:handler cannot be <nil>")
 	}
-	r.register(pattern, ziggurat.HandlerFunc(h))
+	r.register(pattern, HandlerFunc(h))
 }
 
-func (r *Router) register(pattern string, h ziggurat.Handler) {
+func (r *Router) register(pattern string, h Handler) {
 	if r.handlerEntry == nil {
 		r.handlerEntry = make(map[string]routerEntry)
 	}
@@ -91,11 +90,15 @@ func (r *Router) register(pattern string, h ziggurat.Handler) {
 	r.es = sortAndAppend(r.es, e)
 }
 
-func (r *Router) Handle(ctx context.Context, event *ziggurat.Event) error {
+func (r *Router) Handle(ctx context.Context, event *Event) error {
 	path := event.RoutingPath
 	h, _ := r.match(path)
 	if h != nil {
 		return h.Handle(ctx, event)
 	}
-	return fmt.Errorf("rgx router:no pattern registered for [%s]", path)
+	return fmt.Errorf("router router:no pattern registered for [%s]", path)
+}
+
+func NewRouter() *Router {
+	return &Router{}
 }

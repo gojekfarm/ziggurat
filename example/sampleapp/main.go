@@ -1,10 +1,7 @@
-//go:build ignore
-
 package main
 
 import (
 	"context"
-	"github.com/gojekfarm/ziggurat/rgx"
 	"math/rand"
 	"time"
 
@@ -18,7 +15,7 @@ import (
 
 func main() {
 	var zig ziggurat.Ziggurat
-	var r rgx.Router
+	router := ziggurat.NewRouter()
 
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
@@ -49,7 +46,7 @@ func main() {
 		rabbitmq.WithPassword("bitnami"),
 		rabbitmq.WithConnectionTimeout(3*time.Second))
 
-	r.HandlerFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) error {
+	router.HandlerFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) error {
 		if rand.Intn(1000)%2 == 0 {
 			l.Info("retrying")
 			err := ar.Retry(ctx, event, "plain_text_messages_retry")
@@ -59,7 +56,7 @@ func main() {
 		return nil
 	})
 
-	h := ziggurat.Use(&r, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
+	h := ziggurat.Use(router, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
 
 	if runErr := zig.Run(ctx, h, &kcg); runErr != nil {
 		l.Error("error running streams", runErr)
