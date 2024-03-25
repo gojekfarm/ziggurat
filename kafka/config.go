@@ -19,10 +19,6 @@ type ConsumerConfig struct {
 
 func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
-	if c.RouteGroup == "" {
-		panic("route group cannot be empty")
-	}
-
 	kafkaConfMap := kafka.ConfigMap{
 		"bootstrap.servers":        c.BootstrapServers,
 		"group.id":                 c.GroupID,

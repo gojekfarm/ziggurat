@@ -6,25 +6,51 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/gojekfarm/ziggurat/v2"
 	"github.com/gojekfarm/ziggurat/v2/logger"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/mock"
-	"sync/atomic"
 	"testing"
 	"time"
 )
 
+type mockHandler struct {
+	mock.Mock
+}
+
+func (mh *mockHandler) Handle(ctx context.Context, event *ziggurat.Event) error {
+	return mh.Called(ctx, event).Error(0)
+}
+
 func TestWorker(t *testing.T) {
 
 	t.Run("worker processes messages successfully", func(t *testing.T) {
-		var msgCount int32
+
+		wantEvent := ziggurat.Event{
+			RoutingPath: "foo-group/foo/1",
+			EventType:   "kafka",
+			Value:       make([]byte, 0),
+			Key:         make([]byte, 0),
+			Metadata:    map[string]any{"kafka-partition": 1, "kafka-topic": "foo"},
+		}
+
+		eventMatcher := mock.MatchedBy(func(e *ziggurat.Event) bool {
+			diff := cmp.Diff(&wantEvent, e, cmpopts.IgnoreFields(ziggurat.Event{}, "ReceivedTimestamp"))
+			if diff != "" {
+				t.Logf("(-Want +Got)%s\n", diff)
+				return false
+			}
+			return true
+
+		})
+		mh := mockHandler{}
+		mh.On("Handle", mock.Anything, eventMatcher).Return(nil)
+
 		mc := MockConsumer{}
 		w := worker{
-			handler: ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
-				atomic.AddInt32(&msgCount, 1)
-				return nil
-			}),
+			handler:     &mh,
 			logger:      logger.NOOP,
 			consumer:    &mc,
-			routeGroup:  "foo",
+			routeGroup:  "foo-group",
 			pollTimeout: 100,
 			killSig:     make(chan struct{}),
 			id:          "foo-worker",
@@ -43,9 +69,6 @@ func TestWorker(t *testing.T) {
 		if !errors.Is(w.err, context.DeadlineExceeded) {
 			t.Errorf("expected error to be nil got:%v", w.err)
 			return
-		}
-		if msgCount < 1 {
-			t.Error("handler was never invoked")
 		}
 
 	})

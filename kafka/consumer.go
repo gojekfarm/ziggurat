@@ -34,7 +34,12 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 	}
 
 	cm := cg.GroupConfig.toConfigMap()
+
 	confCons := cg.consumerMakeFunc(&cm, cg.GroupConfig.Topics)
+
+	if cg.GroupConfig.RouteGroup == "" {
+		cg.GroupConfig.RouteGroup = cg.GroupConfig.GroupID
+	}
 	cg.c = confCons
 	for i := 0; i < consConf.ConsumerCount; i++ {
 		workerID := fmt.Sprintf("%s_%d", groupID, i)

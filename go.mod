@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.2.0
+	github.com/google/go-cmp v0.5.9
 	github.com/makasim/amqpextra v0.16.4
 	github.com/prometheus/client_golang v1.11.1
 	github.com/rs/zerolog v1.26.0
