@@ -1,5 +1,3 @@
-//go:build ignore
-
 package main
 
 import (
@@ -7,8 +5,6 @@ import (
 	"github.com/gojekfarm/ziggurat/v2"
 	"math/rand"
 	"time"
-
-	"github.com/gojekfarm/ziggurat/v2/mw/statsd"
 
 	"github.com/gojekfarm/ziggurat/v2/kafka"
 	"github.com/gojekfarm/ziggurat/v2/logger"
@@ -21,10 +17,6 @@ func main() {
 
 	ctx := context.Background()
 	l := logger.NewLogger(logger.LevelInfo)
-
-	statsClient := statsd.NewPublisher(statsd.WithLogger(l),
-		statsd.WithDefaultTags(statsd.Tags{"ziggurat-version": "v162"}),
-		statsd.WithPrefix("ziggurat_v162"))
 
 	kcg := kafka.ConsumerGroup{
 		Logger: nil,
@@ -58,7 +50,7 @@ func main() {
 		return nil
 	})
 
-	h := ziggurat.Use(router, statsClient.PublishEventDelay, statsClient.PublishHandlerMetrics)
+	h := ziggurat.Use(router)
 
 	if runErr := zig.Run(ctx, h, &kcg); runErr != nil {
 		l.Error("error running streams", runErr)
