@@ -9,7 +9,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-//mock the actual implementation
+// mock the actual implementation
 var publishAMQP = func(p *publisher.Publisher, msg publisher.Message) error {
 	return p.Publish(msg)
 }
@@ -22,7 +22,7 @@ func publishInternal(p *publisher.Publisher, queue string, retryCount int, delay
 		event.Metadata = map[string]interface{}{KeyRetryCount: 0}
 	}
 
-	newCount := GetRetryCount(event) + 1
+	newCount := RetryCountFor(event) + 1
 	exchange := fmt.Sprintf("%s_%s", queue, "exchange")
 	routingKey := QueueTypeDelay
 
