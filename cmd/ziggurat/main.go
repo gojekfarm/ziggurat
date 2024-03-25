@@ -40,10 +40,10 @@ func main() {
 	args := os.Args[1:]
 	usage := `USAGE:
   ziggurat new <app_name>`
-	if len(args) < 2 {
+	if len(args) < 1 {
 		die(errors.New(usage))
 	}
-	appName := args[1]
+	appName := args[0]
 	d := Data{AppName: appName, Version: "v2.0.1"}
 	wd, err := os.Getwd()
 	die(err)
