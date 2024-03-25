@@ -23,7 +23,7 @@ func main() {
 	l := logger.NewLogger(logger.LevelInfo)
 
 	statsClient := statsd.NewPublisher(statsd.WithLogger(l),
-		statsd.WithDefaultTags(statsd.StatsDTag{"ziggurat-version": "v162"}),
+		statsd.WithDefaultTags(statsd.Tags{"ziggurat-version": "v162"}),
 		statsd.WithPrefix("ziggurat_v162"))
 
 	kcg := kafka.ConsumerGroup{

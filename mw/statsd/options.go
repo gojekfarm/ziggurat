@@ -1,10 +1,11 @@
 package statsd
 
 import (
+	"github.com/gojekfarm/ziggurat/v2"
 	"time"
 )
 
-type StatsDTag = map[string]string
+type Tags = map[string]string
 
 type runOpts struct {
 	goPublishInterval time.Duration
@@ -17,14 +18,14 @@ func WithPrefix(prefix string) func(c *Client) {
 	}
 }
 
-//WithHost lets you specify a custom host
+// WithHost lets you specify a custom host
 func WithHost(host string) func(c *Client) {
 	return func(c *Client) {
 		c.host = host
 	}
 }
 
-//WithLogger lets you specify a custom `ziggurat.StructuredLogger`
+// WithLogger lets you specify a custom `ziggurat.StructuredLogger`
 func WithLogger(l ziggurat.StructuredLogger) func(c *Client) {
 	return func(c *Client) {
 		c.logger = l
@@ -33,7 +34,7 @@ func WithLogger(l ziggurat.StructuredLogger) func(c *Client) {
 
 // WithDefaultTags sets global tags on every metric published.
 // Could be a common app name,host name tag
-func WithDefaultTags(tags StatsDTag) func(c *Client) {
+func WithDefaultTags(tags Tags) func(c *Client) {
 	return func(c *Client) {
 		c.defaultTags = tags
 	}

@@ -2,6 +2,7 @@ package statsd
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/v2"
 	"strings"
 	"time"
 
