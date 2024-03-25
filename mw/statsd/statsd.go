@@ -2,6 +2,7 @@ package statsd
 
 import (
 	"context"
+	"errors"
 	"github.com/gojekfarm/ziggurat/v2"
 	"strings"
 	"time"
@@ -56,15 +57,9 @@ func (s *Client) Run(ctx context.Context, opts ...func(r *runOpts)) error {
 		return clientErr
 	}
 
-	r := &runOpts{
-		goPublishInterval: 10 * time.Second,
-	}
+	r := &runOpts{}
 	for _, o := range opts {
 		o(r)
-	}
-
-	if r.goPublishInterval > 0 {
-		go publishGoRoutines(ctx, r.goPublishInterval, s)
 	}
 
 	s.client = client
@@ -106,15 +101,11 @@ func (s *Client) PublishHandlerMetrics(handler ziggurat.Handler) ziggurat.Handle
 		args := map[string]string{
 			"route": event.RoutingPath,
 		}
-		//required for backwards compatibility
-		if event.RoutingPath == "" {
-			args["route"] = fixRoutingPath(event.RoutingPath)
-		}
 
 		s.logger.Error(publishErrMsg, s.Gauge("handler_execution_time", diff.Truncate(time.Millisecond).Milliseconds(), args))
 		s.logger.Error(publishErrMsg, s.IncCounter("message_count", 1, args))
 
-		if err == ziggurat.Retry {
+		if errors.Is(err, ziggurat.Retry) {
 			s.logger.Error(publishErrMsg, s.IncCounter("event_retry_count", 1, args))
 			return err
 		}
@@ -160,12 +151,6 @@ func (s *Client) PublishEventDelay(handler ziggurat.Handler) ziggurat.Handler {
 		return handler.Handle(ctx, event)
 	}
 	return ziggurat.HandlerFunc(f)
-}
-
-// PublishGoRoutineCount publishes go-routine count manually
-func (s *Client) PublishGoRoutineCount(ctx context.Context, internal time.Duration) error {
-	publishGoRoutines(ctx, internal, s)
-	return nil
 }
 
 func (s *Client) Close() error {

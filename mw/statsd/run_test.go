@@ -47,10 +47,6 @@ func Test_Run(t *testing.T) {
 
 			var called bool
 
-			publishGoRoutines = func(ctx context.Context, interval time.Duration, s *Client) {
-				called = true
-			}
-
 			s := NewPublisher()
 
 			_ = s.Run(context.Background(), c.Opts...)

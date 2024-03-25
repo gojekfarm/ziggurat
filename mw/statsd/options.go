@@ -1,17 +1,17 @@
 package statsd
 
 import (
+	"context"
 	"github.com/gojekfarm/ziggurat/v2"
-	"time"
 )
 
 type Tags = map[string]string
 
 type runOpts struct {
-	goPublishInterval time.Duration
+	GORoutinePublisher func(ctx context.Context)
 }
 
-// WithPrefix prepends a prefix to every every metric produced
+// WithPrefix prepends a prefix to every metric produced
 func WithPrefix(prefix string) func(c *Client) {
 	return func(c *Client) {
 		c.prefix = prefix
@@ -37,13 +37,5 @@ func WithLogger(l ziggurat.StructuredLogger) func(c *Client) {
 func WithDefaultTags(tags Tags) func(c *Client) {
 	return func(c *Client) {
 		c.defaultTags = tags
-	}
-}
-
-// WithGoRoutinePublishInterval lets you specify the
-// interval for publishing go-routine count
-func WithGoRoutinePublishInterval(d time.Duration) func(r *runOpts) {
-	return func(r *runOpts) {
-		r.goPublishInterval = d
 	}
 }
