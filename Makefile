@@ -28,7 +28,7 @@ docker.start-metrics:
 	sleep 10
 
 lib.build:
-	go build .
+	go build ./...
 
 app.start:
 	go build -o sample_app $(EXAMPLE_BUILD_PKG)
