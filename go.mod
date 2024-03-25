@@ -3,7 +3,6 @@ module github.com/gojekfarm/ziggurat/v2
 go 1.22
 
 require (
-	github.com/cactus/go-statsd-client/v5 v5.0.0
 	github.com/confluentinc/confluent-kafka-go/v2 v2.2.0
 	github.com/makasim/amqpextra v0.16.4
 	github.com/prometheus/client_golang v1.11.1
@@ -27,5 +26,3 @@ require (
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-
