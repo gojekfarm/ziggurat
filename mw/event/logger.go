@@ -2,8 +2,7 @@ package event
 
 import (
 	"context"
-
-	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/v2"
 )
 
 func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat.Handler {

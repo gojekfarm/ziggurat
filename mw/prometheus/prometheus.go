@@ -2,12 +2,12 @@ package prometheus
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/v2"
 	"net/http"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/gojekfarm/ziggurat"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

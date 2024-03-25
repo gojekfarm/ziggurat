@@ -2,8 +2,6 @@ package statsd
 
 import (
 	"time"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 type StatsDTag = map[string]string

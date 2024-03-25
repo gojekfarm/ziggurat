@@ -2,8 +2,7 @@ package rabbitmq
 
 import (
 	"fmt"
-
-	"github.com/gojekfarm/ziggurat"
+	"github.com/gojekfarm/ziggurat/v2"
 )
 
 type amqpExtraLogger struct {

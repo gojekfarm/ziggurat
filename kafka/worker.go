@@ -3,9 +3,9 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"github.com/gojekfarm/ziggurat/v2"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/gojekfarm/ziggurat"
 )
 
 type ErrorWorkerKilled struct {

@@ -1,9 +1,8 @@
 package rabbitmq
 
 import (
+	"github.com/gojekfarm/ziggurat/v2"
 	"time"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 type Opts func(r *ARetry)

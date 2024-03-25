@@ -1,18 +1,16 @@
-//go:build ignore
-
 package main
 
 import (
 	"context"
+	"github.com/gojekfarm/ziggurat/v2"
 	"math/rand"
 	"time"
 
-	"github.com/gojekfarm/ziggurat/mw/statsd"
+	"github.com/gojekfarm/ziggurat/v2/mw/statsd"
 
-	"github.com/gojekfarm/ziggurat"
-	"github.com/gojekfarm/ziggurat/kafka"
-	"github.com/gojekfarm/ziggurat/logger"
-	"github.com/gojekfarm/ziggurat/mw/rabbitmq"
+	"github.com/gojekfarm/ziggurat/v2/kafka"
+	"github.com/gojekfarm/ziggurat/v2/logger"
+	"github.com/gojekfarm/ziggurat/v2/mw/rabbitmq"
 )
 
 func main() {

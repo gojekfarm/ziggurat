@@ -1,4 +1,4 @@
-module github.com/gojekfarm/ziggurat
+module github.com/gojekfarm/ziggurat/v2
 
 go 1.22
 
@@ -28,8 +28,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-// go sum hash mismatch errors caused on some CIs
-retract v1.0.6
 
-// go sum hash mismatch errors caused on some CIs need to fix the GH pipeline
-retract v1.0.8

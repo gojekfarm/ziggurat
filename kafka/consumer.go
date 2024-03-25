@@ -5,10 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
-	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/v2"
+	"github.com/gojekfarm/ziggurat/v2/logger"
 	"sync"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 var ErrCleanShutdown = errors.New("error: clean shutdown of kafka consumers")

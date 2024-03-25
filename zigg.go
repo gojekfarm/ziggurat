@@ -3,7 +3,7 @@ package ziggurat
 import (
 	"context"
 	"errors"
-	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/v2/logger"
 	"sync"
 	"time"
 )

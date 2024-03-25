@@ -5,10 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gojekfarm/ziggurat/logger"
+	"github.com/gojekfarm/ziggurat/v2/logger"
 
 	"github.com/cactus/go-statsd-client/v5/statsd"
-	"github.com/gojekfarm/ziggurat"
 )
 
 type Client struct {

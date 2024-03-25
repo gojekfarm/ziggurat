@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gojekfarm/ziggurat/v2"
 	"sync/atomic"
 	"testing"
 	"time"
-
-	"github.com/gojekfarm/ziggurat"
 )
 
 func newAutoRetry(qn string, count int, consumerCount int) *ARetry {

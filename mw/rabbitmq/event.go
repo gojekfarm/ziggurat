@@ -1,8 +1,6 @@
 package rabbitmq
 
-import (
-	"github.com/gojekfarm/ziggurat"
-)
+import "github.com/gojekfarm/ziggurat/v2"
 
 const KeyRetryCount = "rabbitmqAutoRetryCount"
 
