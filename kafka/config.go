@@ -19,6 +19,10 @@ type ConsumerConfig struct {
 
 func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
+	if c.RouteGroup == "" {
+		panic("route group cannot be empty")
+	}
+
 	kafkaConfMap := kafka.ConfigMap{
 		"bootstrap.servers":        c.BootstrapServers,
 		"group.id":                 c.GroupID,
@@ -29,6 +33,7 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 		"auto.commit.interval.ms":  5000,
 		"auto.offset.reset":        "latest",
 	}
+
 	if c.AutoOffsetReset != "" {
 		kafkaConfMap["auto.offset.reset"] = c.AutoOffsetReset
 	}
