@@ -47,7 +47,7 @@ func NewPublisher(opts ...func(c *Client)) *Client {
 
 // Run methods runs the publisher and starts up the go-routine publisher in the background
 // the go-routine publisher publishes the go-routine count every 10 seconds
-func (s *Client) Run(ctx context.Context, opts ...func(r *runOpts)) error {
+func (s *Client) Run(opts ...func(r *runOpts)) error {
 	config := &statsd.ClientConfig{
 		Prefix:  s.prefix,
 		Address: s.host,
