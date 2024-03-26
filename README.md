@@ -271,7 +271,7 @@ Just invoke the API with the following query params
 | queue\* | foo_retry |
 
 > [!NOTE]
-> * indicates a required param
+> \* indicates a required param
 
 > [!CAUTION]
 > Using a Prefetch of 1 is not beneficial for consumption and can fill up the RabbitMQ queues, use a higher value from 10 to 300.
