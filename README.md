@@ -244,15 +244,18 @@ type QueueConfig struct {
 
 type Queues []QueueConfig
 ```
-#### How does queue key work
-A practical example
+### How does a queue key work?
+
+#### A practical example
+
 Suppose your queue key is called `foo_retries`. The RabbitMQ retry module will automatically create 3 queues namely 
 - `foo_retries_instant_queue`
 - `foo_retries_delay_queue`
 - `foo_retries_dlq`
 
-In addition to the queues one exchange will also be created for routing
-It will also create an exchange by the name `foo_retries_exchange`. This exchange is internally used to send messages to the right queue.
+- In addition to the queues one exchange will also be created for routing
+
+- It will also create an exchange by the name `foo_retries_exchange`. This exchange is internally used to send messages to the right queue.
 Consumption only happens from the instant queue. The delay queue is where the retried message is sent and once the retries are exhausted they are sent to the dlq.
 
 #### I have a lot of messages in my dead letter queue, how do I replay them
