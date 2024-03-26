@@ -3,12 +3,8 @@ package main
 import (
 	"context"
 	"github.com/gojekfarm/ziggurat/v2"
-	"math/rand"
-	"time"
-
 	"github.com/gojekfarm/ziggurat/v2/kafka"
 	"github.com/gojekfarm/ziggurat/v2/logger"
-	"github.com/gojekfarm/ziggurat/v2/mw/rabbitmq"
 )
 
 func main() {
@@ -27,33 +23,14 @@ func main() {
 		},
 	}
 
-	ar := rabbitmq.AutoRetry([]rabbitmq.QueueConfig{
-		{
-			QueueKey:              "plain_text_messages_retry",
-			DelayExpirationInMS:   "500",
-			ConsumerPrefetchCount: 1,
-			ConsumerCount:         1,
-			RetryCount:            1,
-		},
-	}, rabbitmq.WithLogger(l),
-		rabbitmq.WithUsername("user"),
-		rabbitmq.WithPassword("bitnami"),
-		rabbitmq.WithConnectionTimeout(3*time.Second))
-
-	router.HandlerFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) error {
-		if rand.Intn(1000)%2 == 0 {
-			l.Info("retrying")
-			err := ar.Retry(ctx, event, "plain_text_messages_retry")
-			l.Info("retrying finished")
-			return err
-		}
+	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) error {
 		return nil
 	})
 
 	h := ziggurat.Use(router)
 
 	if runErr := zig.Run(ctx, h, &kcg); runErr != nil {
-		l.Error("error running streams", runErr)
+		l.Error("error running consumers", runErr)
 	}
 
 }

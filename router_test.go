@@ -16,42 +16,42 @@ func Test_match(t *testing.T) {
 	tests := []struct {
 		want  string
 		name  string
-		path  string
+		paths []string
 		input []routerEntry
 	}{
 		{
 			name:  "should match the longest prefix without regex",
-			want:  "localhost:9092",
-			path:  "localhost:9092/foo_consumer",
-			input: []routerEntry{{pattern: "localhost:9092", handler: nil}},
+			want:  "foo.id",
+			paths: []string{"foo.id/foo_consumer"},
+			input: []routerEntry{{pattern: "foo.id", handler: nil}},
 		},
 		{
 			name:  "should match when topic regex is provided",
-			want:  "localhost:9092/foo_consumer/.*-log",
-			path:  "localhost:9092/foo_consumer/message-log/0",
-			input: []routerEntry{{pattern: "localhost:9092/foo_consumer/.*-log", handler: nil}},
+			want:  "foo.id/foo_consumer/.*-log",
+			paths: []string{"foo.id/foo_consumer/message-log/0", "foo.id/foo_consumer/app-log/0"},
+			input: []routerEntry{{pattern: "foo.id/foo_consumer/.*-log", handler: nil}},
 		},
 		{
 			name:  "should match exact partition when a certain partition is specified",
 			want:  "",
-			path:  "localhost:9092/foo_consumer/message-log/10",
-			input: []routerEntry{{pattern: "localhost:9092/foo_consumer/message-log/1$", handler: nil}},
+			paths: []string{"foo.id/foo_consumer/message-log/10"},
+			input: []routerEntry{{pattern: "foo.id/foo_consumer/message-log/1$", handler: nil}},
 		},
 		{
-			name: "should match the longest prefix with regex",
-			want: "localhost:9092/foo_consumer/.*-log/\\d+",
-			path: "localhost:9092/foo_consumer/message-log/5",
+			name:  "should match the longest prefix with regex",
+			want:  "foo.id/foo_consumer/.*-log/\\d+",
+			paths: []string{"foo.id/foo_consumer/message-log/5"},
 			input: []routerEntry{
-				{pattern: "localhost:9092/foo_consumer/.*-log/\\d+", handler: nil},
-				{pattern: "localhost:9092/foo_consumer/.*-log", handler: nil},
+				{pattern: "foo.id/foo_consumer/.*-log/\\d+", handler: nil},
+				{pattern: "foo.id/foo_consumer/.*-log", handler: nil},
 			},
 		},
 		{
-			name: "should not match similar consumer group names",
-			want: "",
-			path: "localhost:9092/foo_consumer/",
+			name:  "should not match similar consumer group names",
+			want:  "",
+			paths: []string{"foo.id/foo_consumer/"},
 			input: []routerEntry{
-				{pattern: "localhost:9092/foo/"},
+				{pattern: "foo.id/foo/"},
 			},
 		},
 	}
@@ -69,10 +69,15 @@ func Test_match(t *testing.T) {
 			var r Router
 			r.es = test.input
 			r.handlerEntry = esToMap(test.input)
-			_, m := r.match(test.path)
-			if m != test.want {
-				t.Errorf("%s test failed, expected %q got %q", test.name, test.want, m)
+			for _, path := range test.paths {
+				_, m := r.match(path)
+				t.Logf("match:%s\n", m)
+				if m != test.want {
+					t.Errorf("%s test failed, expected %q got %q", test.name, test.want, m)
+					return
+				}
 			}
+
 		})
 	}
 }
