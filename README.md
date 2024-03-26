@@ -9,7 +9,6 @@ go install github.com/gojekfarm/ziggurat/v2/cmd/ziggurat@latest
 ```
 
 ### I already have an application and I just want to use Ziggurat Go without scaffolding a new app
-
 #### Run the following command in your go application directory
 
 ```shell
@@ -62,7 +61,7 @@ func main() {
 		},
 	}
 
-	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) error {
+	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event)  {
 		return nil
 	})
 

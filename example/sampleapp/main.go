@@ -1,7 +1,10 @@
+//go:build ignore
+
 package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/gojekfarm/ziggurat/v2"
 	"github.com/gojekfarm/ziggurat/v2/kafka"
 	"github.com/gojekfarm/ziggurat/v2/logger"
@@ -24,7 +27,7 @@ func main() {
 	}
 
 	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) {
-
+		fmt.Println("received message")
 	})
 
 	h := ziggurat.Use(router)
