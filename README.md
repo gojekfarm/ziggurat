@@ -62,7 +62,7 @@ func main() {
 	}
 
 	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event)  {
-		return nil
+		
 	})
 
 	h := ziggurat.Use(router)
@@ -94,7 +94,7 @@ a `ziggurat.Handler` and a variable number of message consumer implementations.
 
 ```go
 ctx := context.Background()
-h := ziggurat.HandlerFunc(func (context.Context, *ziggurat.Event) error {...})
+h := ziggurat.HandlerFunc(func (context.Context, *ziggurat.Event)  {...})
 groupOne := kafka.ConsumerGroup{...}
 groupTwo := kafka.ConsumerGroup{...}
 if runErr := zig.Run(ctx, h, &groupOne, &groupTwo); runErr != nil {
@@ -111,9 +111,9 @@ application's business logic
 
 ```go
 type Handler interface {
-    Handle(ctx context.Context, event *Event) error
+    Handle(ctx context.Context, event *Event) 
 }
-type HandlerFunc func (ctx context.Context, event *Event) error // serves as an adapter for normal functions to be used as handlers
+type HandlerFunc func (ctx context.Context, event *Event)  // serves as an adapter for normal functions to be used as handlers
 ```
 
 > Any function / struct which implements the above handler interface can be used in the ziggurat.Run method. The
@@ -158,7 +158,7 @@ type NumberConsumer struct {
 counter int
 }
 
-func (nc *NumberConsumer) Consume(ctx context.Context, h Handler) error {
+func (nc *NumberConsumer) Consume(ctx context.Context, h Handler) error{
     var i int64
     for {
         select {
