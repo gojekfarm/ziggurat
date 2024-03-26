@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gojekfarm/ziggurat/v2"
+	"github.com/gojekfarm/ziggurat/v2/logger"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -20,6 +21,7 @@ func newAutoRetry(qn string, count int, consumerCount int) *ARetry {
 		}},
 		WithUsername("user"),
 		WithConnectionTimeout(5*time.Second),
+		WithLogger(logger.NewLogger(logger.LevelInfo)),
 		WithPassword("bitnami"))
 	return ar
 }
@@ -70,10 +72,10 @@ func Test_RetryFlow(t *testing.T) {
 			}
 			done := make(chan struct{})
 			go func() {
-				err := ar.Consume(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
+				err := ar.Consume(ctx, ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
 					atomic.AddInt32(&callCount, 1)
-					return ziggurat.Retry
-				}, c.QueueName))
+					_ = ar.Retry(ctx, event, c.QueueName)
+				}))
 				if !errors.Is(err, ErrCleanShutdown) {
 					t.Errorf("error running consumers: %v", err)
 				}
@@ -264,9 +266,9 @@ func Test_MessageLoss(t *testing.T) {
 
 	done := make(chan struct{})
 	go func() {
-		err := ar.Consume(ctx, ar.Wrap(func(ctx context.Context, event *ziggurat.Event) error {
-			return ziggurat.Retry
-		}, qname))
+		err := ar.Consume(ctx, ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
+			_ = ar.Retry(ctx, event, qname)
+		}))
 		if !errors.Is(err, ErrCleanShutdown) {
 			t.Errorf("exepcted error to be [%v] got [%v]", ErrCleanShutdown, err)
 		}

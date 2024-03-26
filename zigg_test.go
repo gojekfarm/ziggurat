@@ -24,7 +24,7 @@ func (m *MockConsumer) Consume(ctx context.Context, handler Handler) error {
 			keepAlive = false
 		default:
 			time.Sleep(200 * time.Millisecond)
-			_ = handler.Handle(ctx, &Event{})
+			handler.Handle(ctx, &Event{})
 		}
 	}
 	return args.Error(0)
@@ -40,9 +40,8 @@ func TestZiggurat_Run(t *testing.T) {
 		mc1 := MockConsumer{}
 		mc2 := MockConsumer{}
 		mc3 := MockConsumer{}
-		handler := HandlerFunc(func(ctx context.Context, event *Event) error {
+		handler := HandlerFunc(func(ctx context.Context, event *Event) {
 			atomic.AddInt32(&msgCount, 1)
-			return nil
 		})
 
 		mc1.On("Consume", mock.Anything, mock.Anything).Return(nil)
@@ -73,9 +72,8 @@ func TestZiggurat_Run(t *testing.T) {
 		mc1 := MockConsumer{}
 		mc2 := MockConsumer{}
 		mc3 := MockConsumer{}
-		handler := HandlerFunc(func(ctx context.Context, event *Event) error {
+		handler := HandlerFunc(func(ctx context.Context, event *Event) {
 			atomic.AddInt32(&msgCount, 1)
-			return nil
 		})
 
 		mc1.On("Consume", mock.Anything, mock.Anything).Return(nil)

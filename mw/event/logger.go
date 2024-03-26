@@ -7,7 +7,7 @@ import (
 
 func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat.Handler {
 	return func(handler ziggurat.Handler) ziggurat.Handler {
-		f := func(ctx context.Context, event *ziggurat.Event) error {
+		f := func(ctx context.Context, event *ziggurat.Event) {
 			kvs := map[string]interface{}{
 				"path":               event.RoutingPath,
 				"producer-timestamp": event.ProducerTimestamp,
@@ -21,7 +21,7 @@ func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat
 			}
 
 			l.Info("processing message", kvs)
-			return handler.Handle(ctx, event)
+			handler.Handle(ctx, event)
 		}
 		return ziggurat.HandlerFunc(f)
 	}

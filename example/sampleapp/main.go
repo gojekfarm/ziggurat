@@ -23,8 +23,8 @@ func main() {
 		},
 	}
 
-	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) error {
-		return nil
+	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) {
+
 	})
 
 	h := ziggurat.Use(router)

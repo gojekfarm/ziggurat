@@ -58,7 +58,7 @@ func sortAndAppend(s []routerEntry, e routerEntry) []routerEntry {
 	return s
 }
 
-func (r *Router) HandlerFunc(pattern string, h func(ctx context.Context, event *Event) error) {
+func (r *Router) HandlerFunc(pattern string, h func(ctx context.Context, event *Event)) {
 	if pattern == "" {
 		panic(fmt.Errorf("kafka router:pattern cannot be [%q]", pattern))
 	}
@@ -90,13 +90,13 @@ func (r *Router) register(pattern string, h Handler) {
 	r.es = sortAndAppend(r.es, e)
 }
 
-func (r *Router) Handle(ctx context.Context, event *Event) error {
+func (r *Router) Handle(ctx context.Context, event *Event) {
 	path := event.RoutingPath
 	h, _ := r.match(path)
 	if h != nil {
-		return h.Handle(ctx, event)
+		return
 	}
-	return fmt.Errorf("router router:no pattern registered for [%s]", path)
+	return
 }
 
 func NewRouter() *Router {
@@ -110,12 +110,12 @@ var pipe = func(h Handler, fs ...Middleware) Handler {
 		return h
 	}
 	last := len(fs) - 1
-	f := func(ctx context.Context, event *Event) error {
+	f := func(ctx context.Context, event *Event) {
 		next := h
 		for i := last; i >= 0; i-- {
 			next = fs[i](next)
 		}
-		return next.Handle(ctx, event)
+		next.Handle(ctx, event)
 	}
 	return HandlerFunc(f)
 }

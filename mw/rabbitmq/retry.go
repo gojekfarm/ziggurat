@@ -148,29 +148,6 @@ func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey stri
 	return r.publish(ctx, event, queueKey)
 }
 
-func (r *ARetry) Wrap(f ziggurat.HandlerFunc, queueKey string) ziggurat.HandlerFunc {
-	hf := func(ctx context.Context, event *ziggurat.Event) error {
-		// start the publishers once only
-		r.once.Do(func() {
-			r.ogLogger.Info("[amqp] init from wrap")
-			err := r.InitPublishers(ctx)
-			if err != nil {
-				panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
-			}
-		})
-		err := f(ctx, event)
-		if err == ziggurat.Retry {
-			pubErr := r.publish(ctx, event, queueKey)
-			r.ogLogger.Error("AR publishInternal error", pubErr)
-			// return the original error
-			return err
-		}
-		// return the original error and not nil
-		return err
-	}
-	return hf
-}
-
 func (r *ARetry) InitPublishers(ctx context.Context) error {
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {

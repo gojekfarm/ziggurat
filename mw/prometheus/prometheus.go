@@ -78,9 +78,9 @@ func Register() {
 
 // PublishHandlerMetrics - middleware to update registered handler metrics
 func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
-	f := func(ctx context.Context, event *ziggurat.Event) error {
+	f := func(ctx context.Context, event *ziggurat.Event) {
 		t1 := time.Now()
-		err := next.Handle(ctx, event)
+		next.Handle(ctx, event)
 
 		labels := prometheus.Labels{
 			RouteLabel: event.RoutingPath,
@@ -89,11 +89,7 @@ func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
 		HandlerDurationHistogram.With(labels).Observe(time.Since(t1).Seconds())
 
 		HandlerEventsCounter.With(labels).Inc()
-		if err != nil {
-			HandlerFailuresCounter.With(labels).Inc()
-		}
 
-		return err
 	}
 	return ziggurat.HandlerFunc(f)
 }

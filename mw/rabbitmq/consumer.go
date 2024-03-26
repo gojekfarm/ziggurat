@@ -19,6 +19,7 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h zi
 		pfc = c.ConsumerPrefetchCount
 	}
 
+	ogl.Info("starting consumer", map[string]any{"name": c.QueueKey, "count": c.ConsumerCount})
 	qname := fmt.Sprintf("%s_%s_%s", c.QueueKey, QueueTypeInstant, "queue")
 	consumerName := fmt.Sprintf("%s_consumer", c.QueueKey)
 	cons, err := d.Consumer(
@@ -35,10 +36,7 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h zi
 				return msg.Reject(true)
 			}
 			ogl.Info("amqp processing message", map[string]interface{}{"consumer": consumerName})
-			err = h.Handle(ctx, &event)
-			if err != nil {
-				ogl.Error("amqp message processing error", err, event.Metadata)
-			}
+			h.Handle(ctx, &event)
 			return msg.Ack(false)
 		})),
 	)

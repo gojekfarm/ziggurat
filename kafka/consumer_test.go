@@ -42,9 +42,8 @@ func TestWorkerOrchestration(t *testing.T) {
 		var msgCount int32
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
-		err := cg.Consume(ctx, ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
+		err := cg.Consume(ctx, ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
 			atomic.AddInt32(&msgCount, 1)
-			return nil
 		}))
 		if !errors.Is(err, ErrCleanShutdown) {
 			t.Error("expected nil error, got:", err.Error())

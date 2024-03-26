@@ -103,8 +103,8 @@ func Test_sortAndAppend(t *testing.T) {
 
 func Test_register(t *testing.T) {
 	var router Router
-	var h HandlerFunc = func(ctx context.Context, event *Event) error {
-		return nil
+	var h HandlerFunc = func(ctx context.Context, event *Event) {
+
 	}
 	cases := map[string]func(t *testing.T){
 		"should panic on empty pattern": func(t *testing.T) {

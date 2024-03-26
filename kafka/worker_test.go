@@ -17,8 +17,8 @@ type mockHandler struct {
 	mock.Mock
 }
 
-func (mh *mockHandler) Handle(ctx context.Context, event *ziggurat.Event) error {
-	return mh.Called(ctx, event).Error(0)
+func (mh *mockHandler) Handle(ctx context.Context, event *ziggurat.Event) {
+	return
 }
 
 func TestWorker(t *testing.T) {
@@ -76,8 +76,8 @@ func TestWorker(t *testing.T) {
 	t.Run("confluent consumer returns a fatal error", func(t *testing.T) {
 		mc := MockConsumer{}
 		w := worker{
-			handler: ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
-				return nil
+			handler: ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
+
 			}),
 			logger:      logger.NOOP,
 			consumer:    &mc,
@@ -104,8 +104,7 @@ func TestWorker(t *testing.T) {
 	t.Run("worker kill", func(t *testing.T) {
 		mc := MockConsumer{}
 		w := worker{
-			handler: ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) error {
-				return nil
+			handler: ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
 			}),
 			logger:      logger.NOOP,
 			consumer:    &mc,

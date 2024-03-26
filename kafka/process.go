@@ -37,6 +37,6 @@ func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler,
 		ReceivedTimestamp: time.Now(),
 		EventType:         EventType,
 	}
-	l.Error("kafka processing error", h.Handle(ctx, &event))
+	h.Handle(ctx, &event)
 
 }
