@@ -26,8 +26,7 @@ func main() {
 		},
 	}
 
-	router.HandlerFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) error {
-		return nil
+	router.HandlerFunc("cpool/", func(ctx context.Context, event *ziggurat.Event) {
 	})
 
 
