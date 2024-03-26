@@ -258,6 +258,9 @@ Suppose your queue key is called `foo_retries`. The RabbitMQ retry module will a
 > [!NOTE]
 > Consumption only happens from the instant queue. The delay queue is where the retried message is sent and once the retries are exhausted they are sent to the dlq.
 
+> [!CAUTION]
+> Using a Prefetch of 1 is not beneficial for consumption and can fill up the RabbitMQ queues, use a higher value from 10 to 300.
+
 #### I have a lot of messages in my dead letter queue, how do I replay them
 The RabbitMQ package provides HTTP handlers which clear the messages on the RabbitMQ queues. These handlers can be used with any HTTP server.
 
@@ -278,5 +281,3 @@ Just invoke the API with the following query params
 > [!NOTE]
 > \* indicates a required param
 
-> [!CAUTION]
-> Using a Prefetch of 1 is not beneficial for consumption and can fill up the RabbitMQ queues, use a higher value from 10 to 300.
