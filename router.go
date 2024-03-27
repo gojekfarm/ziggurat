@@ -20,6 +20,7 @@ handlerEntry []string sorted by len of paths
 type routerEntry struct {
 	handler Handler
 	pattern string
+	rgx     *regexp.Regexp
 }
 
 type Router struct {
@@ -34,13 +35,11 @@ func (r *Router) match(path string) (Handler, string) {
 		return e.handler, path
 	}
 	for _, e := range r.es {
-		matched, err := regexp.MatchString(e.pattern, path)
-		if err != nil {
-			panic(err)
-		}
+		matched := e.rgx.MatchString(path)
 		if matched {
 			return e.handler, e.pattern
 		}
+
 	}
 	return nil, ""
 }
@@ -84,7 +83,7 @@ func (r *Router) register(pattern string, h Handler) {
 		panic(fmt.Sprintf("kafka router:multiple regirstrations for [%s]", pattern))
 	}
 
-	e := routerEntry{handler: h, pattern: pattern}
+	e := routerEntry{handler: h, pattern: pattern, rgx: regexp.MustCompile(pattern)}
 	r.handlerEntry[pattern] = e
 
 	r.es = sortAndAppend(r.es, e)

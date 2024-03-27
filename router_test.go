@@ -62,6 +62,15 @@ func Test_match(t *testing.T) {
 				{pattern: "bar.id/.*"},
 			},
 		},
+		{
+			name: "regex test: should match paths ending with even numbers",
+			want: "bar.id/message-log/(2|4|6|8|10)$",
+			input: []routerEntry{
+				{pattern: "bar.id/message-log/(1|3|5|7|11)$"},
+				{pattern: "bar.id/message-log/(2|4|6|8|10)$"},
+			},
+			paths: []string{"bar.id/message-log/10"},
+		},
 	}
 
 	esToMap := func(es []routerEntry) map[string]routerEntry {
@@ -75,9 +84,12 @@ func Test_match(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			var r Router
-			r.es = test.input
+			for _, es := range test.input {
+				r.register(es.pattern, es.handler)
+			}
 			r.handlerEntry = esToMap(test.input)
 			for _, path := range test.paths {
+				t.Logf("matching path:%s\n", path)
 				_, m := r.match(path)
 				t.Logf("match:%s\n", m)
 				if m != test.want {
