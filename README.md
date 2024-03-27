@@ -221,9 +221,9 @@ ex: mobile_app_log_consumer/mobile-application-logs/1
 ```go
 router := ziggurat.NewRouter()
 // to execute logic for iOS logs I would use this
-router.HandlerFunc("mobile_app_log_consumer/mobile-application-logs/(1|3|5|7|9|11)", func (ctx, *ziggurat.Event) error {....})
+router.HandlerFunc("mobile_app_log_consumer/mobile-application-logs/(1|3|5|7|9|11)", func (ctx, *ziggurat.Event) {....})
 // to execute logic for Android logs I would use this
-router.HandlerFunc("mobile_app_log_consumer/mobile-application-logs/(2|4|6|8|10|12)", func (ctx, *ziggurat.Event) error {....})
+router.HandlerFunc("mobile_app_log_consumer/mobile-application-logs/(2|4|6|8|10|12)", func (ctx, *ziggurat.Event) {....})
 ```
 
 Based on how the routing path is set by the message consumer implementation, you can define your routing paths.
