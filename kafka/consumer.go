@@ -22,15 +22,16 @@ type ConsumerGroup struct {
 }
 
 func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) error {
+
 	cg.init()
 
-	consConf := cg.GroupConfig
-	groupID := consConf.GroupID
+	grpConfig := cg.GroupConfig
+	groupID := grpConfig.GroupID
 	// sets default pollTimeout of 100ms
 	pollTimeout := 100
 	// allow a PollTimeout of -1
-	if consConf.PollTimeout > 0 || consConf.PollTimeout == -1 {
-		pollTimeout = consConf.PollTimeout
+	if grpConfig.PollTimeout > 0 || grpConfig.PollTimeout == -1 {
+		pollTimeout = grpConfig.PollTimeout
 	}
 
 	cm := cg.GroupConfig.toConfigMap()
@@ -40,14 +41,16 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 	if cg.GroupConfig.RouteGroup == "" {
 		cg.GroupConfig.RouteGroup = cg.GroupConfig.GroupID
 	}
+
 	cg.c = confCons
-	for i := 0; i < consConf.ConsumerCount; i++ {
+	for i := 0; i < grpConfig.ConsumerCount; i++ {
 		workerID := fmt.Sprintf("%s_%d", groupID, i)
+		cg.Logger.Info("spawning kafka worker", map[string]any{"id": workerID})
 		w := worker{
 			handler:     handler,
 			logger:      cg.Logger,
 			consumer:    confCons,
-			routeGroup:  consConf.RouteGroup,
+			routeGroup:  grpConfig.RouteGroup,
 			pollTimeout: pollTimeout,
 			killSig:     make(chan struct{}),
 			id:          workerID,
@@ -80,6 +83,9 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 func (cg *ConsumerGroup) init() {
 	var wg sync.WaitGroup
 	cg.wg = &wg
+	if cg.GroupConfig.ConsumerCount < 1 {
+		cg.GroupConfig.ConsumerCount = 1
+	}
 	cg.workers = make([]*worker, cg.GroupConfig.ConsumerCount)
 	if cg.Logger == nil {
 		cg.Logger = logger.NOOP

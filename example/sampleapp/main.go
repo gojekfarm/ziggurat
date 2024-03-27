@@ -1,5 +1,3 @@
-//go:build ignore
-
 package main
 
 import (
@@ -19,11 +17,11 @@ func main() {
 	l := logger.NewLogger(logger.LevelInfo)
 
 	kcg := kafka.ConsumerGroup{
-		Logger: nil,
+		Logger: logger.NewLogger(logger.LevelInfo),
 		GroupConfig: kafka.ConsumerConfig{
-			BootstrapServers: "localhost:9092",
+			BootstrapServers: "g-gojek-id-mainstream-golabs.io:6668",
 			GroupID:          "foo.id",
-			Topics:           []string{"foo"},
+			Topics:           []string{".*-booking-log"},
 		},
 	}
 
