@@ -44,7 +44,7 @@ func main() {
 		die(errors.New(usage))
 	}
 	appName := args[1]
-	d := Data{AppName: appName, Version: "v2.0.10"}
+	d := Data{AppName: appName, Version: "v2.0.11"}
 	wd, err := os.Getwd()
 	die(err)
 
