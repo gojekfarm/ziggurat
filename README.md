@@ -318,10 +318,10 @@ router.Handle("POST /ds_view", ar.DSViewHandler(context.Background()))
 http.ListenAndServe("localhost:8080", router)
 ```
 Just invoke the API with the following query params
-| Param   | Example   |
-| ------- | --------- |
-| count\* | 100       |
-| queue\* | foo_retry |
+| Param   | Example   | Description                                                  |
+| ------- | --------- | -----------------------------------------------------------  |
+| count\* | 100       | integer value                                                |
+| queue\* | foo_retry | the `queue_key` "only" as specified in you rabbitmq config   |
 
 > [!NOTE]
 > \* indicates a required param
