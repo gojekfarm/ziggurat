@@ -42,10 +42,6 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 
 	confCons := cg.consumerMakeFunc(&cm, cg.GroupConfig.Topics)
 
-	if cg.GroupConfig.RouteGroup == "" {
-		cg.GroupConfig.RouteGroup = cg.GroupConfig.GroupID
-	}
-
 	cg.c = confCons
 	for i := 0; i < grpConfig.ConsumerCount; i++ {
 		workerID := fmt.Sprintf("%s_%d", groupID, i)
@@ -54,7 +50,7 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 			handler:     handler,
 			logger:      cg.Logger,
 			consumer:    confCons,
-			routeGroup:  grpConfig.RouteGroup,
+			routeGroup:  cg.GroupConfig.GroupID,
 			pollTimeout: pollTimeout,
 			killSig:     make(chan struct{}),
 			id:          workerID,

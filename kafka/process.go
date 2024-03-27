@@ -17,7 +17,7 @@ func constructPath(rg string, topic string, part int32) string {
 	return fmt.Sprintf("%s/%s/%d", rg, topic, part)
 }
 
-func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler, l ziggurat.StructuredLogger, route string) {
+func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler, route string) {
 	//copy kvs into new slices
 	key := make([]byte, len(msg.Key))
 	value := make([]byte, len(msg.Value))

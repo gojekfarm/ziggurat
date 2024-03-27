@@ -59,7 +59,7 @@ func (w *worker) run(ctx context.Context) {
 			ev := w.consumer.Poll(w.pollTimeout)
 			switch e := ev.(type) {
 			case *kafka.Message:
-				processMessage(ctx, e, w.handler, w.logger, w.routeGroup)
+				processMessage(ctx, e, w.handler, w.routeGroup)
 				if err := storeOffsets(w.consumer, e.TopicPartition); err != nil {
 					w.logger.Error("error storing offsets locally", err)
 				}

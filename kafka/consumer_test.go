@@ -21,7 +21,6 @@ func TestWorkerOrchestration(t *testing.T) {
 				GroupID:          "group-test",
 				Topics:           []string{"foo"},
 				ConsumerCount:    5,
-				RouteGroup:       "test-grp",
 			},
 			consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string) confluentConsumer {
 				return &mc

@@ -10,7 +10,6 @@ type ConsumerConfig struct {
 	AutoCommitInterval    int
 	ConsumerCount         int
 	PollTimeout           int
-	RouteGroup            string
 	AutoOffsetReset       string
 	PartitionAssignment   string
 	MaxPollIntervalMS     int
