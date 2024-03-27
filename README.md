@@ -136,8 +136,10 @@ ziggurat.Event{
     ReceivedTimestamp time.Time `json:"received_timestamp"` // the timestamp at which the message was ingested by the system, this is also set by the message consumer implementation
     EventType         string    `json:"event_type"`         // the type of event, ex:= kafka,rabbitmq, this is also set by the message consumer implementation
 }
-
 ```
+
+> [!NOTE]
+> A note for message consumer implementations, the Metadata field is not a dumping ground for all sort of key values, it should be sparingly used and should contain only the most required fields
 
 ### ziggurat.MessageConsumer interface
 
@@ -231,6 +233,50 @@ Based on how the routing path is set by the message consumer implementation, you
 Ziggurat-Go includes rabbitmq as the backend for message retries. Message retries are useful when message processing from one message consumer fails and needs to be retried.
 
 The `rabbitMQ.AutoRetry(qc QueueConfig,opts ...Opts)` function creates an instance of the `rabbitmq.ARetry struct`
+
+#### Code sample to retry a message
+```go
+ar := rabbitMQ.AutoRetry(qc QueueConfig,opts ...Opts)
+ar := rabbitmq.AutoRetry(rabbitmq.Queues{
+		{
+			QueueKey:              "foo",
+			DelayExpirationInMS:   "100",
+			RetryCount:            4,
+			ConsumerPrefetchCount: 300,
+			ConsumerCount:         10,
+		},
+	},
+		rabbitmq.WithUsername("guest"),
+		rabbitmq.WithPassword("guest"))
+hf := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
+		err := ar.Retry(ctx, event, "foo") 
+		// Retry always pushes to the delay queue
+		// OR FOR A MORE GRANULAR CONTROL USE
+		err := ar.Publish(ctx,event,"foo",rabbitmq.QueueTypeDLQ,"200")
+		// handle error
+	})
+// important pass the auto retry struct as a message consumer to ziggurat.Run
+zig.Run(ctx, hf, ar)
+```
+The `rabbitmq.AutoRetry` struct implements the `ziggurat.MessageConsumer` interface which makes it a viable candidate for consumer orchestration! Passing this to `ziggurat.Run` will consume the messages from the retry queue and feed it to your handler for re-consumption.
+
+> [!NOTE]
+> The `rabbitmq.MessageConsumer` implementation does not modify the `*ziggurat.Event` struct in any way apart from storing the rabbitmq metadata, the reason being that RabbitMQ MessageConsumer is not the origin / source of the event, it is just a re-consumption of the original message.
+> Message Consumer implementations should keep this in mind before modifying the event struct.
+
+#### How do I know if my message has been retried ?
+```go
+router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) {
+		if rabbitmq.RetryCountFor(event) > 0 {
+			fmt.Println("message has been retried")
+		} else {
+			fmt.Println("new message")
+		}
+	})
+```
+The `rabbitmq.RetryCountFor` function infers the RabbitMQ metadata and provides an integer value which gives the retry count
+
+
 
 Required params
 ```go

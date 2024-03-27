@@ -8,6 +8,7 @@ import (
 	"github.com/gojekfarm/ziggurat/v2"
 	"github.com/gojekfarm/ziggurat/v2/kafka"
 	"github.com/gojekfarm/ziggurat/v2/logger"
+	"github.com/gojekfarm/ziggurat/v2/mw/rabbitmq"
 )
 
 func main() {
@@ -27,7 +28,11 @@ func main() {
 	}
 
 	router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) {
-		fmt.Println("received message")
+		if rabbitmq.RetryCountFor(event) > 0 {
+			fmt.Println("message has been retried")
+		} else {
+			fmt.Println("new message")
+		}
 	})
 
 	h := ziggurat.Use(router)
