@@ -25,6 +25,10 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 
 	cg.init()
 
+	if cg.GroupConfig.ConsumerCount < 1 {
+		cg.Logger.Warn("ConsumerConfig.GroupCount < 1, no consumers will be started")
+	}
+
 	grpConfig := cg.GroupConfig
 	groupID := grpConfig.GroupID
 	// sets default pollTimeout of 100ms
@@ -83,9 +87,7 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 func (cg *ConsumerGroup) init() {
 	var wg sync.WaitGroup
 	cg.wg = &wg
-	if cg.GroupConfig.ConsumerCount < 1 {
-		cg.GroupConfig.ConsumerCount = 1
-	}
+
 	cg.workers = make([]*worker, cg.GroupConfig.ConsumerCount)
 	if cg.Logger == nil {
 		cg.Logger = logger.NOOP
