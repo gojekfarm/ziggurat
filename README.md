@@ -156,26 +156,27 @@ The `kafka.ConsumerGroup` and `rabbitmq.AutoRetry` implement the above interface
 
 A sample implementation which consumes infinite numbers
 ```go
+
 type NumberConsumer struct {
-counter int
+	counter int
 }
 
-func (nc *NumberConsumer) Consume(ctx context.Context, h Handler) error{
-    var i int64
-    for {
-        select {
-		    case <-ctx.Done():
-                return ctx.Err()
-            default:
-                time.Sleep(1000 * time.Millisecond)
-                e := &Event{
-						Value:       strconv.AppendInt(make([]byte, 8), i, 10),
-						Key:         strconv.AppendInt(make([]byte, 8), i, 10),
-						RoutingPath: "numpath",
-						EventType:   "numbergen",}	
-				h.Handle(ctx, e)
-			}
+func (nc *NumberConsumer) Consume(ctx context.Context, h Handler) error {
+	var i int64
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			time.Sleep(1000 * time.Millisecond)
+			e := &Event{
+				Value:       strconv.AppendInt(make([]byte, 8), i, 10),
+				Key:         strconv.AppendInt(make([]byte, 8), i, 10),
+				RoutingPath: "numpath",
+				EventType:   "numbergen"}
+			h.Handle(ctx, e)
 		}
+	}
 }
 ```
 
