@@ -5,10 +5,7 @@ import (
 	"errors"
 	"github.com/gojekfarm/ziggurat/v2/logger"
 	"sync"
-	"time"
 )
-
-const defaultWaitTimeout = 5000 * time.Millisecond
 
 var ErrCleanShutdown = errors.New("clean shutdown of streams")
 
@@ -19,7 +16,6 @@ var ErrCleanShutdown = errors.New("clean shutdown of streams")
 type Ziggurat struct {
 	handler      Handler
 	Logger       StructuredLogger
-	WaitTimeout  time.Duration
 	ErrorHandler func(err error)
 }
 
@@ -41,9 +37,7 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, consumers ...Messag
 	}
 
 	go func() {
-		if timeout := waitWithTimeout(&wg, z.WaitTimeout); timeout {
-			z.Logger.Warn("wait timed out")
-		}
+		wg.Wait()
 		close(errChan)
 	}()
 
@@ -74,24 +68,5 @@ func (z *Ziggurat) mustInit(consumers []MessageConsumer, handler Handler) {
 	if handler == nil {
 		panic("error: handler cannot be nil")
 	}
-	if z.WaitTimeout == 0 {
-		z.WaitTimeout = defaultWaitTimeout
-	}
 
-}
-
-func waitWithTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	done := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
-
-	timeoutAfter := time.After(timeout)
-	select {
-	case <-done:
-		return false
-	case <-timeoutAfter:
-		return true
-	}
 }

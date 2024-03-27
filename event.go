@@ -7,7 +7,6 @@ import "time"
 // ProducerTimestamp holds the timestamp of the message as given by the producer
 // Path is the message path and can be used by routers to route message to the correct handler
 // EventType is the type of event eg:- kafka,rabbitmq,redis
-// Headers can contain additional metadata about the message
 // Metadata is used to store metadata about the message
 type Event struct {
 	Metadata map[string]any `json:"meta"`
