@@ -94,7 +94,7 @@ func (r *Router) Handle(ctx context.Context, event *Event) {
 	path := event.RoutingPath
 	h, _ := r.match(path)
 	if h != nil {
-		return
+		h.Handle(ctx, event)
 	}
 	return
 }

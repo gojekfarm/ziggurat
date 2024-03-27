@@ -54,6 +54,14 @@ func Test_match(t *testing.T) {
 				{pattern: "foo.id/foo/"},
 			},
 		},
+		{
+			name:  "should not match similar consumer group names",
+			want:  "bar.id/.*",
+			paths: []string{"bar.id/GO_BIRD_COMBO-booking-log/11"},
+			input: []routerEntry{
+				{pattern: "bar.id/.*"},
+			},
+		},
 	}
 
 	esToMap := func(es []routerEntry) map[string]routerEntry {
