@@ -321,7 +321,7 @@ Just invoke the API with the following query params
 | Param   | Example   | Description                                                  |
 | ------- | --------- | -----------------------------------------------------------  |
 | count\* | 100       | integer value                                                |
-| queue\* | foo_retry | the `queue_key` "only" as specified in you rabbitmq config   |
+| queue\* | foo_retry | the `queue_key` **only** as specified in you rabbitmq config   |
 
 > [!NOTE]
 > \* indicates a required param
