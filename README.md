@@ -157,9 +157,7 @@ The `kafka.ConsumerGroup` and `rabbitmq.AutoRetry` implement the above interface
 A sample implementation which consumes infinite numbers
 ```go
 
-type NumberConsumer struct {
-	counter int
-}
+type NumberConsumer struct {}
 
 func (nc *NumberConsumer) Consume(ctx context.Context, h Handler) error {
 	var i int64
