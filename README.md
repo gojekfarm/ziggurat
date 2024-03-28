@@ -1,28 +1,26 @@
-### Ziggurat Golang
+# Ziggurat Golang
 
 Consumer Orchestration made easy
 
-### Install the ziggurat CLI
+## Install the ziggurat CLI
 
 ```shell script
 go install github.com/gojekfarm/ziggurat/v2/cmd/ziggurat@latest                                                                                                                                                    
 ```
 
-### I already have an application and I just want to use Ziggurat Go without scaffolding a new app
-#### Run the following command in your go application directory
-
+### Using with an existing application
 ```shell
 go get github.com/gojekfarm/ziggurat/v2
 ```
 
-### create a new app using the `new` command
+### Creating a new app using the CLI
 
 ```shell
 ziggurat new <app_name>
 go mod tidy -v  # cleans up dependencies
 ```
 
-### Features
+## Features
 
 - Ziggurat-Go enables you to orchestrate multiple message consumers by decoupling the consumer implementation from the
   orchestration
@@ -33,7 +31,7 @@ go mod tidy -v  # cleans up dependencies
 - Ziggurat Go provides a RabbitMQ message consumer implementation to consume "retried" messages from RabbitMQ
 - Ziggurat Go also includes a Prometheus middleware and exposes a Prometheus exporter server for instrumentation
 
-### How to consume messages from Kafka
+## How to consume messages from Kafka
 
 ```go
 package main
@@ -74,7 +72,7 @@ func main() {
 }
 ```
 
-### Configuring the `Ziggurat` struct
+## Configuring the `Ziggurat` struct
 
 ```go
 ziggurat.Ziggurat{
@@ -102,7 +100,7 @@ if runErr := zig.Run(ctx, h, &groupOne, &groupTwo); runErr != nil {
 }
 ```
 
-### Ziggurat Handler interface
+## Ziggurat Handler interface
 
 The `ziggurat.Handler` is an interface for handling ziggurat events, an event is just something that happens in a finite
 timeframe. This event can come from
@@ -119,12 +117,12 @@ type HandlerFunc func (ctx context.Context, event *Event)  // serves as an adapt
 > Any function / struct which implements the above handler interface can be used in the ziggurat.Run method. The
 > ziggurat.Router also implements the above interface.
 
-### Ziggurat Event struct
+## Ziggurat Event struct
 
 The `ziggurat.Event` struct is a generic event struct that is passed to the handler. This is a pointer value and should
 not be modified by handlers as it is not thread safe. The struct can be cloned and modified.
 
-#### Description
+### Description
 
 ```go
 ziggurat.Event{
@@ -141,7 +139,7 @@ ziggurat.Event{
 > [!NOTE]
 > A note for message consumer implementations, the Metadata field is not a dumping ground for all sort of key values, it should be sparingly used and should contain only the most required fields
 
-### ziggurat.MessageConsumer interface
+## Ziggurat MessageConsumer interface
 
 The `ziggurat.MessageConsumer` interface is the interface used for implementing message consumers which can be passed to
 the ziggurat.Run method for orchestration.
@@ -200,7 +198,7 @@ type ConsumerConfig struct {
 > For low level details please check For full details please check
 https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
 
-## How to use the router
+## How to use the ziggurat Event Router
 First of all understand if you need a router, a router is required if you have complex routing logic that needs to be implemented, if your application
 just consumes from one topic, and you just want to handle all events in the same way then a router is not required, you can just pass a `ziggurat.HandlerFunc` OR a type that implements the `ziggurat.Handler` interface directly. A router lets you handle different events in a different ways by defining regex rules.
 ```go
@@ -240,12 +238,25 @@ router.HandlerFunc("mobile_app_log_consumer/mobile-application-logs/(2|4|6|8|10|
 
 Based on how the routing path is set by the message consumer implementation, you can define your routing paths.
 
-### Retries
+## Retries using RabbitMQ
 Ziggurat-Go includes rabbitmq as the backend for message retries. Message retries are useful when message processing from one message consumer fails and needs to be retried.
 
 The `rabbitMQ.AutoRetry(qc QueueConfig,opts ...Opts)` function creates an instance of the `rabbitmq.ARetry struct`
 
-#### Code sample to retry a message
+### RabbitMQ Queue config
+```go
+type QueueConfig struct {
+	QueueKey              string  // A queue key to be used for retries, any arbitrary string would do
+	DelayExpirationInMS   string  // The time in milliseconds after which to reconsume the message for processing
+	RetryCount            int     // The number of times to retry the message
+	ConsumerPrefetchCount int     // The number of messages in batch to be consumed from RabbitMQ 
+	ConsumerCount         int     // Number of concurrent consumer instances
+}
+
+type Queues []QueueConfig
+```
+
+### Code sample to retry a message
 ```go
 ar := rabbitMQ.AutoRetry(qc QueueConfig,opts ...Opts)
 ar := rabbitmq.AutoRetry(rabbitmq.Queues{
@@ -275,7 +286,7 @@ The `rabbitmq.AutoRetry` struct implements the `ziggurat.MessageConsumer` interf
 > The `rabbitmq.MessageConsumer` implementation does not modify the `*ziggurat.Event` struct in any way apart from storing the rabbitmq metadata, the reason being that RabbitMQ MessageConsumer is not the origin / source of the event, it is just a re-consumption of the original message.
 > Message Consumer implementations should keep this in mind before modifying the event struct.
 
-#### How do I know if my message has been retried ?
+### How do I know if my message has been retried ?
 ```go
 router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) {
 		if rabbitmq.RetryCountFor(event) > 0 {
@@ -287,20 +298,6 @@ router.HandlerFunc("foo.id/*", func(ctx context.Context, event *ziggurat.Event) 
 ```
 The `rabbitmq.RetryCountFor` function infers the RabbitMQ metadata and provides an integer value which gives the retry count
 
-
-
-Required params
-```go
-type QueueConfig struct {
-	QueueKey              string  // A queue key to be used for retries, any arbitrary string would do
-	DelayExpirationInMS   string  // The time in milliseconds after which to reconsume the message for processing
-	RetryCount            int     // The number of times to retry the message
-	ConsumerPrefetchCount int     // The number of messages in batch to be consumed from RabbitMQ 
-	ConsumerCount         int     // Number of concurrent consumer instances
-}
-
-type Queues []QueueConfig
-```
 ### How does a queue key work?
 
 #### A practical example
@@ -318,7 +315,7 @@ Suppose your queue key is called `foo_retries`. The RabbitMQ retry module will a
 > [!CAUTION]
 > Using a Prefetch of 1 is not beneficial for consumption and can fill up the RabbitMQ queues, use a higher value from 10 to 300.
 
-#### I have a lot of messages in my dead letter queue, how do I replay them
+## I have a lot of messages in my dead letter queue, how do I replay them
 The RabbitMQ package provides HTTP handlers which clear the messages on the RabbitMQ queues. These handlers can be used with any HTTP server.
 
 Example usage:
