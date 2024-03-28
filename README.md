@@ -209,7 +209,7 @@ h := ziggurat.HandlerFunc(func (context.Context, *ziggurat.Event)  {
 	// handle all events 
 })
 groupOne := kafka.ConsumerGroup{...}
-if runErr := zig.Run(ctx, h, &groupOne, &groupTwo); runErr != nil {
+if runErr := zig.Run(ctx, h, &groupOne); runErr != nil {
     logger.Error("error running consumers", runErr)
 }
 ```
