@@ -338,7 +338,7 @@ ziggurat.Event{
 ```
 
 > [!NOTE]
-> The rabbitmq MessageConsumer implementation does not modify the event struct and preserves the source data as is, it just stored the retry count in the metadata. This is a guarantee provided by the rabbitmq implementation.
+> The rabbitmq MessageConsumer implementation does not modify the event struct and preserves the source data as is, it just stores the retry count in the metadata. This is a guarantee provided by the rabbitmq implementation.
 
 > [!NOTE]
 > The `rabbitmq.MessageConsumer` implementation does not modify the `*ziggurat.Event` struct in any way apart from storing the rabbitmq metadata, the reason being that RabbitMQ MessageConsumer is not the origin / source of the event, it is just a re-consumption of the original message.
