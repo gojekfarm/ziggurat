@@ -2,6 +2,31 @@
 
 Consumer Orchestration made easy
 
+<!-- TOC -->
+* [Ziggurat Golang](#ziggurat-golang)
+  * [Install the ziggurat CLI](#install-the-ziggurat-cli)
+    * [Using with an existing application](#using-with-an-existing-application)
+    * [Creating a new app using the CLI](#creating-a-new-app-using-the-cli)
+  * [Features](#features)
+  * [How to consume messages from Kafka](#how-to-consume-messages-from-kafka)
+  * [Configuring the `Ziggurat` struct](#configuring-the-ziggurat-struct)
+    * [Ziggurat Run method](#ziggurat-run-method)
+  * [Ziggurat Handler interface](#ziggurat-handler-interface)
+  * [Ziggurat Event struct](#ziggurat-event-struct)
+    * [Description](#description)
+  * [Ziggurat MessageConsumer interface](#ziggurat-messageconsumer-interface)
+  * [Kafka consumer configuration](#kafka-consumer-configuration)
+  * [How to use the ziggurat Event Router](#how-to-use-the-ziggurat-event-router)
+    * [A practical example](#a-practical-example)
+  * [Retries using RabbitMQ](#retries-using-rabbitmq)
+    * [RabbitMQ Queue config](#rabbitmq-queue-config)
+    * [Code sample to retry a message](#code-sample-to-retry-a-message)
+    * [How do I know if my message has been retried ?](#how-do-i-know-if-my-message-has-been-retried-)
+    * [How does a queue key work?](#how-does-a-queue-key-work)
+      * [A practical example](#a-practical-example-1)
+  * [I have a lot of messages in my dead letter queue, how do I replay them](#i-have-a-lot-of-messages-in-my-dead-letter-queue-how-do-i-replay-them)
+<!-- TOC -->
+
 ## Install the ziggurat CLI
 
 ```shell script
