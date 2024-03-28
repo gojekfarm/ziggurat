@@ -201,6 +201,18 @@ type ConsumerConfig struct {
 https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
 
 ## How to use the router
+First of all understand if you need a router, a router is required if you have complex routing logic that needs to be implemented, if your application
+just consumes from one topic, and you just want to handle all events in the same way then a router is not required, you can just pass a `ziggurat.HandlerFunc` directly. A router lets you handle different events in a different ways by defining regex rules.
+```go
+ctx := context.Background()
+h := ziggurat.HandlerFunc(func (context.Context, *ziggurat.Event)  {
+	// handle all events 
+})
+groupOne := kafka.ConsumerGroup{...}
+if runErr := zig.Run(ctx, h, &groupOne, &groupTwo); runErr != nil {
+    logger.Error("error running consumers", runErr)
+}
+```
 
 A router enables you to handle complex routing problems by defining handler functions for predefined regex paths.
 
