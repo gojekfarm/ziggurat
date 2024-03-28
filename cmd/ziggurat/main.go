@@ -20,7 +20,7 @@ func die(err error) {
 
 //go:embed templates/*
 var res embed.FS
-var Version = "v1.0.0"
+var Version = "v2.0.16"
 
 var definePaths = func(basePath string) map[string]string {
 	return map[string]string{
@@ -38,13 +38,15 @@ type Data struct {
 
 func main() {
 	args := os.Args[1:]
+	fmt.Println("CLI version:", Version)
 	usage := `USAGE:
   ziggurat new <app_name>`
 	if len(args) < 2 {
 		die(errors.New(usage))
 	}
+
 	appName := args[1]
-	d := Data{AppName: appName, Version: "v2.0.16"}
+	d := Data{AppName: appName, Version: Version}
 	wd, err := os.Getwd()
 	die(err)
 
