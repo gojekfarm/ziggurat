@@ -15,12 +15,15 @@ Consumer Orchestration made easy
   * [Ziggurat Event struct](#ziggurat-event-struct)
     * [Description](#description)
   * [Ziggurat MessageConsumer interface](#ziggurat-messageconsumer-interface)
-  * [Kafka consumer configuration](#kafka-consumer-configuration)
+  * [Using Kafka Consumer](#using-kafka-consumer)
+    * [ConsumerConfig](#consumerconfig)
+    * [Events emitted by the kafka.ConsumerGroup implementation](#events-emitted-by-the-kafkaconsumergroup-implementation)
   * [How to use the ziggurat Event Router](#how-to-use-the-ziggurat-event-router)
     * [A practical example](#a-practical-example)
   * [Retries using RabbitMQ](#retries-using-rabbitmq)
     * [RabbitMQ Queue config](#rabbitmq-queue-config)
     * [Code sample to retry a message](#code-sample-to-retry-a-message)
+    * [Events emitted by the `rabbitmq.AutoRetry`](#events-emitted-by-the-rabbitmqautoretry)
     * [How do I know if my message has been retried ?](#how-do-i-know-if-my-message-has-been-retried-)
     * [How does a queue key work?](#how-does-a-queue-key-work)
       * [A practical example](#a-practical-example-1)
@@ -202,8 +205,9 @@ func (nc *NumberConsumer) Consume(ctx context.Context, h Handler) error {
 ```
 
 
-## Kafka consumer configuration
+## Using Kafka Consumer
 
+### ConsumerConfig
 ```go
 type ConsumerConfig struct {
     BootstrapServers      string // A required comma separated list of broker addresses
@@ -217,6 +221,19 @@ type ConsumerConfig struct {
     AutoOffsetReset       string // earliest or latest
     PartitionAssignment   string // refer partition.assignment.strategy https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
     MaxPollIntervalMS     int    // Kafka Failure detection interval in milliseconds
+}
+```
+
+### Events emitted by the kafka.ConsumerGroup implementation
+```go
+ziggurat.Event{
+    Metadata map[string]any  // map[string]any{"kafka-partition":1,"kafka-topic":"foo-log"}
+    Value    []byte         `json:"value"` // byte slice 
+    Key      []byte         `json:"key"`   // byte slice
+    RoutingPath       string    `json:"routing_path"`  // <consumer_group_id>/<topic_name>/<parition_num> can be used in routing
+    ProducerTimestamp time.Time `json:"producer_timestamp"`  // A normal time.Time struct
+    ReceivedTimestamp time.Time `json:"received_timestamp"` // A normal time.Time struct
+    EventType         string    `json:"event_type"`         // kafka
 }
 ```
 
@@ -306,6 +323,22 @@ hf := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
 zig.Run(ctx, hf, ar)
 ```
 The `rabbitmq.AutoRetry` struct implements the `ziggurat.MessageConsumer` interface which makes it a viable candidate for consumer orchestration! Passing this to `ziggurat.Run` will consume the messages from the retry queue and feed it to your handler for re-consumption.
+### Events emitted by the `rabbitmq.AutoRetry`
+
+```go
+ziggurat.Event{
+    Metadata map[string]any  // map[string]any{... source key values + "rabbitmqAutoRetryCount":3}
+    Value    []byte         `json:"value"` // byte slice 
+    Key      []byte         `json:"key"`   // byte slice
+    RoutingPath       string    `json:"routing_path"`  // <consumer_group_id>/<topic_name>/<parition_num> same as source path
+    ProducerTimestamp time.Time `json:"producer_timestamp"`  // A normal time.Time struct
+    ReceivedTimestamp time.Time `json:"received_timestamp"` // A normal time.Time struct
+    EventType         string    `json:"event_type"`         // source path
+}
+```
+
+> [!NOTE]
+> The rabbitmq MessageConsumer implementation does not modify the event struct and preserves the source data as is, it just stored the retry count in the metadata. This is a guarantee provided by the rabbitmq implementation.
 
 > [!NOTE]
 > The `rabbitmq.MessageConsumer` implementation does not modify the `*ziggurat.Event` struct in any way apart from storing the rabbitmq metadata, the reason being that RabbitMQ MessageConsumer is not the origin / source of the event, it is just a re-consumption of the original message.
