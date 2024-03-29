@@ -12,6 +12,8 @@ Consumer Orchestration made easy
   * [Configuring the `Ziggurat` struct](#configuring-the-ziggurat-struct)
     * [Ziggurat Run method](#ziggurat-run-method)
   * [Ziggurat Handler interface](#ziggurat-handler-interface)
+    * [Writing custom re-usable middlewares](#writing-custom-re-usable-middlewares)
+      * [A practical example](#a-practical-example)
   * [Ziggurat Event struct](#ziggurat-event-struct)
     * [Description](#description)
   * [Ziggurat MessageConsumer interface](#ziggurat-messageconsumer-interface)
@@ -19,14 +21,14 @@ Consumer Orchestration made easy
     * [ConsumerConfig](#consumerconfig)
     * [Events emitted by the kafka.ConsumerGroup implementation](#events-emitted-by-the-kafkaconsumergroup-implementation)
   * [How to use the ziggurat Event Router](#how-to-use-the-ziggurat-event-router)
-    * [A practical example](#a-practical-example)
+    * [A practical example](#a-practical-example-1)
   * [Retries using RabbitMQ](#retries-using-rabbitmq)
     * [RabbitMQ Queue config](#rabbitmq-queue-config)
     * [Code sample to retry a message](#code-sample-to-retry-a-message)
     * [Events emitted by the `rabbitmq.AutoRetry`](#events-emitted-by-the-rabbitmqautoretry)
     * [How do I know if my message has been retried ?](#how-do-i-know-if-my-message-has-been-retried-)
     * [How does a queue key work?](#how-does-a-queue-key-work)
-      * [A practical example](#a-practical-example-1)
+      * [A practical example](#a-practical-example-2)
   * [I have a lot of messages in my dead letter queue, how do I replay them](#i-have-a-lot-of-messages-in-my-dead-letter-queue-how-do-i-replay-them)
 <!-- TOC -->
 
@@ -140,6 +142,79 @@ type Handler interface {
     Handle(ctx context.Context, event *Event) 
 }
 type HandlerFunc func (ctx context.Context, event *Event)  // serves as an adapter for normal functions to be used as handlers
+```
+
+### Writing custom re-usable middlewares
+Middlewares are a good way to run specific code before every handler is run. They provide a neat way to abstract common code which can be composed with other middlewares
+
+Any function/Method of the signature
+```go
+type Middelware func(ziggurat.Handler) ziggurat.Handler
+```
+Can be used as a middleware in the `ziggurat.Use` function to compose middlewares
+
+#### A practical example
+I want to authenticate a certain user before I run my handler, if the auth succeeds only then I want to save the event to the database
+Code snippet
+```go
+type Auther interface {
+	Authenticate(user string) bool
+}
+
+type GoogleAuth struct{}
+
+func (g GoogleAuth) Authenticate(user string) bool {
+	return user == "foo"
+}
+
+type AuthMiddleware struct {
+	Authenticator Auther
+}
+
+func (a *AuthMiddleware) Authenticate(next ziggurat.Handler) ziggurat.Handler {
+	return ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
+		type user struct{ Username string }
+		var u user
+		if err := json.Unmarshal(event.Value, &u); err != nil {
+			// handle error
+			return // do not execute the next handler
+		}
+		if a.Authenticator.Authenticate(u.Username) {
+			// if auth succeeds call the next handler
+			next.Handle(ctx, event)
+			return
+		}
+		// handle the failed auth
+	})
+}
+
+func main() {
+	var zig Ziggurat
+	kcg := kafka.ConsumerGroup{
+		Logger: logger.NewLogger(logger.LevelInfo),
+		GroupConfig: kafka.ConsumerConfig{
+			BootstrapServers: "localhost:9092",
+			GroupID:          "foo.id",
+			ConsumerCount:    1,
+			Topics:           []string{"^.auth-log"},
+		},
+	}
+	
+	authMW := &AuthMiddleware{Authenticator: &GoogleAuth{}}
+	router := ziggurat.NewRouter()
+	router.HandlerFunc("foo.id/india-auth-log$",func(ctx context.Context,e *ziggurat.Event){...})
+	router.HandlerFunc("foo.id/usa-auth-log$",func(ctx context.Context,e *ziggurat.Event){...})
+	router.HandlerFunc("foo.id/uk-auth-log$",func(ctx context.Context,e *ziggurat.Event){...})
+	router.HandlerFunc("foo.id/aus-auth-log$",func(ctx context.Context,e *ziggurat.Event){...})
+	router.HandlerFunc("foo.id/spain-auth-log$",func(ctx context.Context,e *ziggurat.Event){...})
+	
+	// Authenticate using the AuthMiddleware
+	ziggurat.Use(router,authMW.Authenticate)
+	handler := ziggurat.Use(router, authMW.Authenticate)
+	_ = zig.Run(context.Background(),handler,&kcg)
+	
+}
+
 ```
 
 > Any function / struct which implements the above handler interface can be used in the ziggurat.Run method. The
