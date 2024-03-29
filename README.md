@@ -154,7 +154,8 @@ type Middelware func(ziggurat.Handler) ziggurat.Handler
 Can be used as a middleware in the `ziggurat.Use` function to compose middlewares
 
 #### A practical example
-I want to authenticate a certain user before I run my handler, if the auth succeeds only then I want to save the event to the database
+I want to authenticate a certain user before I run my handler, if the auth succeeds only then I want to execute my business logic
+
 Code snippet
 ```go
 type Auther interface {
