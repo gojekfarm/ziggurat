@@ -143,6 +143,8 @@ type Handler interface {
 }
 type HandlerFunc func (ctx context.Context, event *Event)  // serves as an adapter for normal functions to be used as handlers
 ```
+> Any function / struct which implements the above handler interface can be used in the ziggurat.Run method. The
+> ziggurat.Router also implements the above interface.
 
 ### Writing custom re-usable middlewares
 Middlewares are a good way to run specific code before every handler is run. They provide a neat way to abstract common code which can be composed with other middlewares
@@ -154,7 +156,7 @@ type Middelware func(ziggurat.Handler) ziggurat.Handler
 Can be used as a middleware in the `ziggurat.Use` function to compose middlewares
 
 #### A practical example
-I want to authenticate a certain user before I run my handler, if the auth succeeds only then I want to execute my business logic
+I want to authenticate a certain user before I run my handler, if the auth succeeds only then I want to execute my business logic 
 
 Code snippet
 ```go
@@ -217,9 +219,6 @@ func main() {
 }
 
 ```
-
-> Any function / struct which implements the above handler interface can be used in the ziggurat.Run method. The
-> ziggurat.Router also implements the above interface.
 
 ## Ziggurat Event struct
 
