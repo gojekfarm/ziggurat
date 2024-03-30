@@ -20,7 +20,7 @@ func die(err error) {
 
 //go:embed templates/*
 var res embed.FS
-var Version = "v2.0.16"
+var Version = "v2.0.18"
 
 var definePaths = func(basePath string) map[string]string {
 	return map[string]string{
