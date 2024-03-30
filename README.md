@@ -316,7 +316,7 @@ ziggurat.Event{
 https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
 
 ## How to use the ziggurat Event Router
-First of all understand if you need a router, a router is required if you have complex routing logic that needs to be implemented, if your application
+First of all understand if you need a router, a router is required only if you have different handlers for different type of events, if your application
 just consumes from one topic, and you just want to handle all events in the same way then a router is not required, you can just pass a `ziggurat.HandlerFunc` OR a type that implements the `ziggurat.Handler` interface directly. A router lets you handle different events in a different ways by defining regex rules.
 ```go
 ctx := context.Background()
