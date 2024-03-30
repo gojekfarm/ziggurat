@@ -129,6 +129,8 @@ if runErr := zig.Run(ctx, h, &groupOne, &groupTwo); runErr != nil {
     logger.Error("error running consumers", runErr)
 }
 ```
+> [!NOTE]
+> The `Run` method returns a `ziggurat.ErrCleanShutdown` incase of a clean shutdown
 
 ## Ziggurat Handler interface
 
