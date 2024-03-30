@@ -7,35 +7,35 @@ import (
 	"github.com/rs/zerolog"
 )
 
-type textLogger struct {
+type TextLogger struct {
 	l zerolog.Logger
 }
 
-func (h *textLogger) Info(message string, kvs ...map[string]interface{}) {
+func (h *TextLogger) Info(message string, kvs ...map[string]interface{}) {
 	appendFields(h.l.Info(), kvs).Msg(message)
 }
 
-func (h *textLogger) Debug(message string, kvs ...map[string]interface{}) {
+func (h *TextLogger) Debug(message string, kvs ...map[string]interface{}) {
 	appendFields(h.l.Debug(), kvs).Msg(message)
 }
 
-func (h *textLogger) Warn(message string, kvs ...map[string]interface{}) {
+func (h *TextLogger) Warn(message string, kvs ...map[string]interface{}) {
 	appendFields(h.l.Warn(), kvs).Msg(message)
 }
 
-func (h *textLogger) Error(message string, err error, kvs ...map[string]interface{}) {
+func (h *TextLogger) Error(message string, err error, kvs ...map[string]interface{}) {
 	if err != nil {
 		appendFields(h.l.Err(err), kvs).Msg(message)
 	}
 }
 
-func (h *textLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
+func (h *TextLogger) Fatal(message string, err error, kvs ...map[string]interface{}) {
 	if err != nil {
 		appendFields(h.l.Fatal(), kvs).Msg(message)
 	}
 }
 
-func NewLogger(level string, opts ...func(w *zerolog.ConsoleWriter)) *textLogger {
+func NewLogger(level string, opts ...func(w *zerolog.ConsoleWriter)) *TextLogger {
 	cw := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) {
 		w.FormatLevel = func(i interface{}) string {
 			return fmt.Sprintf("[%s]", i)
@@ -48,5 +48,5 @@ func NewLogger(level string, opts ...func(w *zerolog.ConsoleWriter)) *textLogger
 		}
 	})
 	l := zerolog.New(cw).With().Timestamp().Logger().Level(logLevelMapping[level])
-	return &textLogger{l: l}
+	return &TextLogger{l: l}
 }
