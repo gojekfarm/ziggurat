@@ -353,7 +353,7 @@ router.HandlerFunc("mobile_app_log_consumer/mobile-application-logs/(1|3|5|7|9|1
 router.HandlerFunc("mobile_app_log_consumer/mobile-application-logs/(2|4|6|8|10|12)$", func (ctx, *ziggurat.Event) {....})
 ```
 
-Based on how the routing path is set by the message consumer implementation, you can define your routing paths.
+Based on how the routing path is set by the message consumer implementation, you can define your regex patterns.
 
 ## Retries using RabbitMQ
 Ziggurat-Go includes rabbitmq as the backend for message retries. Message retries are useful when message processing from one message consumer fails and needs to be retried.
