@@ -199,7 +199,7 @@ func main() {
 			BootstrapServers: "localhost:9092",
 			GroupID:          "foo.id",
 			ConsumerCount:    1,
-			Topics:           []string{"^.auth-log"},
+			Topics:           []string{"^.*auth-log"},
 		},
 	}
 	
