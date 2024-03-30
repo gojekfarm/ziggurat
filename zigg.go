@@ -10,7 +10,7 @@ import (
 
 var ErrCleanShutdown = errors.New("clean shutdown of streams")
 
-// Ziggurat serves as a container for streams to run in
+// Ziggurat serves as a container for message consumers to run in
 // can be used without initialization
 // var z ziggurat.Ziggurat
 // z.run(ctx context.Context,s ziggurat.MessageConsumer,h ziggurat.Handler)
