@@ -107,10 +107,12 @@ func main() {
 ```go
 ziggurat.Ziggurat{
     Logger            StructuredLogger  // a logger implementation of ziggurat.StructuredLogger
-    ShutdownTimeout  time.Duration      // wait timeout when consumers are shutdown default value: 6 seconds
+    ShutdownTimeout  time.Duration      // wait timeout when consumers are shutdown, default value: 6 seconds
     ErrorHandler     func(err error)    // a notifier for when one of the message consumers is shutdown abruptly
 }
 ```
+> [!NOTE]
+> Some message consumer implementations might not honor the context timeout/cancelation and this can cause your application to hangup when it is killed, use the shutdown timeout value to exit the application even if the message consunmers misbehave. The default value is 6 seconds.
 
 > [!NOTE]  
 > The zero value of `ziggurat.Ziggurat` is perfectly valid and can be used without any issues
