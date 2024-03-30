@@ -106,9 +106,9 @@ func main() {
 
 ```go
 ziggurat.Ziggurat{
-    Logger       StructuredLogger // a logger implementation of ziggurat.StructuredLogger
-    WaitTimeout  time.Duration    // wait timeout when consumers are shutdown
-    ErrorHandler func(err error) // a notifier for when one of the message consumers is shutdown abruptly
+    Logger            StructuredLogger  // a logger implementation of ziggurat.StructuredLogger
+    ShutdownTimeout  time.Duration      // wait timeout when consumers are shutdown default value: 6 seconds
+    ErrorHandler     func(err error)    // a notifier for when one of the message consumers is shutdown abruptly
 }
 ```
 
