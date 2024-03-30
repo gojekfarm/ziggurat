@@ -14,13 +14,14 @@ func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat
 				"received-timestamp": event.ReceivedTimestamp,
 				"value-length":       len(event.Value),
 				"event-type":         event.EventType,
+				"logger-type":        "event.logger.middleware",
 			}
 
 			for k, v := range event.Metadata {
 				kvs[k] = v
 			}
 
-			l.Info("processing message", kvs)
+			l.Info("event received", kvs)
 			handler.Handle(ctx, event)
 		}
 		return ziggurat.HandlerFunc(f)
