@@ -20,6 +20,7 @@ Consumer Orchestration made easy. Consume events from Kafka without hassles. Zig
   * [Ziggurat MessageConsumer interface](#ziggurat-messageconsumer-interface)
   * [Using Kafka Consumer](#using-kafka-consumer)
     * [ConsumerConfig](#consumerconfig)
+      * [Practical example on setting the `ConsumerCount` value](#practical-example-on-setting-the-consumercount-value)
     * [Events emitted by the kafka.ConsumerGroup implementation](#events-emitted-by-the-kafkaconsumergroup-implementation)
   * [How to use the ziggurat Event Router](#how-to-use-the-ziggurat-event-router)
     * [A practical example](#a-practical-example-1)
