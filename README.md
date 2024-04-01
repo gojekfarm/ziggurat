@@ -1,6 +1,6 @@
 # Ziggurat Golang
 
-Consumer Orchestration made easy
+Consumer Orchestration made easy. Consume events from Kafka without hassles. Ziggurat Golang is a library that aims to simplify the consumer orchestration and lets you focus on your business logic. Define simple functions to handle events from Kafka.
 
 <!-- TOC -->
 * [Ziggurat Golang](#ziggurat-golang)
@@ -333,6 +333,10 @@ type ConsumerConfig struct {
 }
 ```
 
+> [!NOTE]
+> We don't support manual commits at the moment, as it can lead to unwanted bugs, if need be in the future we can expose it as a feature.
+> We also use the `CONSUMER` protocol and not the `STREAMS` protocol as it is not supported by the client and also since we just deal with stateless events consumption, `CONSUMER` protocol is better suited for such workloads.
+
 ### Events emitted by the kafka.ConsumerGroup implementation
 ```go
 ziggurat.Event{
@@ -445,10 +449,6 @@ ziggurat.Event{
     EventType         string    `json:"event_type"`         // source path
 }
 ```
-
-> [!NOTE]
-> The rabbitmq MessageConsumer implementation does not modify the event struct and preserves the source data as is, it just stores the retry count in the metadata. This is a guarantee provided by the rabbitmq implementation.
-
 > [!NOTE]
 > The `rabbitmq.MessageConsumer` implementation does not modify the `*ziggurat.Event` struct in any way apart from storing the rabbitmq metadata, the reason being that RabbitMQ MessageConsumer is not the origin / source of the event, it is just a re-consumption of the original message.
 > Message Consumer implementations should keep this in mind before modifying the event struct.
