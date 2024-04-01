@@ -331,7 +331,6 @@ type ConsumerConfig struct {
     AutoCommitInterval    int      // A commit Interval time in milliseconds
     ConsumerCount         int      // Number of concurrent consumer instances to consume from Kafka
     PollTimeout           int    // Kafka Poll timeout in milliseconds
-    RouteGroup            string // An optional route group to use for routing purposes
     AutoOffsetReset       string // earliest or latest
     PartitionAssignment   string // refer partition.assignment.strategy https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
     MaxPollIntervalMS     int    // Kafka Failure detection interval in milliseconds
