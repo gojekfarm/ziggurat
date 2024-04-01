@@ -350,7 +350,7 @@ ziggurat.Event{
 }
 ```
 
-> For low level details please check For full details please check
+> For more info on what the config keys and values mean please check the below link
 https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
 
 ## How to use the ziggurat Event Router
