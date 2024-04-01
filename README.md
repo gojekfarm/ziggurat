@@ -268,13 +268,13 @@ not be modified by handlers as it is not thread safe. The struct can be cloned a
 
 ```go
 ziggurat.Event{
-    Metadata map[string]any `json:"meta"` // metadata is a generic map for storing event related info
-    Value    []byte         `json:"value"` // a byte slice value which contains the actual message 
-    Key      []byte         `json:"key"`   // a byte slice value which contains the actual key
-    RoutingPath       string    `json:"routing_path"`       // an arbitrary string set by the message consumer implementation
-    ProducerTimestamp time.Time `json:"producer_timestamp"` // the producer timestamp set by the message consumer implementation
-    ReceivedTimestamp time.Time `json:"received_timestamp"` // the timestamp at which the message was ingested by the system, this is also set by the message consumer implementation
-    EventType         string    `json:"event_type"`         // the type of event, ex:= kafka,rabbitmq, this is also set by the message consumer implementation
+    Metadata            map[string]any     `json:"meta"` // metadata is a generic map for storing event related info
+    Value               []byte             `json:"value"` // a byte slice value which contains the actual message 
+    Key                 []byte             `json:"key"`   // a byte slice value which contains the actual key
+    RoutingPath         string             `json:"routing_path"`       // an arbitrary string set by the message consumer implementation
+    ProducerTimestamp   time.Time          `json:"producer_timestamp"` // the producer timestamp set by the message consumer implementation
+    ReceivedTimestamp   time.Time          `json:"received_timestamp"` // the timestamp at which the message was ingested by the system, this is also set by the message consumer implementation
+    EventType           string             `json:"event_type"`         // the type of event, ex:= kafka,rabbitmq, this is also set by the message consumer implementation
 }
 ```
 
