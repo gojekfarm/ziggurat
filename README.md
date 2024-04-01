@@ -334,6 +334,7 @@ type ConsumerConfig struct {
 ```
 
 > [!NOTE]
+> The `ConsumerCount` value is used to control the concurrency of your handler execution, a higher value does not mean better performance, for an optimum performance please set it to the number of partitions you are consuming from.
 > We don't support manual commits at the moment, as it can lead to unwanted bugs, if need be in the future we can expose it as a feature.
 > We also use the `CONSUMER` protocol and not the `STREAMS` protocol as it is not supported by the client and also since we just deal with stateless events consumption, `CONSUMER` protocol is better suited for such workloads.
 
