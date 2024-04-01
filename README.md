@@ -253,6 +253,10 @@ ziggurat.Run(context.Background(),handler)
 To get the metrics 
 ```shell
 curl -vv "http://localhost:9090/metrics"
+
+ziggurat_go_handler_duration_seconds_bucket{route="<some_string_value>",le="0.05"} 228
+ziggurat_go_handler_duration_seconds_bucket{route="<some_string_value>",le="0.1"} 228
+ziggurat_go_handler_events_total{route="<some_string_value>"} 460
 ```
 
 ## Ziggurat Event struct
