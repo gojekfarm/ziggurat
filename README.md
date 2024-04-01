@@ -254,8 +254,6 @@ To get the metrics
 curl -vv "http://localhost:9090/metrics"
 ```
 
-   
-
 ## Ziggurat Event struct
 
 The `ziggurat.Event` struct is a generic event struct that is passed to the handler. This is a pointer value and should
