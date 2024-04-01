@@ -336,7 +336,7 @@ type ConsumerConfig struct {
 
 #### Practical example on setting the `ConsumerCount` value
 The `ConsumerCount` value is used to control the concurrency of your handler execution, a higher value does not mean better performance, for an optimum performance please set it to the number of partitions you are consuming from.
-> If you are consuming from 12 partitions using 4 individual VMs / Pods then each VM / Pod should have a ConsumerCount of 4. This adds upto 4 * 3 = 12
+> If you are consuming from 12 partitions using 4 individual VMs / Pods then each VM / Pod should have a ConsumerCount of 3. This adds upto 4(VM/Pods) * 3(Consumers) = 12(Consumers)
 > Please follow the above rule for optimising concurrency.
 > Golang Goroutines are multiplexed across multiple OS threads, ConsumerCount doesn't imply they will run in parallel.
 
