@@ -14,6 +14,7 @@ Consumer Orchestration made easy
   * [Ziggurat Handler interface](#ziggurat-handler-interface)
     * [Writing custom re-usable middlewares](#writing-custom-re-usable-middlewares)
       * [A practical example](#a-practical-example)
+      * [Bundled middlewares with Ziggurat-go](#bundled-middlewares-with-ziggurat-go)
   * [Ziggurat Event struct](#ziggurat-event-struct)
     * [Description](#description)
   * [Ziggurat MessageConsumer interface](#ziggurat-messageconsumer-interface)
@@ -221,8 +222,40 @@ func main() {
 	_ = zig.Run(context.Background(),handler,&kcg)
 	
 }
-
 ```
+
+#### Bundled middlewares with Ziggurat-go
+
+Ziggurat Go includes two middlewares out of the box. 
+- Event Logger middleware
+  - The event logger middleware logs to the STDOUT whenever an event is received.
+  - Usage
+```go
+hf := ziggurat.HandlerFunc(func(context.Context,*ziggurat.Event){...})
+l := someLogger() // must implement the ziggurat.StructuredLogger interface
+eventLoggerMW := event.Logger(l)
+handler := ziggurat.Use(hf,eventLoggerMW)
+ziggurat.Run(context.Background(),handler)
+```  
+- Prometheus middleware
+  - The Prometheus middleware emits handler metrics using the Prometheus exporter server
+  - Usage
+```go
+hf := ziggurat.HandlerFunc(func(context.Context,*ziggurat.Event){...})
+prometheus.Register() // registers promethues registry handlers
+go func() {
+	prometheus.StartMonitoringServer(context.Background(),....)
+}
+eventLoggerMW := event.Logger(l)
+handler := ziggurat.Use(hf,promtheues.PublishHandlerMetrics)
+ziggurat.Run(context.Background(),handler)
+```
+To get the metrics 
+```shell
+curl -vv "http://localhost:9090/metrics"
+```
+
+   
 
 ## Ziggurat Event struct
 

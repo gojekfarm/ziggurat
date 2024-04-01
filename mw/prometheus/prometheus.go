@@ -40,17 +40,6 @@ var HandlerEventsCounter = prometheus.NewCounterVec(
 	[]string{RouteLabel},
 )
 
-// HandlerFailuresCounter - Prometheus counter for handler failures
-var HandlerFailuresCounter = prometheus.NewCounterVec(
-	prometheus.CounterOpts{
-		Namespace: namespace,
-		Subsystem: handlerSubsystem,
-		Name:      "failures_total",
-		Help:      "Event handler failures, partitioned by route",
-	},
-	[]string{RouteLabel},
-)
-
 // HandlerDurationHistogram - Prometheus histogram for handler duration
 var HandlerDurationHistogram = prometheus.NewHistogramVec(
 	prometheus.HistogramOpts{
@@ -71,7 +60,6 @@ func StartMonitoringServer(ctx context.Context, opts ...ServerOpts) error {
 func Register() {
 	prometheus.MustRegister(
 		HandlerEventsCounter,
-		HandlerFailuresCounter,
 		HandlerDurationHistogram,
 	)
 }
@@ -87,7 +75,6 @@ func PublishHandlerMetrics(next ziggurat.Handler) ziggurat.Handler {
 		}
 
 		HandlerDurationHistogram.With(labels).Observe(time.Since(t1).Seconds())
-
 		HandlerEventsCounter.With(labels).Inc()
 
 	}
