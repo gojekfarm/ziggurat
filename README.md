@@ -246,7 +246,6 @@ prometheus.Register() // registers promethues registry handlers
 go func() {
 	prometheus.StartMonitoringServer(context.Background(),....)
 }
-eventLoggerMW := event.Logger(l)
 handler := ziggurat.Use(hf,promtheues.PublishHandlerMetrics)
 ziggurat.Run(context.Background(),handler)
 ```
