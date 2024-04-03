@@ -30,7 +30,11 @@ type worker struct {
 func (w *worker) run(ctx context.Context) {
 
 	defer func() {
-		err := w.consumer.Close()
+		_, err := w.consumer.Commit()
+		if err != nil {
+			w.logger.Error("pre-close commit error", err, map[string]interface{}{"Worker-ID": w.id})
+		}
+		err = w.consumer.Close()
 		w.logger.Error("error closing kafka consumer", err, map[string]interface{}{"Worker-ID": w.id})
 	}()
 

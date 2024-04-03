@@ -36,6 +36,7 @@ func TestWorkerOrchestration(t *testing.T) {
 		mc.On("StoreOffsets", []kafka.TopicPartition{expectedTopicPartStoreOffsets}).
 			Return([]kafka.TopicPartition{expectedTopicPartStoreOffsets}, nil)
 		mc.On("Close").Return(nil)
+		mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
 		mc.On("Logs").Return(logChan)
 
 		var msgCount int32

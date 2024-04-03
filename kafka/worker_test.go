@@ -61,6 +61,7 @@ func TestWorker(t *testing.T) {
 		mc.On("Poll", 100).Return(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: 1},
 		})
+		mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
 		mc.On("StoreOffsets", mock.AnythingOfType("[]kafka.TopicPartition")).Return([]kafka.TopicPartition{}, nil)
 		mc.On("Close").Return(nil)
 		ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Millisecond)
@@ -89,6 +90,7 @@ func TestWorker(t *testing.T) {
 
 		mc.On("Logs").Return(make(chan kafka.LogEvent))
 		mc.On("Poll", 100).Return(kafka.NewError(kafka.ErrAllBrokersDown, "fatal error", true))
+		mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
 		mc.On("Close").Return(nil)
 		ctx, cancel := context.WithTimeout(context.Background(), 1000*time.Millisecond)
 		defer cancel()
@@ -116,6 +118,7 @@ func TestWorker(t *testing.T) {
 
 		topic := "foo"
 		mc.On("Logs").Return(make(chan kafka.LogEvent))
+		mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
 		mc.On("StoreOffsets", mock.AnythingOfType("[]kafka.TopicPartition")).Return([]kafka.TopicPartition{}, nil)
 		mc.On("Poll", 100).Return(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: 1},
