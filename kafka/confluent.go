@@ -10,6 +10,7 @@ type confluentConsumer interface {
 	Poll(int) kafka.Event
 	StoreOffsets([]kafka.TopicPartition) ([]kafka.TopicPartition, error)
 	Logs() chan kafka.LogEvent
+	Commit() ([]kafka.TopicPartition, error)
 	Close() error
 }
 
@@ -25,6 +26,11 @@ func (m *MockConsumer) Poll(i int) kafka.Event {
 
 func (m *MockConsumer) StoreOffsets(partitions []kafka.TopicPartition) ([]kafka.TopicPartition, error) {
 	args := m.Called(partitions)
+	return args.Get(0).([]kafka.TopicPartition), args.Error(1)
+}
+
+func (m *MockConsumer) Commit() ([]kafka.TopicPartition, error) {
+	args := m.Called()
 	return args.Get(0).([]kafka.TopicPartition), args.Error(1)
 }
 
