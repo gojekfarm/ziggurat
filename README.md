@@ -11,6 +11,7 @@ Consumer Orchestration made easy. Consume events from Kafka without hassles. Zig
     * [Running unit tests](#running-unit-tests)
     * [Running integration tests](#running-integration-tests)
     * [Coverage Report in HTML](#coverage-report-in-html)
+    * [Contribution guidelines](#contribution-guidelines)
   * [Features](#features)
   * [How to consume messages from Kafka](#how-to-consume-messages-from-kafka)
   * [Configuring the `Ziggurat` struct](#configuring-the-ziggurat-struct)
@@ -87,6 +88,14 @@ lib.test-coverage-html
 > [!NOTE]
 > For other make tests refer to the Makefile
 
+### Contribution guidelines
+
+- Avoid exposing unwanted APIs publicly
+- Make sure the APIs provide certain guarantees about what they return
+- Leave concurrency to the caller, an API if using concurrency internally must leave the decision to invoke it concurrently to the caller. Your APIs should be as simple as a function / method which takes in args and returns a value. Make sure to document it if an API blocks forever, like the `ziggurat.Run` function.
+- Keep configuration minimum and leave the decisions on the user
+- Do not write an interface first and then implement, write a struct first and add your methods, **discover interfaces do not invent them**. A premature abstraction is mostly going to be a leaky one.
+- Last but not the least, Keep it simple stupid.
 
 ## Features
 
