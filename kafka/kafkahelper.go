@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"fmt"
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
@@ -20,7 +21,7 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string) confluentC
 // offsets are stored in memory and are later flushed by the auto-commit timer
 func storeOffsets(consumer confluentConsumer, partition kafka.TopicPartition) error {
 	if partition.Error != nil {
-		return ErrPart
+		return fmt.Errorf("error storing offsets:%w", partition.Error)
 	}
 	offsets := []kafka.TopicPartition{partition}
 	offsets[0].Offset++
