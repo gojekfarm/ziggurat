@@ -41,6 +41,7 @@ go install github.com/gojekfarm/ziggurat/v2/cmd/ziggurat@latest
 ```
 
 ### Using with an existing application
+
 ```shell
 go get github.com/gojekfarm/ziggurat/v2
 ```
@@ -51,6 +52,33 @@ go get github.com/gojekfarm/ziggurat/v2
 ziggurat new <app_name>
 go mod tidy -v  # cleans up dependencies
 ```
+### Building from source
+
+```shell
+make lib.build
+```
+
+### Running unit tests
+
+```shell
+make lib.test
+```
+
+### Running integration tests
+
+```shell
+make lib.test-integration
+```
+
+### Coverage Report in HTML
+
+```shell
+lib.test-coverage-html
+```
+
+> [!NOTE]
+> For other make tests refer to the Makefile
+
 
 ## Features
 
