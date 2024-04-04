@@ -453,6 +453,12 @@ Ziggurat-Go includes rabbitmq as the backend for message retries. Message retrie
 
 The `rabbitMQ.AutoRetry(qc QueueConfig,opts ...Opts)` function creates an instance of the `rabbitmq.ARetry struct`
 
+> [!WARNING]
+> RabbitMQ publish does not use publisher confirms https://www.rabbitmq.com/tutorials/tutorial-seven-java
+> Once a message is retried to RabbitMQ there is no acknowledgement received from RabbitMQ whether the message has reached the broker or not. This implies that
+> the message could be lost and will not be retried if there is an error in the network layer. For most use cases it should not 
+> matter. Using publishing confirms reduces publish throughput but guarantees reliability over performance.
+
 ### RabbitMQ Queue config
 ```go
 type QueueConfig struct {
