@@ -71,8 +71,12 @@ make lib.test
 ### Running integration tests
 
 ```shell
+docker-compose up -d # starts up the RabbitMQ and Kafka containers
 make lib.test-integration
 ```
+
+> [!NOTE]
+> There are no integration tests for Kafka, only for RabbitMQ
 
 ### Coverage Report in HTML
 
