@@ -381,6 +381,8 @@ type ConsumerConfig struct {
     MaxPollIntervalMS     int    // Kafka Failure detection interval in milliseconds
 }
 ```
+> For more info on what the config keys and values mean please check the below link ( not all config keys are included in Ziggurat, they might be added in the future )
+https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
 
 #### Practical example on setting the `ConsumerCount` value
 The `ConsumerCount` value is used to control the concurrency of your handler execution, a higher value does not mean better performance, for an optimum performance please set it to the number of partitions you are consuming from.
@@ -404,9 +406,6 @@ ziggurat.Event{
     EventType         string    `json:"event_type"`         // kafka
 }
 ```
-
-> For more info on what the config keys and values mean please check the below link
-https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
 
 ## How to use the ziggurat Event Router
 First of all understand if you need a router, a router is required only if you have different handlers for different type of events, if your application
