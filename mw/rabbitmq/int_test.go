@@ -112,6 +112,7 @@ func Test_view(t *testing.T) {
 		viewCount         int
 		expectedViewCount int
 		name              string
+		expectedMessages  []string
 	}
 
 	cases := []test{
@@ -121,6 +122,7 @@ func Test_view(t *testing.T) {
 			publishCount:      5,
 			viewCount:         5,
 			expectedViewCount: 5,
+			expectedMessages:  []string{"bar-0", "bar-1", "bar-2", "bar-3", "bar-4"},
 		},
 		{
 			name:              "read excess number of messages than there are in the queue",
@@ -128,6 +130,7 @@ func Test_view(t *testing.T) {
 			publishCount:      5,
 			viewCount:         10,
 			expectedViewCount: 5,
+			expectedMessages:  []string{"bar-0", "bar-1", "bar-2", "bar-3", "bar-4"},
 		},
 		{
 			name:              "read negative number of messages",
@@ -135,6 +138,7 @@ func Test_view(t *testing.T) {
 			publishCount:      5,
 			viewCount:         -1,
 			expectedViewCount: 0,
+			expectedMessages:  []string{},
 		},
 		{
 			name:              "read zero messages",
@@ -142,6 +146,7 @@ func Test_view(t *testing.T) {
 			viewCount:         0,
 			publishCount:      5,
 			expectedViewCount: 0,
+			expectedMessages:  []string{},
 		}}
 
 	for _, c := range cases {
@@ -167,6 +172,11 @@ func Test_view(t *testing.T) {
 			}
 			if len(events) != c.expectedViewCount {
 				t.Errorf("expected to read %d messages but read %d", c.expectedViewCount, len(events))
+			}
+			for idx, event := range events {
+				if string(event.Value) != c.expectedMessages[idx] {
+					t.Errorf("expected message %s but got %s", c.expectedMessages[0], string(event.Value))
+				}
 			}
 			err = ar.DeleteQueuesAndExchanges(context.Background(), c.qname)
 			if err != nil {
