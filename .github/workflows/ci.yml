@@ -34,6 +34,6 @@ jobs:
         run: make lib.test-coverage
 
       - name: Upload Coverage
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           files: cp.out
