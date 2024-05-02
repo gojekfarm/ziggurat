@@ -166,16 +166,17 @@ func Test_view(t *testing.T) {
 				}
 			}
 			queueName := fmt.Sprintf("%s_%s_%s", c.qname, "dlq", "queue")
-			events, err := ar.view(ctx, queueName, c.viewCount, false)
+			viewEventsOnce, err := ar.view(ctx, queueName, c.viewCount, false)
+			viewEventsTwice, err := ar.view(ctx, queueName, c.viewCount, false)
 			if err != nil {
 				t.Errorf("error viewing messages: %v", err)
 			}
-			if len(events) != c.expectedViewCount {
-				t.Errorf("expected to read %d messages but read %d", c.expectedViewCount, len(events))
+			if len(viewEventsOnce) != c.expectedViewCount {
+				t.Errorf("expected to read %d messages but read %d", c.expectedViewCount, len(viewEventsOnce))
 			}
-			for idx, event := range events {
-				if string(event.Value) != c.expectedMessages[idx] {
-					t.Errorf("expected message %s but got %s", c.expectedMessages[0], string(event.Value))
+			for idx, event := range c.expectedMessages {
+				if string(viewEventsOnce[idx].Value) != event || string(viewEventsTwice[idx].Value) != event {
+					t.Errorf("expected message %s but got %s", event, string(viewEventsOnce[idx].Value))
 				}
 			}
 			err = ar.DeleteQueuesAndExchanges(context.Background(), c.qname)

@@ -246,11 +246,9 @@ func (r *ARetry) view(ctx context.Context, qnameWithType string, count int, ack 
 		actualCount = q.Messages
 	}
 	events := make([]*ziggurat.Event, actualCount)
-	var consumedDeliveries []amqp.Delivery
 	for i := 0; i < actualCount; i++ {
 
 		msg, _, err := ch.Get(qnameWithType, false)
-
 		if err != nil {
 			return []*ziggurat.Event{}, err
 		}
@@ -261,18 +259,13 @@ func (r *ARetry) view(ctx context.Context, qnameWithType string, count int, ack 
 			return []*ziggurat.Event{}, err
 		}
 
-		events[i] = &e
-		consumedDeliveries = append(consumedDeliveries, msg)
-	}
-	for _, delivery := range consumedDeliveries {
 		var ackErr error
 		if ack {
-			ackErr = delivery.Ack(true)
-		} else {
-			ackErr = delivery.Reject(true)
+			ackErr = msg.Ack(true)
 		}
-		r.ogLogger.Error("", ackErr)
 
+		r.ogLogger.Error("", ackErr)
+		events[i] = &e
 	}
 	r.ogLogger.Error("auto retry view: channel close error:", ch.Close())
 	return events, nil
