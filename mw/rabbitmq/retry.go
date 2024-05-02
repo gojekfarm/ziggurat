@@ -262,8 +262,6 @@ func (r *ARetry) view(ctx context.Context, qnameWithType string, count int, ack 
 		var ackErr error
 		if ack {
 			ackErr = msg.Ack(true)
-		} else {
-			ackErr = msg.Reject(true)
 		}
 
 		r.ogLogger.Error("", ackErr)
