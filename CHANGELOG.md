@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+# Added
+
+- `PollStartTimestamp` field on `ziggurat.Event`, populated by `kafka.ConsumerGroup` with the instant captured immediately before `Poll` is invoked. This aligns with otel-kafka semantics so downstream consumers can compute lag/latency metrics consistently. The field is the zero value for consumers without a distinct poll boundary (e.g. `rabbitmq.AutoRetry`).
+
 ## [v2.0.21] 2024-03-25
 
 - Manually commit uncommitted offsets before closing the Kafka Consumer

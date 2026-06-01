@@ -319,6 +319,7 @@ ziggurat.Event{
     RoutingPath         string             `json:"routing_path"`       // an arbitrary string set by the message consumer implementation
     ProducerTimestamp   time.Time          `json:"producer_timestamp"` // the producer timestamp set by the message consumer implementation
     ReceivedTimestamp   time.Time          `json:"received_timestamp"` // the timestamp at which the message was ingested by the system, this is also set by the message consumer implementation
+    PollStartTimestamp  time.Time          `json:"poll_start_timestamp"` // the timestamp captured immediately before the underlying consumer's poll operation began. Set only by consumers with a distinct poll boundary (currently kafka.ConsumerGroup); zero value otherwise
     EventType           string             `json:"event_type"`         // the type of event, ex:= kafka,rabbitmq, this is also set by the message consumer implementation
 }
 ```
@@ -402,7 +403,8 @@ ziggurat.Event{
     Key      []byte         `json:"key"`   // byte slice
     RoutingPath       string    `json:"routing_path"`  // <consumer_group_id>/<topic_name>/<parition_num> can be used in routing
     ProducerTimestamp time.Time `json:"producer_timestamp"`  // A normal time.Time struct
-    ReceivedTimestamp time.Time `json:"received_timestamp"` // A normal time.Time struct
+    ReceivedTimestamp time.Time `json:"received_timestamp"` // A normal time.Time struct, set after Poll returns the message
+    PollStartTimestamp time.Time `json:"poll_start_timestamp"` // A normal time.Time struct captured immediately before Poll is invoked; aligns with otel-kafka semantics for lag/latency metrics
     EventType         string    `json:"event_type"`         // kafka
 }
 ```
@@ -506,6 +508,7 @@ ziggurat.Event{
     RoutingPath       string    `json:"routing_path"`  // <consumer_group_id>/<topic_name>/<parition_num> same as source path
     ProducerTimestamp time.Time `json:"producer_timestamp"`  // A normal time.Time struct
     ReceivedTimestamp time.Time `json:"received_timestamp"` // A normal time.Time struct
+    PollStartTimestamp time.Time `json:"poll_start_timestamp"` // Zero value: AutoRetry is a re-consumption path with no poll boundary
     EventType         string    `json:"event_type"`         // source path
 }
 ```

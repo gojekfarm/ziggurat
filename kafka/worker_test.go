@@ -34,7 +34,7 @@ func TestWorker(t *testing.T) {
 		}
 
 		eventMatcher := mock.MatchedBy(func(e *ziggurat.Event) bool {
-			diff := cmp.Diff(&wantEvent, e, cmpopts.IgnoreFields(ziggurat.Event{}, "ReceivedTimestamp"))
+			diff := cmp.Diff(&wantEvent, e, cmpopts.IgnoreFields(ziggurat.Event{}, "ReceivedTimestamp", "PollStartTimestamp"))
 			if diff != "" {
 				t.Logf("(-Want +Got)%s\n", diff)
 				return false

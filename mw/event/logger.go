@@ -9,12 +9,13 @@ func Logger(l ziggurat.StructuredLogger) func(handler ziggurat.Handler) ziggurat
 	return func(handler ziggurat.Handler) ziggurat.Handler {
 		f := func(ctx context.Context, event *ziggurat.Event) {
 			kvs := map[string]interface{}{
-				"path":               event.RoutingPath,
-				"producer-timestamp": event.ProducerTimestamp,
-				"received-timestamp": event.ReceivedTimestamp,
-				"value-length":       len(event.Value),
-				"event-type":         event.EventType,
-				"logger-type":        "event.logger.middleware",
+				"path":                 event.RoutingPath,
+				"producer-timestamp":   event.ProducerTimestamp,
+				"received-timestamp":   event.ReceivedTimestamp,
+				"poll-start-timestamp": event.PollStartTimestamp,
+				"value-length":         len(event.Value),
+				"event-type":           event.EventType,
+				"logger-type":          "event.logger.middleware",
 			}
 
 			for k, v := range event.Metadata {
