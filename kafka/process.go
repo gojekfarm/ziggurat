@@ -17,7 +17,7 @@ func constructPath(rg string, topic string, part int32) string {
 	return fmt.Sprintf("%s/%s/%d", rg, topic, part)
 }
 
-func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler, route string) {
+func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler, route string, pollStartTimestamp time.Time) {
 	//copy kvs into new slices
 	key := make([]byte, len(msg.Key))
 	value := make([]byte, len(msg.Value))
@@ -32,10 +32,11 @@ func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler,
 			"kafka-topic":     *msg.TopicPartition.Topic,
 			"kafka-partition": int(msg.TopicPartition.Partition),
 		},
-		RoutingPath:       constructPath(route, *msg.TopicPartition.Topic, msg.TopicPartition.Partition),
-		ProducerTimestamp: msg.Timestamp,
-		ReceivedTimestamp: time.Now(),
-		EventType:         EventType,
+		RoutingPath:        constructPath(route, *msg.TopicPartition.Topic, msg.TopicPartition.Partition),
+		ProducerTimestamp:  msg.Timestamp,
+		ReceivedTimestamp:  time.Now(),
+		PollStartTimestamp: pollStartTimestamp,
+		EventType:          EventType,
 	}
 	h.Handle(ctx, &event)
 

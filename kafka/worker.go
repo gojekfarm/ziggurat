@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/gojekfarm/ziggurat/v2"
 
@@ -60,10 +61,11 @@ func (w *worker) run(ctx context.Context) {
 			w.err = ErrorWorkerKilled{workerID: w.id}
 			run = false
 		default:
+			pollStart := time.Now()
 			ev := w.consumer.Poll(w.pollTimeout)
 			switch e := ev.(type) {
 			case *kafka.Message:
-				processMessage(ctx, e, w.handler, w.routeGroup)
+				processMessage(ctx, e, w.handler, w.routeGroup, pollStart)
 				if err := storeOffsets(w.consumer, e.TopicPartition); err != nil {
 					w.logger.Error("error storing offsets locally", err)
 				}
