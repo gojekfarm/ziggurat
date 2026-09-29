@@ -21,6 +21,9 @@ type MockConsumer struct {
 func (m *MockConsumer) Poll(i int) kafka.Event {
 	args := m.Called(i)
 	time.Sleep(time.Duration(i) * time.Millisecond)
+	if args.Get(0) == nil {
+		return nil
+	}
 	return args.Get(0).(kafka.Event)
 }
 
