@@ -3,8 +3,10 @@ package kafka
 import (
 	"context"
 	"fmt"
-	"github.com/gojekfarm/ziggurat/v2"
+	"runtime/debug"
 	"time"
+
+	"github.com/gojekfarm/ziggurat/v2"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
@@ -17,7 +19,13 @@ func constructPath(rg string, topic string, part int32) string {
 	return fmt.Sprintf("%s/%s/%d", rg, topic, part)
 }
 
-func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler, route string) {
+// processMessage builds a ziggurat.Event from a raw kafka.Message and invokes the
+// handler. A panic inside the handler is recovered here and logged rather than being
+// allowed to propagate: an unrecovered panic in a worker goroutine would otherwise
+// terminate the entire process, and would also skip the wg.Done() call the caller
+// relies on to know this worker has finished, permanently deadlocking
+// ConsumerGroup.Consume's wg.Wait() for every other worker in the group.
+func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler, route string, logger ziggurat.StructuredLogger) {
 	//copy kvs into new slices
 	key := make([]byte, len(msg.Key))
 	value := make([]byte, len(msg.Value))
@@ -37,6 +45,22 @@ func processMessage(ctx context.Context, msg *kafka.Message, h ziggurat.Handler,
 		ReceivedTimestamp: time.Now(),
 		EventType:         EventType,
 	}
-	h.Handle(ctx, &event)
 
+	defer func() {
+		if r := recover(); r != nil {
+			if logger != nil {
+				logger.Error(
+					"recovered from panic in handler",
+					fmt.Errorf("panic: %v", r),
+					map[string]interface{}{
+						"routing_path": event.RoutingPath,
+						"kafka-topic":  event.Metadata["kafka-topic"],
+						"stack":        string(debug.Stack()),
+					},
+				)
+			}
+		}
+	}()
+
+	h.Handle(ctx, &event)
 }
