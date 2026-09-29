@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/gojekfarm/ziggurat/v2"
 	"github.com/gojekfarm/ziggurat/v2/logger"
-	"sync"
 )
 
 var ErrCleanShutdown = errors.New("error: clean shutdown of kafka consumers")
@@ -17,7 +18,6 @@ type ConsumerGroup struct {
 	Logger           ziggurat.StructuredLogger
 	GroupConfig      ConsumerConfig
 	wg               *sync.WaitGroup
-	c                confluentConsumer
 	consumerMakeFunc func(*kafka.ConfigMap, []string) confluentConsumer
 }
 
@@ -40,16 +40,13 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 
 	cm := cg.GroupConfig.toConfigMap()
 
-	confCons := cg.consumerMakeFunc(&cm, cg.GroupConfig.Topics)
-
-	cg.c = confCons
 	for i := 0; i < grpConfig.ConsumerCount; i++ {
 		workerID := fmt.Sprintf("%s_%d", groupID, i)
 		cg.Logger.Info("spawning kafka worker", map[string]any{"id": workerID})
 		w := worker{
 			handler:     handler,
 			logger:      cg.Logger,
-			consumer:    confCons,
+			consumer:    cg.consumerMakeFunc(&cm, cg.GroupConfig.Topics),
 			routeGroup:  cg.GroupConfig.GroupID,
 			pollTimeout: pollTimeout,
 			killSig:     make(chan struct{}),
