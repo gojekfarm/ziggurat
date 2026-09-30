@@ -19,3 +19,6 @@ services:
       - '15672:15672'
       - '5672:5672'
     container_name: 'ziggurat_go_rabbitmq'
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=bitnami
