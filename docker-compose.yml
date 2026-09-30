@@ -1,6 +1,6 @@
 services:
   zookeeper:
-    image: 'bitnami/zookeeper:3.9'
+    image: 'bitnami/zookeeper:latest'
     ports:
       - '2181:2181'
     container_name: 'ziggurat_go_zookeeper'
