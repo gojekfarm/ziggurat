@@ -77,13 +77,8 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 		cg.workers[i] = &w
 		cg.wg.Add(1)
 		go func() {
-			// defer, not a trailing call: guarantees wg.Done() still runs even if
-			// something inside w.run panics despite the recover() in processMessage
-			// (e.g. a panic in worker/orchestration code itself, not just the handler).
-			// Without this, an unrecovered panic here would skip wg.Done() entirely and
-			// permanently deadlock cg.wg.Wait() for every other worker in the group.
-			defer cg.wg.Done()
 			w.run(ctx)
+			cg.wg.Done()
 		}()
 	}
 
