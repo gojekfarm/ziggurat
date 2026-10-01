@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+# Fixed
+
+- Fixed a race in `Ziggurat.Run` where two goroutines (context-cancellation/shutdown-timeout
+  handling and consumer completion) could both close or send on the same `errChan`/timeout
+  channels, causing a `panic: send on closed channel` or `panic: close of closed channel`
+  during shutdown
+- Fixed an error-swallowing bug in `kafka.ConsumerGroup.Consume`'s worker-error aggregation,
+  where a buggy `switch` matched almost any real Kafka error via unintended OR-logic and
+  silently treated it as a clean shutdown instead of surfacing it
+- Fixed `kafka.ConsumerGroup` creating a single Kafka consumer client shared across all
+  `ConsumerCount` worker goroutines; each worker now gets its own independent consumer
+  instance. The shared client meant concurrent, unsynchronized `Poll`/`Commit`/
+  `StoreOffsets`/`Close` calls on a single non-thread-safe librdkafka handle — observed
+  under test to cause a native `SIGSEGV` inside cgo, not just a Go-level data race
+- Added panic recovery around handler invocation for both Kafka
+  (`kafka.processMessage`) and RabbitMQ (`handleDelivery`, extracted from an inline
+  closure for testability) consume paths. A panic in handler/middleware code is now
+  logged with a stack trace and the message is skipped/acked rather than crashing the
+  whole process and deadlocking every other worker in the group. See
+  `.local-notes/panic-handling-explainer.md` for exactly what is and isn't recovered
+
+# Added
+
+- Unit tests: `TestConsumerGroup_EachWorkerGetsOwnConsumerInstance`,
+  `TestProcessMessage_RecoversFromHandlerPanic`,
+  `TestProcessMessage_SubsequentMessagesStillProcessed`,
+  `TestProcessMessage_HandlerDoesNotPanic`, `TestHandleDelivery_RecoversFromHandlerPanic`,
+  `TestHandleDelivery_HandlerDoesNotPanic`,
+  `TestHandleDelivery_MalformedMessageIsRejectedWithRequeue`, `TestRun_DoubleCloseRace`,
+  and a tightened `TestConsumerGroup_FatalErrorIsNotSwallowed` regression test
+
 ## [v2.0.21] 2024-03-25
 
 - Manually commit uncommitted offsets before closing the Kafka Consumer
