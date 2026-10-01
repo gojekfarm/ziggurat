@@ -25,8 +25,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (`kafka.processMessage`) and RabbitMQ (`handleDelivery`, extracted from an inline
   closure for testability) consume paths. A panic in handler/middleware code is now
   logged with a stack trace and the message is skipped/acked rather than crashing the
-  whole process and deadlocking every other worker in the group. See
-  `.local-notes/panic-handling-explainer.md` for exactly what is and isn't recovered
+  whole process and deadlocking every other worker in the group.
 
 # Added
 
