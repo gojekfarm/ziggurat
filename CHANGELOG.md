@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.0.24] 2026-10-01
 
 # Fixed
 
@@ -21,21 +21,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   instance. The shared client meant concurrent, unsynchronized `Poll`/`Commit`/
   `StoreOffsets`/`Close` calls on a single non-thread-safe librdkafka handle — observed
   under test to cause a native `SIGSEGV` inside cgo, not just a Go-level data race
-- Added panic recovery around handler invocation for both Kafka
-  (`kafka.processMessage`) and RabbitMQ (`handleDelivery`, extracted from an inline
-  closure for testability) consume paths. A panic in handler/middleware code is now
-  logged with a stack trace and the message is skipped/acked rather than crashing the
-  whole process and deadlocking every other worker in the group.
 
 # Added
 
 - Unit tests: `TestConsumerGroup_EachWorkerGetsOwnConsumerInstance`,
-  `TestProcessMessage_RecoversFromHandlerPanic`,
-  `TestProcessMessage_SubsequentMessagesStillProcessed`,
-  `TestProcessMessage_HandlerDoesNotPanic`, `TestHandleDelivery_RecoversFromHandlerPanic`,
-  `TestHandleDelivery_HandlerDoesNotPanic`,
-  `TestHandleDelivery_MalformedMessageIsRejectedWithRequeue`, `TestRun_DoubleCloseRace`,
-  and a tightened `TestConsumerGroup_FatalErrorIsNotSwallowed` regression test
+  `TestRun_DoubleCloseRace`, and a tightened `TestConsumerGroup_FatalErrorIsNotSwallowed`
+  regression test
 
 ## [v2.0.21] 2024-03-25
 
