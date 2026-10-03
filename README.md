@@ -483,6 +483,9 @@ ar := rabbitmq.AutoRetry(rabbitmq.Queues{
 			ConsumerCount:         10,
 		},
 	},
+		rabbitmq.WithLogger(l),
+		rabbitmq.WithConnectionTimeout(100*time.Millisecond),
+		rabbitmq.WithHosts("localhost:5672"),
 		rabbitmq.WithUsername("guest"),
 		rabbitmq.WithPassword("guest"))
 hf := ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {
