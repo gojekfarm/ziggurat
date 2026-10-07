@@ -12,6 +12,8 @@ import (
 	"time"
 
 	zl "github.com/gojekfarm/ziggurat/v2/logger"
+	"github.com/gojekfarm/ziggurat/v2/mw/otelemetry"
+	"github.com/gojekfarm/ziggurat/v2/mw/prometheus"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
@@ -98,7 +100,7 @@ func (r *ARetry) publish(c context.Context, event *ziggurat.Event, queue string)
 		return err
 	}
 	defer r.publisherPool.put(pub)
-	err = publishInternal(pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
+	err = publishInternal(c, pub, queue, r.queueConfig[queue].RetryCount, r.queueConfig[queue].DelayExpirationInMS, event)
 	return err
 }
 
@@ -125,13 +127,21 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 	if err != nil {
 		return err
 	}
+
+	carrier := otelemetry.HeaderCarrier{"retry-origin": "ziggurat-go"}
+	otelemetry.InjectTraceContext(ctx, carrier)
+	headers := make(map[string]interface{}, len(carrier))
+	for k, v := range carrier {
+		headers[k] = v
+	}
+
 	msg := publisher.Message{
 		Exchange: exchange,
 		Key:      queueType,
 		Publishing: amqp.Publishing{
 			Expiration: expirationMS,
 			Body:       eb,
-			Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
+			Headers:    headers,
 		},
 	}
 	return p.Publish(msg)
@@ -359,6 +369,7 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 	for i := 0; i < actualCount; i++ {
 		m, _, err := ch.Get(srcQueue, false)
 		if err != nil {
+			prometheus.ReplayCounter.With(map[string]string{prometheus.QueueLabel: queue, prometheus.ResultLabel: "error"}).Inc()
 			return replayCount, fmt.Errorf("error getting message from queue:%w", err)
 		}
 		err = p.Publish(publisher.Message{
@@ -366,15 +377,24 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 			Exchange: fmt.Sprintf("%s_%s", queue, "exchange"),
 			Publishing: amqp.Publishing{
 				Body: m.Body,
+				// Forward the original message's headers (including any traceparent set
+				// when it was first published to retry/DLQ) rather than dropping them -
+				// a replayed message should continue the trace it was already part of,
+				// not lose its lineage or start a new, disconnected one tied to whoever
+				// happened to call the replay HTTP handler.
+				Headers: m.Headers,
 			},
 		})
 		if err != nil {
+			prometheus.ReplayCounter.With(map[string]string{prometheus.QueueLabel: queue, prometheus.ResultLabel: "error"}).Inc()
 			return replayCount, fmt.Errorf("error publishing to instant queue:%w", err)
 		}
 		err = m.Ack(false)
 		if err != nil {
+			prometheus.ReplayCounter.With(map[string]string{prometheus.QueueLabel: queue, prometheus.ResultLabel: "error"}).Inc()
 			return replayCount, fmt.Errorf("error ack-ing maessage:%w", err)
 		}
+		prometheus.ReplayCounter.With(map[string]string{prometheus.QueueLabel: queue, prometheus.ResultLabel: "success"}).Inc()
 		replayCount++
 	}
 	return replayCount, nil

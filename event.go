@@ -2,6 +2,13 @@ package ziggurat
 
 import "time"
 
+// MetadataKeyHeaders is the Event.Metadata key under which the native transport message
+// headers (Kafka record headers, AMQP message headers) are captured, as map[string]string.
+// This is the shared vehicle for anything that needs to ride along on a message's
+// headers - most notably a W3C traceparent/tracestate for distributed tracing context
+// propagation across consume/republish hops.
+const MetadataKeyHeaders = "headers"
+
 // Event is a generic event
 // ReceivedTimestamp holds the timestamp of the message when it was received
 // ProducerTimestamp holds the timestamp of the message as given by the producer
