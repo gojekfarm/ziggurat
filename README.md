@@ -473,11 +473,27 @@ Ziggurat-Go includes rabbitmq as the backend for message retries. Message retrie
 
 The `rabbitMQ.AutoRetry(qc QueueConfig,opts ...Opts)` function creates an instance of the `rabbitmq.ARetry struct`
 
-> [!WARNING]
-> RabbitMQ publish does not use publisher confirms https://www.rabbitmq.com/tutorials/tutorial-seven-java
-> Once a message is retried to RabbitMQ there is no acknowledgement received from RabbitMQ whether the message has reached the broker or not. This implies that
-> the message could be lost and will not be retried if there is an error in the network layer. For most use cases it should not 
-> matter. Using publishing confirms reduces publish throughput but guarantees reliability over performance.
+> [!NOTE]
+> By default, RabbitMQ publish does not use publisher confirms (https://www.rabbitmq.com/docs/confirms#publisher-confirms).
+> Without confirms, a nil error from `ar.Publish`/`ar.Retry` only means the message was written to the TCP connection -
+> it says nothing about whether the broker actually accepted and routed it. The message could be lost and will not be
+> retried if there is an error in the network layer. For most use cases this should not matter.
+>
+> Pass `rabbitmq.WithPublisherConfirms(buffer)` to `rabbitmq.AutoRetry` to opt in to publisher confirms for every
+> publish this `ARetry` makes (`Publish`, `Retry`/the delay-DLQ republish it triggers, and DLQ replay). With this on,
+> the broker acknowledges (or negatively acknowledges) each message, and a broker-level nack now surfaces as a
+> returned error. `buffer` caps how many confirms can be in flight at once across the publisher pool; pass `0` to use
+> a default of 100. Using publisher confirms adds latency to every publish call (it now waits for the broker's
+> acknowledgement) in exchange for that reliability guarantee - reliability over throughput, enable it if your use
+> case needs the stronger guarantee.
+>
+> ```go
+> ar := rabbitmq.AutoRetry(rabbitmq.Queues{...},
+> 	rabbitmq.WithUsername("guest"),
+> 	rabbitmq.WithPassword("guest"),
+> 	rabbitmq.WithPublisherConfirms(0), // use the default buffer of 100
+> )
+> ```
 
 ### RabbitMQ Queue config
 ```go

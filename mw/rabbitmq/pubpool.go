@@ -12,10 +12,16 @@ type publisherPool struct {
 	pool chan *publisher.Publisher
 	d    *amqpextra.Dialer
 	l    logger.Logger
+	// opts is applied to every publisher.Publisher this pool creates on demand -
+	// e.g. publisher.WithConfirmation(...) when publisher confirms are enabled via
+	// rabbitmq.WithPublisherConfirms. Kept as a field (rather than threading through
+	// get()) so every publisher the pool ever hands out, regardless of when it's
+	// created, is configured identically.
+	opts []publisher.Option
 }
 
-func newPubPool(size int, d *amqpextra.Dialer, logger logger.Logger) (*publisherPool, error) {
-	pubPool := &publisherPool{pool: make(chan *publisher.Publisher, size), d: d, l: logger}
+func newPubPool(size int, d *amqpextra.Dialer, logger logger.Logger, opts ...publisher.Option) (*publisherPool, error) {
+	pubPool := &publisherPool{pool: make(chan *publisher.Publisher, size), d: d, l: logger, opts: opts}
 	return pubPool, nil
 }
 
@@ -24,7 +30,7 @@ func (c *publisherPool) get(ctx context.Context) (*publisher.Publisher, error) {
 	case pub := <-c.pool:
 		return pub, nil
 	default:
-		pub, err := getPublisher(ctx, c.d, c.l)
+		pub, err := getPublisher(ctx, c.d, c.l, c.opts...)
 		if err != nil {
 			return nil, fmt.Errorf("could not get a channel from publisher pool:%v\n", err)
 		}

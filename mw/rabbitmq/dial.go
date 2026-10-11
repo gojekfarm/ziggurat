@@ -38,8 +38,10 @@ func getChannelFromDialer(ctx context.Context, d *amqpextra.Dialer, timeout time
 	return conn.Channel()
 }
 
-func getPublisher(ctx context.Context, d *amqpextra.Dialer, l logger.Logger) (*publisher.Publisher, error) {
-	return d.Publisher(
+func getPublisher(ctx context.Context, d *amqpextra.Dialer, l logger.Logger, opts ...publisher.Option) (*publisher.Publisher, error) {
+	allOpts := append([]publisher.Option{
 		publisher.WithContext(ctx),
-		publisher.WithLogger(l))
+		publisher.WithLogger(l),
+	}, opts...)
+	return d.Publisher(allOpts...)
 }
