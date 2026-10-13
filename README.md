@@ -26,6 +26,7 @@ Consumer Orchestration made easy. Consume events from Kafka without hassles. Zig
   * [Using Kafka Consumer](#using-kafka-consumer)
     * [ConsumerConfig](#consumerconfig)
       * [Practical example on setting the `ConsumerCount` value](#practical-example-on-setting-the-consumercount-value)
+    * [SASL/SCRAM authentication](#saslscram-authentication)
     * [Events emitted by the kafka.ConsumerGroup implementation](#events-emitted-by-the-kafkaconsumergroup-implementation)
   * [How to use the ziggurat Event Router](#how-to-use-the-ziggurat-event-router)
     * [A practical example](#a-practical-example-1)
@@ -400,10 +401,64 @@ type ConsumerConfig struct {
     AutoOffsetReset       string // earliest or latest
     PartitionAssignment   string // refer partition.assignment.strategy https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
     MaxPollIntervalMS     int    // Kafka Failure detection interval in milliseconds
+
+    // SASL authentication (e.g. for a cluster enforcing ACLs) - see "SASL/SCRAM
+    // authentication" below
+    SecurityProtocol string // kafka.SecurityProtocolSASLPlaintext (default) or kafka.SecurityProtocolSASLSSL
+    SASLMechanism    string // kafka.SASLMechanismScramSHA512 (default) or kafka.SASLMechanismScramSHA256
+    SASLUsername     string
+    SASLPassword     string
+    SSLCALocation    string // optional, path to a CA bundle; defaults to the system CA store
 }
 ```
 > For more info on what the config keys and values mean please check the below link ( not all config keys are included in Ziggurat, they might be added in the future )
 https://github.com/confluentinc/librdkafka/blob/master/CONFIGURATION.md
+
+### SASL/SCRAM authentication
+
+If your Kafka cluster enforces ACLs, the consumer needs to authenticate before those
+ACLs can apply to it at all. Set at least `SASLUsername` and `SASLPassword` to
+authenticate via SASL - `SASLMechanismScramSHA256`/`SASLMechanismScramSHA512` are the
+mechanisms this has been tested against (librdkafka implements SCRAM natively, so no
+extra system dependency like cyrus-sasl is needed).
+
+```go
+cg := &kafka.ConsumerGroup{
+    GroupConfig: kafka.ConsumerConfig{
+        BootstrapServers: "broker1:9095,broker2:9095",
+        GroupID:          "my-consumer-group",
+        Topics:           []string{"my-topic"},
+        SASLUsername:     os.Getenv("KAFKA_SASL_USERNAME"),
+        // TODO: Securely load this value from an environment variable or secrets vault. Do not hardcode.
+        SASLPassword:     os.Getenv("KAFKA_SASL_PASSWORD"),
+        // SASLMechanism and SecurityProtocol are both optional here - see the
+        // defaults called out below. Set them explicitly to override, e.g.:
+        // SASLMechanism:    kafka.SASLMechanismScramSHA256,
+        // SecurityProtocol: kafka.SecurityProtocolSASLSSL,
+    },
+}
+```
+
+> [!NOTE]
+> Kafka ACLs are authorized by the broker against the authenticated principal - this
+> package has no ACL logic of its own, and can't: granting or denying an operation is
+> the broker's job, configured there (e.g. via `kafka-acls.sh`). What `SASLMechanism`
+> etc. provide is the client-side authentication step that lets those broker-side ACLs
+> apply to this consumer's principal in the first place.
+>
+> Defaults, both overridable by setting the field explicitly:
+> - `SASLMechanism` defaults to `kafka.SASLMechanismScramSHA512` when `SASLUsername`
+>   and/or `SASLPassword` are set but `SASLMechanism` is left empty.
+> - `SecurityProtocol` defaults to `kafka.SecurityProtocolSASLPlaintext` (SASL without
+>   TLS) whenever SASL is configured (i.e. any of `SASLMechanism`/`SASLUsername`/
+>   `SASLPassword` are set) and `SecurityProtocol` is left empty. Set it to
+>   `kafka.SecurityProtocolSASLSSL` explicitly if your cluster terminates TLS and you
+>   want the connection encrypted too (set `SSLCALocation` as well if it uses a private
+>   CA).
+>
+> Leaving `SecurityProtocol`, `SASLMechanism`, `SASLUsername`, and `SASLPassword` all
+> unset is unchanged from before - no security properties are added to the Kafka
+> client config.
 
 #### Practical example on setting the `ConsumerCount` value
 The `ConsumerCount` value is used to control the concurrency of your handler execution, a higher value does not mean better performance, for an optimum performance please set it to the number of partitions you are consuming from.

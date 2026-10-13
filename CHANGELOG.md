@@ -56,6 +56,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `buffer` caps in-flight confirms across the publisher pool; `0` defaults to 100.
     Off by default (adds publish latency in exchange for the stronger guarantee, so it's
     an explicit opt-in rather than a behavior change for existing callers).
+- Kafka SASL/SCRAM authentication - developed on a separate feature branch stacked on
+  top of the RabbitMQ publisher confirms branch above, listed as its own item for the
+  same reason:
+  - `kafka.ConsumerConfig` gained `SecurityProtocol`, `SASLMechanism`, `SASLUsername`,
+    `SASLPassword`, and `SSLCALocation` fields, wired into `toConfigMap()`. Lets a
+    `kafka.ConsumerGroup` authenticate against a Kafka cluster via SASL (tested against
+    `SCRAM-SHA-256`/`SCRAM-SHA-512`) so that broker-side ACLs configured for that
+    principal actually apply - this package has no ACL logic of its own; ACLs are
+    authorized by the broker, this just lets the client authenticate in the first
+    place. New `kafka.SecurityProtocolSASLPlaintext`/`SecurityProtocolSASLSSL` and
+    `kafka.SASLMechanismScramSHA256`/`SASLMechanismScramSHA512` constants.
+  - Defaults, both overridable by setting the field explicitly: `SASLMechanism`
+    defaults to `SASLMechanismScramSHA512` when `SASLUsername`/`SASLPassword` are set
+    but `SASLMechanism` is left empty; `SecurityProtocol` defaults to
+    `SecurityProtocolSASLPlaintext` whenever SASL is configured and `SecurityProtocol`
+    is left empty (set `SecurityProtocolSASLSSL` explicitly for a cluster that
+    terminates TLS).
+  - No behavior change for existing callers that don't set any of these fields -
+    `security.protocol`/`sasl.*` are simply absent from the generated `kafka.ConfigMap`,
+    same as before.
 
 ## [v2.0.24] 2026-10-01
 
