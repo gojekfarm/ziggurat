@@ -307,12 +307,18 @@ ziggurat_go_handler_events_total{route="<some_string_value>"} 460
   - The `mw/otelemetry` middleware starts a distributed tracing span for every message handled, as a child of any
     trace context found in the message's headers (so a message republished via the RabbitMQ retry/DLQ middleware
     stays part of the same trace as its original consume, instead of starting a disconnected new one).
+  - **Tracing is opt-in and off by default.** `otelemetry.Setup`'s last argument, `enabled bool`, controls whether
+    it does anything at all - pass `false` (or, for a real off-by-default posture, source it from your own
+    config/env var, e.g. `os.Getenv("TRACING_ENABLED") == "true"`, so an unset env var disables it) and `Setup`
+    does no OTLP dial and registers nothing, returning a safe no-op shutdown. It is always safe to call `Setup`
+    unconditionally from `main` and let the `enabled` flag decide.
   - A local OpenTelemetry Collector + Jaeger stack for development is in `docker-compose-tracing.yml` - after
     `docker compose -f docker-compose-tracing.yml up`, traces are visible at `http://localhost:16686`.
   - Usage
 ```go
 hf := ziggurat.HandlerFunc(func(context.Context,*ziggurat.Event){...})
-shutdown, err := otelemetry.Setup(context.Background(), "my-service", "localhost:4317") // OTLP gRPC endpoint
+tracingEnabled := os.Getenv("TRACING_ENABLED") == "true" // off unless explicitly enabled
+shutdown, err := otelemetry.Setup(context.Background(), "my-service", "localhost:4317", tracingEnabled) // OTLP gRPC endpoint
 if err != nil { ... }
 defer shutdown(context.Background())
 handler := ziggurat.Use(hf, otelemetry.TraceHandler("my-service"))
