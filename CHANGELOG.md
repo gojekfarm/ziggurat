@@ -29,6 +29,19 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     re-panicked, same never-swallow contract as the metrics middleware. `Setup` wires a
     TracerProvider exporting via OTLP/gRPC (default: `AlwaysSample`, every message
     gets a span - revisit if Kafka throughput makes this too expensive).
+  - `mw/otelemetry.Setup` now takes an explicit `enabled bool` as its last argument.
+    Tracing is opt-in: when `enabled` is `false`, `Setup` does no OTLP dial, registers
+    no TracerProvider/propagator, and returns a no-op shutdown - safe to call
+    unconditionally from `main` regardless of the flag. Callers sourcing `enabled` from
+    an env var (e.g. `TRACING_ENABLED`) get an off-by-default posture for free, since an
+    unset var evaluates to `false`. This is a breaking change to `Setup`'s signature
+    (see "Changed" below).
+
+# Changed
+
+- `mw/otelemetry.Setup(ctx, serviceName, otlpEndpoint string)` is now
+  `Setup(ctx, serviceName, otlpEndpoint string, enabled bool)` - update call sites to
+  pass the new `enabled` argument (see "Added" above for the behavior this unlocks).
   - `mw/rabbitmq`'s retry/DLQ republish paths (`publishInternal`, `ARetry.Publish`) now
     inject the active span's trace context into the outgoing message's headers
     alongside the existing `retry-origin` header, so a republished message continues
