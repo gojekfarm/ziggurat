@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.1.0] 2026-10-17
 
 # Added
 
@@ -19,33 +19,39 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `ziggurat_go_retry_dlq_published_total{queue}`, and
     `ziggurat_go_retry_replay_total{queue,result}` counters, wired into
     `mw/rabbitmq`'s retry/DLQ publish and DLQ-replay paths (previously uninstrumented).
+    These increment unconditionally whenever `AutoRetry` publishes/replays, regardless
+    of whether the application calls `prometheus.Register()` - harmless no-op memory
+    cost if it doesn't, since an unregistered counter is never scraped.
   - `kafka` and `mw/rabbitmq`: native transport message headers (Kafka record headers,
     AMQP headers) are now captured into `Event.Metadata[ziggurat.MetadataKeyHeaders]`
-    (`map[string]string`) - previously read by nothing.
+    (`map[string]string`) - previously read by nothing. This is unconditional, not
+    behind a flag: for RabbitMQ consumers specifically, a message that previously
+    arrived with a `nil` `Metadata` can now arrive with a non-nil map (one `"headers"`
+    key), if the producer set native AMQP headers - a real, visible change for any
+    caller doing `Metadata == nil`/`len(Metadata) == 0` checks.
   - New `mw/otelemetry` package: OpenTelemetry-based distributed tracing middleware
     (`TraceHandler`), following the same `ziggurat.Use`-compatible shape as
     `mw/prometheus`/`mw/event`. Extracts/starts a span as a child of any trace context
     found in a message's headers; a panic is recorded on the span as an error and then
     re-panicked, same never-swallow contract as the metrics middleware. `Setup` wires a
     TracerProvider exporting via OTLP/gRPC (default: `AlwaysSample`, every message
-    gets a span - revisit if Kafka throughput makes this too expensive).
-  - `mw/otelemetry.Setup` now takes an explicit `enabled bool` as its last argument.
+    gets a span - revisit if Kafka throughput makes this too expensive). Purely
+    opt-in: nothing in this package runs unless the application explicitly imports it
+    and adds `TraceHandler` to its own `ziggurat.Use(...)` chain.
+  - `mw/otelemetry.Setup` takes an explicit `enabled bool` as its last argument.
     Tracing is opt-in: when `enabled` is `false`, `Setup` does no OTLP dial, registers
     no TracerProvider/propagator, and returns a no-op shutdown - safe to call
     unconditionally from `main` regardless of the flag. Callers sourcing `enabled` from
     an env var (e.g. `TRACING_ENABLED`) get an off-by-default posture for free, since an
-    unset var evaluates to `false`. This is a breaking change to `Setup`'s signature
-    (see "Changed" below).
-
-# Changed
-
-- `mw/otelemetry.Setup(ctx, serviceName, otlpEndpoint string)` is now
-  `Setup(ctx, serviceName, otlpEndpoint string, enabled bool)` - update call sites to
-  pass the new `enabled` argument (see "Added" above for the behavior this unlocks).
+    unset var evaluates to `false`.
   - `mw/rabbitmq`'s retry/DLQ republish paths (`publishInternal`, `ARetry.Publish`) now
     inject the active span's trace context into the outgoing message's headers
     alongside the existing `retry-origin` header, so a republished message continues
     the same trace as its original consume instead of starting a disconnected one.
+    This call is unconditional (runs on every retry/DLQ publish regardless of whether
+    the app uses `mw/otelemetry`), but is a true no-op against OTel's default no-op
+    propagator when tracing was never set up - no extra header content is added, and
+    `mw/rabbitmq` now has a direct import dependency on `mw/otelemetry`.
   - `go.opentelemetry.io/otel` (and its SDK/OTLP-exporter submodules) added as a direct
     dependency of the root module (not split into a separate optional module - deemed
     simpler, consistent with how `mw/prometheus`'s client library is already a direct
@@ -58,8 +64,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `RetryCountFor(event)` (set in `mw/rabbitmq/publish.go`) - no new field was needed
     for this.
 - RabbitMQ publisher confirms - developed on a separate feature branch from the
-  Observability & Telemetry work above, and expected to merge after it, so it's listed
-  as its own item here rather than folded into that entry:
+  Observability & Telemetry work above, and combined with it in this release via
+  `feat/acl-support` without merging either branch into `master` (pending team review),
+  so it's listed as its own item here rather than folded into that entry:
   - `mw/rabbitmq`: new `rabbitmq.WithPublisherConfirms(buffer)` option on `AutoRetry`
     opts in to RabbitMQ publisher confirms (previously confirmed absent - see the
     `[!WARNING]` this replaces in the README) for every publisher an `ARetry` creates:
@@ -69,6 +76,26 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     `buffer` caps in-flight confirms across the publisher pool; `0` defaults to 100.
     Off by default (adds publish latency in exchange for the stronger guarantee, so it's
     an explicit opt-in rather than a behavior change for existing callers).
+- Kafka SASL/SCRAM authentication - developed on a separate feature branch stacked on
+  top of the RabbitMQ publisher confirms branch above, listed as its own item for the
+  same reason:
+  - `kafka.ConsumerConfig` gained `SecurityProtocol`, `SASLMechanism`, `SASLUsername`,
+    `SASLPassword`, and `SSLCALocation` fields, wired into `toConfigMap()`. Lets a
+    `kafka.ConsumerGroup` authenticate against a Kafka cluster via SASL (tested against
+    `SCRAM-SHA-256`/`SCRAM-SHA-512`) so that broker-side ACLs configured for that
+    principal actually apply - this package has no ACL logic of its own; ACLs are
+    authorized by the broker, this just lets the client authenticate in the first
+    place. New `kafka.SecurityProtocolSASLPlaintext`/`SecurityProtocolSASLSSL` and
+    `kafka.SASLMechanismScramSHA256`/`SASLMechanismScramSHA512` constants.
+  - Defaults, both overridable by setting the field explicitly: `SASLMechanism`
+    defaults to `SASLMechanismScramSHA512` when `SASLUsername`/`SASLPassword` are set
+    but `SASLMechanism` is left empty; `SecurityProtocol` defaults to
+    `SecurityProtocolSASLPlaintext` whenever SASL is configured and `SecurityProtocol`
+    is left empty (set `SecurityProtocolSASLSSL` explicitly for a cluster that
+    terminates TLS).
+  - No behavior change for existing callers that don't set any of these fields -
+    `security.protocol`/`sasl.*` are simply absent from the generated `kafka.ConfigMap`,
+    same as before.
 
 ## [v2.0.24] 2026-10-01
 

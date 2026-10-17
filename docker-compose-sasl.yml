@@ -1,0 +1,29 @@
+services:
+  kafka:
+    ports:
+      - '9095:9095' # SASL_SCRAM listener, additive to the existing PLAINTEXT 9092
+    volumes:
+      # Static JAAS file for the SASL_SCRAM listener - see kafka-sasl-jaas.conf for why
+      # this has no static credentials in it despite SASL requiring a JAAS config file.
+      - ./kafka-sasl-jaas.conf:/etc/kafka/secrets/kafka_server_jaas.conf:ro
+    environment:
+      # Adds a third listener (SASL_SCRAM) alongside the existing PLAINTEXT/CONTROLLER
+      # ones - PLAINTEXT stays up unauthenticated on 9092, so existing non-SASL
+      # tests/harnesses are unaffected. Inter-broker and controller traffic stay on
+      # their original listeners too.
+      - KAFKA_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093,SASL_SCRAM://:9095
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://localhost:9092,SASL_SCRAM://localhost:9095
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,SASL_SCRAM:SASL_PLAINTEXT
+      - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      # SASL_PLAINTEXT (not SASL_SSL) here - this is a local dev broker with no TLS
+      # cert. This matches ziggurat-go's client config default (SecurityProtocolSASLPlaintext).
+      - KAFKA_SASL_ENABLED_MECHANISMS=SCRAM-SHA-256
+      # This is the actual, confirmed-working mechanism for configuring SASL on the
+      # apache/kafka image: a static JAAS file mounted into the container, referenced
+      # via KAFKA_OPTS - taken directly from Apache's own official
+      # docker/examples/docker-compose-files/single-node/sasl_plaintext example in the
+      # Kafka source tree. (An earlier attempt here used a per-listener
+      # KAFKA_LISTENER_NAME_<listener>_<mechanism>_SASL_JAAS_CONFIG env var instead,
+      # which this image's config generator does not actually support - it failed with
+      # "Could not find a 'KafkaServer' ... entry in the JAAS configuration".)
+      - KAFKA_OPTS=-Djava.security.auth.login.config=/etc/kafka/secrets/kafka_server_jaas.conf
