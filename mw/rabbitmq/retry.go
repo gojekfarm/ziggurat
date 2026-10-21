@@ -52,6 +52,21 @@ type ARetry struct {
 	ogLogger      ziggurat.StructuredLogger
 	queueConfig   map[string]QueueConfig
 	publisherPool *publisherPool
+
+	// publisherConfirms/publisherConfirmsBuffer are set via WithPublisherConfirms and
+	// applied uniformly to every publisher this ARetry creates - see publisherOptions.
+	publisherConfirms       bool
+	publisherConfirmsBuffer uint
+}
+
+// publisherOptions returns the amqpextra publisher.Option set that every publisher
+// created by this ARetry (pooled or ad-hoc, e.g. the one replay() builds directly) must
+// share, so publisher-confirm behavior is consistent across Publish, Retry and replay.
+func (r *ARetry) publisherOptions() []publisher.Option {
+	if !r.publisherConfirms {
+		return nil
+	}
+	return []publisher.Option{publisher.WithConfirmation(r.publisherConfirmsBuffer)}
 }
 
 func constructAMQPURL(host, username, password string) string {
@@ -164,7 +179,7 @@ func (r *ARetry) InitPublishers(ctx context.Context) error {
 		return err
 	}
 	r.publishDialer = dialer
-	r.publisherPool, err = newPubPool(10, dialer, r.logger)
+	r.publisherPool, err = newPubPool(10, dialer, r.logger, r.publisherOptions()...)
 	if err != nil {
 		return err
 	}
@@ -361,7 +376,7 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 		actualCount = q.Messages
 	}
 
-	p, err := d.Publisher()
+	p, err := d.Publisher(r.publisherOptions()...)
 	defer p.Close()
 	if err != nil {
 		return replayCount, fmt.Errorf("error getting publiser:%w", err)
