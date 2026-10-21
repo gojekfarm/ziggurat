@@ -36,6 +36,15 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     an env var (e.g. `TRACING_ENABLED`) get an off-by-default posture for free, since an
     unset var evaluates to `false`. This is a breaking change to `Setup`'s signature
     (see "Changed" below).
+  - `mw/rabbitmq`: new `rabbitmq.WithPublisherConfirms(buffer)` option on `AutoRetry`
+    opts in to RabbitMQ publisher confirms (previously confirmed absent - see the
+    `[!WARNING]` this replaces in the README) for every publisher an `ARetry` creates:
+    `Publish`, `Retry` (and the delay/DLQ republish it triggers), and DLQ replay. With
+    this enabled, a broker-level nack surfaces as a returned error from `Publish`/`Retry`
+    instead of being indistinguishable from a successful hand-off to the TCP connection.
+    `buffer` caps in-flight confirms across the publisher pool; `0` defaults to 100.
+    Off by default (adds publish latency in exchange for the stronger guarantee, so it's
+    an explicit opt-in rather than a behavior change for existing callers).
 
 # Changed
 
@@ -57,18 +66,6 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Retry-attempt tracking already existed via `Event.Metadata[KeyRetryCount]` /
     `RetryCountFor(event)` (set in `mw/rabbitmq/publish.go`) - no new field was needed
     for this.
-- RabbitMQ publisher confirms - developed on a separate feature branch from the
-  Observability & Telemetry work above, and expected to merge after it, so it's listed
-  as its own item here rather than folded into that entry:
-  - `mw/rabbitmq`: new `rabbitmq.WithPublisherConfirms(buffer)` option on `AutoRetry`
-    opts in to RabbitMQ publisher confirms (previously confirmed absent - see the
-    `[!WARNING]` this replaces in the README) for every publisher an `ARetry` creates:
-    `Publish`, `Retry` (and the delay/DLQ republish it triggers), and DLQ replay. With
-    this enabled, a broker-level nack surfaces as a returned error from `Publish`/`Retry`
-    instead of being indistinguishable from a successful hand-off to the TCP connection.
-    `buffer` caps in-flight confirms across the publisher pool; `0` defaults to 100.
-    Off by default (adds publish latency in exchange for the stronger guarantee, so it's
-    an explicit opt-in rather than a behavior change for existing callers).
 
 ## [v2.0.24] 2026-10-01
 
