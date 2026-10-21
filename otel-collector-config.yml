@@ -1,0 +1,28 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  # Jaeger (all-in-one, in docker-compose-tracing.yml) accepts OTLP natively on its own
+  # 4317/4318 ports since Jaeger 1.35+, so the collector just forwards on via OTLP rather
+  # than needing the older, now-deprecated jaeger-specific exporter.
+  otlp/jaeger:
+    endpoint: jaeger:4317
+    tls:
+      insecure: true
+  debug:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/jaeger, debug]

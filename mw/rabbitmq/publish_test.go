@@ -1,6 +1,7 @@
 package rabbitmq
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/gojekfarm/ziggurat/v2"
 	"github.com/makasim/amqpextra/publisher"
@@ -54,7 +55,7 @@ func Test_publish(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			p := mockAMQPPublisher{}
 			p.On("Publish", c.WantMsg).Return(nil)
-			_ = publishInternal(&p, "foo", c.retryCount, "100", c.input)
+			_ = publishInternal(context.Background(), &p, "foo", c.retryCount, "100", c.input)
 		})
 	}
 }
@@ -117,7 +118,7 @@ func Test_publish_retries(t *testing.T) {
 				}
 				want.Publishing.Body = toJSON(ziggurat.Event{Metadata: map[string]any{KeyRetryCount: retryCount}})
 				p.On("Publish", want).Return(nil).Once()
-				_ = publishInternal(&p, "foo", c.retryCount, "100", &e)
+				_ = publishInternal(context.Background(), &p, "foo", c.retryCount, "100", &e)
 			}
 		})
 	}

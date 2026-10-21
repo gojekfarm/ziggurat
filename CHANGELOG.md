@@ -5,6 +5,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+# Added
+
+- Observability & Telemetry foundations:
+  - `mw/prometheus`: handler metrics now carry an `outcome` label (`success`/`panic` -
+    `ziggurat.Handler.Handle` has no error return, so "error" isn't an outcome this
+    middleware can observe). A panic is recorded (outcome=panic, duration up to the
+    panic) and then re-panicked - this middleware observes, it never swallows, per the
+    decision to revert blanket panic recovery (see the `v2.0.24` entry below).
+  - `mw/prometheus`: new `ziggurat_go_retry_published_total{queue}`,
+    `ziggurat_go_retry_dlq_published_total{queue}`, and
+    `ziggurat_go_retry_replay_total{queue,result}` counters, wired into
+    `mw/rabbitmq`'s retry/DLQ publish and DLQ-replay paths (previously uninstrumented).
+  - `kafka` and `mw/rabbitmq`: native transport message headers (Kafka record headers,
+    AMQP headers) are now captured into `Event.Metadata[ziggurat.MetadataKeyHeaders]`
+    (`map[string]string`) - previously read by nothing.
+  - New `mw/otelemetry` package: OpenTelemetry-based distributed tracing middleware
+    (`TraceHandler`), following the same `ziggurat.Use`-compatible shape as
+    `mw/prometheus`/`mw/event`. Extracts/starts a span as a child of any trace context
+    found in a message's headers; a panic is recorded on the span as an error and then
+    re-panicked, same never-swallow contract as the metrics middleware. `Setup` wires a
+    TracerProvider exporting via OTLP/gRPC (default: `AlwaysSample`, every message
+    gets a span - revisit if Kafka throughput makes this too expensive).
+  - `mw/otelemetry.Setup` now takes an explicit `enabled bool` as its last argument.
+    Tracing is opt-in: when `enabled` is `false`, `Setup` does no OTLP dial, registers
+    no TracerProvider/propagator, and returns a no-op shutdown - safe to call
+    unconditionally from `main` regardless of the flag. Callers sourcing `enabled` from
+    an env var (e.g. `TRACING_ENABLED`) get an off-by-default posture for free, since an
+    unset var evaluates to `false`. This is a breaking change to `Setup`'s signature
+    (see "Changed" below).
+
+# Changed
+
+- `mw/otelemetry.Setup(ctx, serviceName, otlpEndpoint string)` is now
+  `Setup(ctx, serviceName, otlpEndpoint string, enabled bool)` - update call sites to
+  pass the new `enabled` argument (see "Added" above for the behavior this unlocks).
+  - `mw/rabbitmq`'s retry/DLQ republish paths (`publishInternal`, `ARetry.Publish`) now
+    inject the active span's trace context into the outgoing message's headers
+    alongside the existing `retry-origin` header, so a republished message continues
+    the same trace as its original consume instead of starting a disconnected one.
+  - `go.opentelemetry.io/otel` (and its SDK/OTLP-exporter submodules) added as a direct
+    dependency of the root module (not split into a separate optional module - deemed
+    simpler, consistent with how `mw/prometheus`'s client library is already a direct
+    dependency).
+  - `docker-compose-tracing.yml` + `otel-collector-config.yml`: local OTel Collector +
+    Jaeger stack for development (`docker compose -f docker-compose-tracing.yml up`,
+    traces visible at `http://localhost:16686`), mirroring the existing
+    `docker-compose-metrics.yml` for Prometheus/Grafana.
+  - Retry-attempt tracking already existed via `Event.Metadata[KeyRetryCount]` /
+    `RetryCountFor(event)` (set in `mw/rabbitmq/publish.go`) - no new field was needed
+    for this.
+
 ## [v2.0.24] 2026-10-01
 
 # Fixed

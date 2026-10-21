@@ -1,0 +1,22 @@
+services:
+  jaeger:
+    image: 'jaegertracing/all-in-one:latest'
+    container_name: 'ziggurat_go_jaeger'
+    ports:
+      - '16686:16686' # Jaeger UI
+      - '4317' # OTLP gRPC (collector-facing only, not published to host - go through the collector below)
+      - '4318' # OTLP HTTP (same)
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  otel-collector:
+    image: 'otel/opentelemetry-collector-contrib:latest'
+    container_name: 'ziggurat_go_otel_collector'
+    command: ['--config=/etc/otel-collector-config.yml']
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml:ro
+    ports:
+      - '4317:4317' # OTLP gRPC - point ziggurat's otelemetry.Setup(ctx, serviceName, "localhost:4317", true) here
+      - '4318:4318' # OTLP HTTP
+    depends_on:
+      - jaeger
