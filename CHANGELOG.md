@@ -9,7 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 # Added
 
-- Observability & Telemetry foundations:
+- Observability & Telemetry foundations, Rabbitmq publisher confirms:
   - `mw/prometheus`: handler metrics now carry an `outcome` label (`success`/`panic` -
     `ziggurat.Handler.Handle` has no error return, so "error" isn't an outcome this
     middleware can observe). A panic is recorded (outcome=panic, duration up to the
@@ -66,6 +66,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - Retry-attempt tracking already existed via `Event.Metadata[KeyRetryCount]` /
     `RetryCountFor(event)` (set in `mw/rabbitmq/publish.go`) - no new field was needed
     for this.
+  - New rabbitmq.WithPublisherConfirms(buffer uint) option on AutoRetry.
+    buffer caps how many confirms can be in flight at once across the
+    publisher pool; 0 defaults to 100.
+  - Applies uniformly to every publisher an ARetry creates: Publish,
+    Retry (and the delay/DLQ republish it triggers), and the DLQ replay
+    publisher used by DSReplayHandler.
+  - Off by default - existing callers see no behavior change unless they
+    opt in.
+  - README's old [!WARNING] about missing publisher confirms replaced with
+    a [!NOTE] documenting the new option and its latency tradeoff.
 
 ## [v2.0.24] 2026-10-01
 
