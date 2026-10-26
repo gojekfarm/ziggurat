@@ -1,6 +1,10 @@
 package kafka
 
-import "github.com/confluentinc/confluent-kafka-go/v2/kafka"
+import (
+	"fmt"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+)
 
 // Kafka security.protocol values relevant to SASL authentication. Set
 // ConsumerConfig.SecurityProtocol to one of these explicitly, or leave it empty and
@@ -74,6 +78,51 @@ type ConsumerConfig struct {
 	SSLCALocation string
 }
 
+// saslConfigured reports whether SASL is considered "configured" on c - true if any of
+// SASLMechanism/SASLUsername/SASLPassword is set, not just SASLMechanism, so that a
+// caller who sets only SASLUsername/SASLPassword still gets SASL wired up (with
+// DefaultSASLMechanism) rather than silently getting no SASL config at all. Shared by
+// toConfigMap and Validate so the two can never disagree about what "SASL is on" means.
+func (c ConsumerConfig) saslConfigured() bool {
+	return c.SASLMechanism != "" || c.SASLUsername != "" || c.SASLPassword != ""
+}
+
+// Validate reports whether c's SASL-related fields are internally consistent, without
+// requiring a broker connection. It is called automatically by ConsumerGroup.Consume
+// before any worker is started or any connection is attempted, so a bad SASL config
+// fails fast with a clear, local error instead of surfacing later as a cryptic
+// authentication failure from librdkafka. Callers may also call it directly - e.g. to
+// validate configuration at application startup, before ever calling Consume.
+//
+// A ConsumerConfig that leaves every SASL field empty always passes - Validate only
+// rejects configs that look like SASL was intended but is incomplete or contradictory.
+func (c ConsumerConfig) Validate() error {
+	if c.saslConfigured() {
+		if c.SASLUsername == "" || c.SASLPassword == "" {
+			return fmt.Errorf(
+				"kafka: incomplete SASL config: both SASLUsername and SASLPassword are required once SASL is configured (SASLMechanism, SASLUsername, or SASLPassword is set) - got SASLUsername set=%t, SASLPassword set=%t",
+				c.SASLUsername != "", c.SASLPassword != "",
+			)
+		}
+
+		if c.SASLMechanism != "" && c.SASLMechanism != SASLMechanismScramSHA256 && c.SASLMechanism != SASLMechanismScramSHA512 {
+			return fmt.Errorf(
+				"kafka: unsupported SASLMechanism %q - supported values are %q and %q",
+				c.SASLMechanism, SASLMechanismScramSHA256, SASLMechanismScramSHA512,
+			)
+		}
+
+		if c.SecurityProtocol != "" && c.SecurityProtocol != SecurityProtocolSASLPlaintext && c.SecurityProtocol != SecurityProtocolSASLSSL {
+			return fmt.Errorf(
+				"kafka: SecurityProtocol %q is not compatible with SASL authentication - use %q or %q, or leave SecurityProtocol empty to default to %q",
+				c.SecurityProtocol, SecurityProtocolSASLPlaintext, SecurityProtocolSASLSSL, SecurityProtocolSASLPlaintext,
+			)
+		}
+	}
+
+	return nil
+}
+
 func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
 	kafkaConfMap := kafka.ConfigMap{
@@ -109,10 +158,7 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
 	kafkaConfMap["allow.auto.create.topics"] = c.AllowAutoCreateTopics
 
-	// SASL is considered "configured" if any of the three fields are set, not just
-	// SASLMechanism - this lets a caller set only SASLUsername/SASLPassword and get
-	// DefaultSASLMechanism rather than silently getting no SASL config at all.
-	saslConfigured := c.SASLMechanism != "" || c.SASLUsername != "" || c.SASLPassword != ""
+	saslConfigured := c.saslConfigured()
 
 	if saslConfigured {
 		mechanism := c.SASLMechanism

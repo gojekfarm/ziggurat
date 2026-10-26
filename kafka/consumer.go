@@ -25,6 +25,13 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 
 	cg.init()
 
+	// Fail fast on an incomplete/contradictory SASL config - before starting any
+	// worker or attempting any connection - rather than letting it surface later as an
+	// opaque authentication failure from librdkafka.
+	if err := cg.GroupConfig.Validate(); err != nil {
+		return err
+	}
+
 	if cg.GroupConfig.ConsumerCount < 1 {
 		cg.Logger.Warn("ConsumerConfig.GroupCount < 1, no consumers will be started")
 	}

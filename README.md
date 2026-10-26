@@ -466,6 +466,20 @@ cg := &kafka.ConsumerGroup{
 > unset is unchanged from before - no security properties are added to the Kafka
 > client config.
 
+`ConsumerGroup.Consume` validates these fields before doing anything else - before
+starting any worker or attempting a connection - and returns an error immediately if
+SASL looks misconfigured, rather than letting it surface later as an opaque
+authentication failure from librdkafka. It rejects:
+- Setting only one of `SASLUsername`/`SASLPassword` (or setting `SASLMechanism` with
+  neither) - both are required once any SASL field is set.
+- An `SASLMechanism` other than `kafka.SASLMechanismScramSHA256`/`ScramSHA512`.
+- A `SecurityProtocol` other than `kafka.SecurityProtocolSASLPlaintext`/`SASLSSL` when
+  SASL is configured (a `SecurityProtocol` set without any SASL fields at all, e.g. for
+  plain TLS, is unaffected - this only applies once SASL is in the picture).
+
+You can also call `kafka.ConsumerConfig{...}.Validate() error` directly to check
+configuration at application startup, before ever calling `Consume`.
+
 #### Practical example on setting the `ConsumerCount` value
 The `ConsumerCount` value is used to control the concurrency of your handler execution, a higher value does not mean better performance, for an optimum performance please set it to the number of partitions you are consuming from.
 > If you are consuming from 12 partitions using 4 individual VMs / Pods then each VM / Pod should have a ConsumerCount of 3. This adds upto 4(VM/Pods) * 3(Consumers) = 12(Consumers)
