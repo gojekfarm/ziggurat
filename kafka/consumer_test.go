@@ -190,6 +190,51 @@ func TestConsumerGroup_EachWorkerGetsOwnConsumerInstance(t *testing.T) {
 	}
 }
 
+// TestConsumerGroup_Consume_InvalidSASLConfig_FailsFastWithoutStartingWorkers verifies
+// Consume validates GroupConfig before doing anything else: an incomplete SASL config
+// (here, SASLPassword without SASLUsername) must return an error immediately, without
+// calling consumerMakeFunc or starting any worker - i.e. before ever attempting a
+// connection to the broker.
+func TestConsumerGroup_Consume_InvalidSASLConfig_FailsFastWithoutStartingWorkers(t *testing.T) {
+	var consumerMakeFuncCalled bool
+
+	cg := ConsumerGroup{
+		Logger: logger.NewLogger(logger.LevelError),
+		GroupConfig: ConsumerConfig{
+			BootstrapServers: "localhost:9092",
+			GroupID:          "group-invalid-sasl",
+			Topics:           []string{"foo"},
+			ConsumerCount:    1,
+			// Incomplete SASL config: password set, username is not.
+			SASLPassword: "s3cret",
+		},
+		consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string) confluentConsumer {
+			consumerMakeFuncCalled = true
+			return &MockConsumer{}
+		},
+	}
+
+	err := cg.Consume(context.Background(), ziggurat.HandlerFunc(func(ctx context.Context, event *ziggurat.Event) {}))
+
+	if err == nil {
+		t.Fatal("expected Consume to return an error for an invalid SASL config, got nil")
+	}
+	if errors.Is(err, ErrCleanShutdown) {
+		t.Fatalf("expected a validation error, not the clean-shutdown sentinel: %v", err)
+	}
+	if consumerMakeFuncCalled {
+		t.Error("expected Consume to fail validation before creating any Kafka consumer client")
+	}
+	// init() pre-allocates cg.workers to length ConsumerCount before Validate runs, so
+	// the slice itself isn't empty - what matters is that no *worker was ever assigned
+	// into it, i.e. the spawn loop never ran.
+	for i, w := range cg.workers {
+		if w != nil {
+			t.Errorf("expected no worker to have been started, but cg.workers[%d] is non-nil", i)
+		}
+	}
+}
+
 func makePtr[V any](v V) *V {
 	return &v
 }
