@@ -76,6 +76,23 @@ type ConsumerConfig struct {
 	// correct for brokers with a certificate from a public CA; set it explicitly for
 	// a private/internal CA.
 	SSLCALocation string
+
+	// ClientRack enables rack-aware consumption by setting librdkafka's
+	// "client.rack" property. It should match the availability zone/rack the
+	// consumer process is running in (e.g. "us-east-1a" or the value of the
+	// Kubernetes topology.kubernetes.io/zone label on the node).
+	//
+	// Rack awareness lets the broker-side "follower fetching" feature
+	// (KIP-392) prefer serving a fetch from a replica in the same rack as the
+	// consumer, instead of always routing it to the partition leader. This can
+	// reduce cross-zone network traffic/cost and latency, but only takes
+	// effect when the brokers themselves are also configured with a matching
+	// broker.rack. If the cluster's brokers have no broker.rack configured,
+	// setting ClientRack here is harmless but has no effect.
+	//
+	// Leave empty to disable rack-aware consumption (the default - fetches
+	// always go to the partition leader).
+	ClientRack string
 }
 
 // saslConfigured reports whether SASL is considered "configured" on c - true if any of
@@ -185,6 +202,10 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
 	if c.SSLCALocation != "" {
 		kafkaConfMap["ssl.ca.location"] = c.SSLCALocation
+	}
+
+	if c.ClientRack != "" {
+		kafkaConfMap["client.rack"] = c.ClientRack
 	}
 
 	return kafkaConfMap
