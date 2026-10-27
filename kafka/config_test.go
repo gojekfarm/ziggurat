@@ -101,6 +101,27 @@ func TestToConfigMap_SSLCALocation_PassedThrough(t *testing.T) {
 	assertConfigValue(t, cm, "ssl.ca.location", "/etc/ssl/certs/ca.pem")
 }
 
+func TestToConfigMap_NoClientRack_LeavesClientRackUnset(t *testing.T) {
+	cm := ConsumerConfig{
+		BootstrapServers: "localhost:9092",
+		GroupID:          "g1",
+	}.toConfigMap()
+
+	if _, ok := cm["client.rack"]; ok {
+		t.Errorf("expected client.rack to be unset when ClientRack isn't configured, got %v", cm["client.rack"])
+	}
+}
+
+func TestToConfigMap_ClientRack_PassedThrough(t *testing.T) {
+	cm := ConsumerConfig{
+		BootstrapServers: "localhost:9092",
+		GroupID:          "g1",
+		ClientRack:       "us-east-1a",
+	}.toConfigMap()
+
+	assertConfigValue(t, cm, "client.rack", "us-east-1a")
+}
+
 func assertConfigValue(t *testing.T, cm kafka.ConfigMap, key string, want interface{}) {
 	t.Helper()
 	got, ok := cm[key]

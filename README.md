@@ -27,6 +27,7 @@ Consumer Orchestration made easy. Consume events from Kafka without hassles. Zig
     * [ConsumerConfig](#consumerconfig)
       * [Practical example on setting the `ConsumerCount` value](#practical-example-on-setting-the-consumercount-value)
     * [SASL/SCRAM authentication](#saslscram-authentication)
+    * [Rack-aware consumption](#rack-aware-consumption)
     * [Events emitted by the kafka.ConsumerGroup implementation](#events-emitted-by-the-kafkaconsumergroup-implementation)
   * [How to use the ziggurat Event Router](#how-to-use-the-ziggurat-event-router)
     * [A practical example](#a-practical-example-1)
@@ -415,6 +416,9 @@ type ConsumerConfig struct {
     SASLUsername     string
     SASLPassword     string
     SSLCALocation    string // optional, path to a CA bundle; defaults to the system CA store
+
+    // Rack-aware consumption - see "Rack-aware consumption" below
+    ClientRack string // e.g. "us-east-1a"; empty disables rack awareness (default)
 }
 ```
 > For more info on what the config keys and values mean please check the below link ( not all config keys are included in Ziggurat, they might be added in the future )
@@ -479,6 +483,36 @@ authentication failure from librdkafka. It rejects:
 
 You can also call `kafka.ConsumerConfig{...}.Validate() error` directly to check
 configuration at application startup, before ever calling `Consume`.
+
+### Rack-aware consumption
+
+Set `ClientRack` to the availability zone/rack the consumer process itself is running in
+(e.g. the pod's node `topology.kubernetes.io/zone` label, or `AWS_AVAILABILITY_ZONE`) to
+enable rack-aware consumption:
+
+```go
+cg := &kafka.ConsumerGroup{
+    GroupConfig: kafka.ConsumerConfig{
+        BootstrapServers: "broker1:9095,broker2:9095",
+        GroupID:          "my-consumer-group",
+        Topics:           []string{"my-topic"},
+        ClientRack:       os.Getenv("AWS_AVAILABILITY_ZONE"),
+    },
+}
+```
+
+This sets librdkafka's `client.rack` property, which enables "follower fetching"
+([KIP-392](https://cwiki.apache.org/confluence/display/KAFKA/KIP-392%3A+Allow+consumers+to+fetch+from+closest+replica)):
+the broker can serve a consumer's fetch from a replica in the same rack instead of
+always routing it to the partition leader, which can cut cross-zone network traffic/cost
+and latency in a multi-AZ cluster.
+
+> [!NOTE]
+> This only has an effect if the brokers are also configured with a matching
+> `broker.rack` - that's a broker-side setting this package has no control over. If the
+> cluster's brokers don't set `broker.rack`, setting `ClientRack` here is harmless but
+> does nothing. Leaving `ClientRack` empty (the default) is unchanged from before - no
+> `client.rack` property is added to the Kafka client config.
 
 #### Practical example on setting the `ConsumerCount` value
 The `ConsumerCount` value is used to control the concurrency of your handler execution, a higher value does not mean better performance, for an optimum performance please set it to the number of partitions you are consuming from.

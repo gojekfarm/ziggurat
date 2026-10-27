@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+# Added
+
+- Rack-aware consumption for Kafka: `kafka.ConsumerConfig` gained `ClientRack`, which
+  sets librdkafka's `client.rack` property. Combined with a matching `broker.rack` on
+  the brokers (not something this package controls), this enables KIP-392 follower
+  fetching, letting the broker serve a consumer's fetch from a same-rack replica instead
+  of always the partition leader - reduces cross-zone traffic/cost and latency in
+  multi-AZ clusters. Off by default (`ClientRack` empty) - zero config-map difference
+  for existing callers. Not applicable to `mw/rabbitmq` - RabbitMQ has no partition
+  replica/follower-fetch concept for this to map to.
+
 ## [v2.1.0] 2026-10-17
 
 # Added
