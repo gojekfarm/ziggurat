@@ -6,3 +6,11 @@ cp.out
 ziggurat_example
 *.swp
 sample_app
+
+# throwaway local test harness (not part of the library)
+/.local-test
+/.local-test-prefix
+/.local-notes
+/.local-test-observability
+/.local-test-sasl
+/.local-test-k8s-tracing
