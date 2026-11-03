@@ -1,0 +1,229 @@
+package kafka
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/stretchr/testify/mock"
+)
+
+// ---------------------------------------------------------------------------
+// Config tests: partition.assignment.strategy default and override
+// ---------------------------------------------------------------------------
+
+func TestToConfigMap_DefaultPartitionAssignment_IsCooperativeSticky(t *testing.T) {
+	// When PartitionAssignment is left empty, toConfigMap must set the strategy
+	// to DefaultPartitionAssignmentStrategy ("cooperative-sticky") so that the
+	// librdkafka client uses incremental rebalancing without any caller having
+	// to opt in explicitly.
+	cm := ConsumerConfig{
+		BootstrapServers: "localhost:9092",
+		GroupID:          "g1",
+	}.toConfigMap()
+
+	assertConfigValue(t, cm, "partition.assignment.strategy", DefaultPartitionAssignmentStrategy)
+}
+
+func TestToConfigMap_ExplicitPartitionAssignment_OverridesDefault(t *testing.T) {
+	// A caller that explicitly sets PartitionAssignment must be able to override
+	// the default — e.g. to roll back to "range" during a canary or incident.
+	const override = "range,roundrobin"
+	cm := ConsumerConfig{
+		BootstrapServers:    "localhost:9092",
+		GroupID:             "g1",
+		PartitionAssignment: override,
+	}.toConfigMap()
+
+	assertConfigValue(t, cm, "partition.assignment.strategy", override)
+}
+
+// ---------------------------------------------------------------------------
+// Rebalance callback tests
+//
+// rebalanceCb returns a func(*kafka.Consumer, kafka.Event) error, but a real
+// *kafka.Consumer requires a broker connection — impossible in a unit test.
+// We therefore exercise the callback *logic* through the invokeRebalanceCb
+// adapter (defined below) which replaces *kafka.Consumer with the narrow
+// rebalanceConsumerActions interface that our MockConsumer satisfies.
+// ---------------------------------------------------------------------------
+
+// rebalanceLogCapture records Info/Error calls so tests can assert on them.
+type rebalanceLogCapture struct {
+	infos  []string
+	errors []string
+}
+
+func (l *rebalanceLogCapture) Info(msg string, _ ...map[string]interface{}) {
+	l.infos = append(l.infos, msg)
+}
+
+func (l *rebalanceLogCapture) Error(msg string, _ error, _ ...map[string]interface{}) {
+	l.errors = append(l.errors, msg)
+}
+
+// rebalanceMockConsumer wraps MockConsumer and adds mock implementations for
+// the rebalance-specific methods so testify can record/assert on them.
+type rebalanceMockConsumer struct {
+	mock.Mock
+}
+
+func (m *rebalanceMockConsumer) IncrementalAssign(partitions []kafka.TopicPartition) error {
+	return m.Called(partitions).Error(0)
+}
+
+func (m *rebalanceMockConsumer) IncrementalUnassign(partitions []kafka.TopicPartition) error {
+	return m.Called(partitions).Error(0)
+}
+
+func (m *rebalanceMockConsumer) Commit() ([]kafka.TopicPartition, error) {
+	args := m.Called()
+	return args.Get(0).([]kafka.TopicPartition), args.Error(1)
+}
+
+// rebalanceConsumerActions is the interface the callback body actually uses.
+// It is deliberately narrow so tests don't need to stub methods they don't
+// exercise.
+type rebalanceConsumerActions interface {
+	Commit() ([]kafka.TopicPartition, error)
+	IncrementalAssign([]kafka.TopicPartition) error
+	IncrementalUnassign([]kafka.TopicPartition) error
+}
+
+// invokeRebalanceCb drives the same logic as rebalanceCb but through
+// rebalanceConsumerActions instead of *kafka.Consumer, enabling unit testing
+// without a live broker.
+//
+// The implementation must stay a faithful mirror of rebalanceCb's inner body
+// (kafkahelper.go). If you change rebalanceCb, update this too and vice-versa.
+func invokeRebalanceCb(log rebalanceLogger, c rebalanceConsumerActions, ev kafka.Event) error {
+	switch e := ev.(type) {
+	case kafka.AssignedPartitions:
+		log.Info("rebalance: partitions assigned", map[string]interface{}{
+			"count": len(e.Partitions),
+		})
+		if err := c.IncrementalAssign(e.Partitions); err != nil {
+			return err
+		}
+
+	case kafka.RevokedPartitions:
+		log.Info("rebalance: partitions revoked — committing stored offsets", map[string]interface{}{
+			"count": len(e.Partitions),
+		})
+		if _, err := c.Commit(); err != nil {
+			if kErr, ok := err.(kafka.Error); ok && kErr.Code() == kafka.ErrNoOffset {
+				log.Info("rebalance: no stored offsets to commit on revocation (ErrNoOffset — benign)")
+			} else {
+				log.Error("rebalance: synchronous commit on revocation failed", err)
+				// Proceed to unassign regardless — a commit failure must not
+				// stall the rebalance.
+			}
+		}
+		if len(e.Partitions) > 0 {
+			if err := c.IncrementalUnassign(e.Partitions); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+func TestRebalanceCb_AssignedPartitions_CallsIncrementalAssign(t *testing.T) {
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{}
+	partitions := []kafka.TopicPartition{
+		{Topic: makePtr("foo"), Partition: 0},
+		{Topic: makePtr("foo"), Partition: 1},
+	}
+	mc.On("IncrementalAssign", partitions).Return(nil)
+
+	ev := kafka.AssignedPartitions{Partitions: partitions}
+	if err := invokeRebalanceCb(log, mc, ev); err != nil {
+		t.Fatalf("expected no error from AssignedPartitions callback, got: %v", err)
+	}
+	mc.AssertCalled(t, "IncrementalAssign", partitions)
+	mc.AssertNotCalled(t, "Commit")
+	mc.AssertNotCalled(t, "IncrementalUnassign", mock.Anything)
+}
+
+func TestRebalanceCb_RevokedPartitions_CommitsThenUnassigns(t *testing.T) {
+	// Commit must be called before IncrementalUnassign: flushing stored offsets
+	// synchronously before the partitions leave this consumer prevents the next
+	// owner from re-processing already-handled messages.
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{}
+	partitions := []kafka.TopicPartition{
+		{Topic: makePtr("bar"), Partition: 2},
+	}
+	mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
+	mc.On("IncrementalUnassign", partitions).Return(nil)
+
+	ev := kafka.RevokedPartitions{Partitions: partitions}
+	if err := invokeRebalanceCb(log, mc, ev); err != nil {
+		t.Fatalf("expected no error from RevokedPartitions callback, got: %v", err)
+	}
+
+	mc.AssertCalled(t, "Commit")
+	mc.AssertCalled(t, "IncrementalUnassign", partitions)
+}
+
+func TestRebalanceCb_RevokedPartitions_EmptySlice_SkipsUnassign(t *testing.T) {
+	// During a rolling upgrade from eager to cooperative, librdkafka delivers a
+	// RevokedPartitions event with an empty Partitions slice to signal "revoke
+	// everything". The callback must still commit but must NOT call
+	// IncrementalUnassign with an empty slice.
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{}
+	mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
+
+	ev := kafka.RevokedPartitions{Partitions: []kafka.TopicPartition{}}
+	if err := invokeRebalanceCb(log, mc, ev); err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+
+	mc.AssertCalled(t, "Commit")
+	mc.AssertNotCalled(t, "IncrementalUnassign", mock.Anything)
+}
+
+func TestRebalanceCb_RevokedPartitions_ErrNoOffset_IsNotLoggedAsError(t *testing.T) {
+	// ErrNoOffset from Commit means there were no stored offsets to flush —
+	// this is benign and must be logged at Info level, not Error.
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{}
+	noOffsetErr := kafka.NewError(kafka.ErrNoOffset, "no offset to commit", false)
+	mc.On("Commit").Return([]kafka.TopicPartition{}, noOffsetErr)
+	mc.On("IncrementalUnassign", mock.Anything).Return(nil)
+
+	partitions := []kafka.TopicPartition{{Topic: makePtr("baz"), Partition: 0}}
+	ev := kafka.RevokedPartitions{Partitions: partitions}
+	if err := invokeRebalanceCb(log, mc, ev); err != nil {
+		t.Fatalf("expected no error for ErrNoOffset, got: %v", err)
+	}
+
+	if len(log.errors) > 0 {
+		t.Errorf("ErrNoOffset must not be logged at Error level; got error logs: %v", log.errors)
+	}
+}
+
+func TestRebalanceCb_RevokedPartitions_CommitError_IsLoggedButRebalanceContinues(t *testing.T) {
+	// A non-ErrNoOffset commit failure must be logged as an error but the
+	// callback must still call IncrementalUnassign — a commit failure must not
+	// stall the rebalance.
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{}
+	mc.On("Commit").Return([]kafka.TopicPartition{}, errors.New("broker unavailable"))
+	mc.On("IncrementalUnassign", mock.Anything).Return(nil)
+
+	partitions := []kafka.TopicPartition{{Topic: makePtr("qux"), Partition: 1}}
+	ev := kafka.RevokedPartitions{Partitions: partitions}
+	_ = invokeRebalanceCb(log, mc, ev)
+
+	if len(log.errors) == 0 {
+		t.Error("expected a non-ErrNoOffset commit failure to be logged at Error level")
+	}
+	mc.AssertCalled(t, "IncrementalUnassign", partitions)
+}

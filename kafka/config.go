@@ -25,6 +25,23 @@ const (
 // but SASLMechanism is left empty.
 const DefaultSASLMechanism = SASLMechanismScramSHA512
 
+// DefaultPartitionAssignmentStrategy is the partition.assignment.strategy that
+// toConfigMap sets when ConsumerConfig.PartitionAssignment is left empty.
+//
+// "cooperative-sticky" (COOPERATIVE_STICKY in the Kafka protocol) eliminates
+// stop-the-world eager rebalances: instead of revoking ALL partitions on every
+// group-membership change and re-assigning them from scratch, the coordinator
+// only moves the partitions that actually need to be reassigned. Every other
+// partition keeps being consumed without interruption, so a single pod restart
+// or scale event no longer freezes the entire consumer group.
+//
+// Rolling-upgrade note: a consumer group can only use cooperative rebalancing
+// once ALL members have switched to a cooperative assignor. During a rolling
+// deploy a transitional rebalance occurs (all partitions are temporarily
+// revoked) and then cooperative mode kicks in for subsequent rebalances. This
+// is safe and automatic - no coordinator-side changes are needed.
+const DefaultPartitionAssignmentStrategy = "cooperative-sticky"
+
 // SASL mechanisms this package has been exercised against. librdkafka (the C library
 // confluent-kafka-go binds to) implements SCRAM natively, so no extra system
 // dependency (e.g. cyrus-sasl, needed for GSSAPI/Kerberos) is required to use these.
@@ -143,14 +160,15 @@ func (c ConsumerConfig) Validate() error {
 func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
 	kafkaConfMap := kafka.ConfigMap{
-		"bootstrap.servers":        c.BootstrapServers,
-		"group.id":                 c.GroupID,
-		"enable.auto.commit":       true,
-		"debug":                    "consumer",
-		"go.logs.channel.enable":   true,
-		"enable.auto.offset.store": false,
-		"auto.commit.interval.ms":  5000,
-		"auto.offset.reset":        "latest",
+		"bootstrap.servers":             c.BootstrapServers,
+		"group.id":                      c.GroupID,
+		"enable.auto.commit":            true,
+		"debug":                         "consumer",
+		"go.logs.channel.enable":        true,
+		"enable.auto.offset.store":      false,
+		"auto.commit.interval.ms":       5000,
+		"auto.offset.reset":             "latest",
+		"partition.assignment.strategy": DefaultPartitionAssignmentStrategy,
 	}
 
 	if c.AutoOffsetReset != "" {
@@ -158,6 +176,7 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 	}
 
 	if c.PartitionAssignment != "" {
+		// Explicit caller override wins over the default above.
 		kafkaConfMap["partition.assignment.strategy"] = c.PartitionAssignment
 	}
 

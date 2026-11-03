@@ -5,99 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v2.1.0] 2026-11-03
 
 # Added
 
-- Rack-aware consumption for Kafka: `kafka.ConsumerConfig` gained `ClientRack`, which
-  sets librdkafka's `client.rack` property. Combined with a matching `broker.rack` on
-  the brokers (not something this package controls), this enables KIP-392 follower
-  fetching, letting the broker serve a consumer's fetch from a same-rack replica instead
-  of always the partition leader - reduces cross-zone traffic/cost and latency in
-  multi-AZ clusters. Off by default (`ClientRack` empty) - zero config-map difference
-  for existing callers. Not applicable to `mw/rabbitmq` - RabbitMQ has no partition
-  replica/follower-fetch concept for this to map to.
+- **Incremental Cooperative Rebalancing for Kafka**: `kafka.ConsumerConfig` gained `PartitionAssignmentStrategy`, 
+  defaulting to `cooperative-sticky` (replacing `librdkafka`'s eager `range,roundrobin` default). This enables 
+  Kafka's incremental cooperative rebalance protocol, ensuring unaffected partitions continue message consumption 
+  uninterrupted during rolling updates, canaries, and scaling events.
+- **Synchronous Rebalance Callback & Offset Commit**: Registered a dedicated `rebalanceCb` in `SubscribeTopics`. 
+  On `kafka.RevokedPartitions`, pending in-memory stored offsets are flushed and committed synchronously before 
+  partitions are unassigned, eliminating the duplicate processing window inherent in asynchronous commit timers 
+  during pod lifecycle transitions.
+- **Rack-aware consumption for Kafka**: `kafka.ConsumerConfig` gained `ClientRack`, which sets `librdkafka`'s 
+  `client.rack` property. Combined with a matching `broker.rack` on the brokers, this enables KIP-392 follower 
+  fetching, letting the broker serve a consumer's fetch from a same-rack replica instead of always the partition 
+  leader—reducing cross-zone traffic costs and latency in multi-AZ clusters. Off by default (`ClientRack` 
+  empty)—zero config-map difference for existing callers. Not applicable to `mw/rabbitmq`.
+- **New `mw/otelemetry` package**: OpenTelemetry-based distributed tracing middleware (`TraceHandler`), 
+  following the same `ziggurat.Use`-compatible shape as `mw/prometheus`/`mw/event`. It extracts/starts a span as 
+  a child of any trace context found in a message's headers; a panic is recorded on the span as an error and then 
+  re-panicked, matching the contract of the metrics middleware.
+- `otelemetry.Setup(ctx, serviceName, otlpEndpoint string, enabled bool)` wires a `TracerProvider` exporting 
+  via OTLP/gRPC (sampling: `AlwaysSample`). Tracing is opt-in and off by default: when `enabled` is `false`, 
+  `Setup` does no OTLP dial and registers nothing, returning a no-op shutdown—safe to call unconditionally from 
+  `main`, gated purely by the `enabled` flag.
+- Nothing in this package runs unless the application explicitly imports it and adds `TraceHandler` to its own 
+  `ziggurat.Use(...)` chain.
+- `go.opentelemetry.io/otel` (and its SDK/OTLP-exporter submodules) added as direct dependencies of the root 
+  module.
+- `docker-compose-tracing.yml` + `otel-collector-config.yml`: local OTel Collector + Jaeger stack for development 
+  (`docker compose -f docker-compose-tracing.yml up`, traces visible at `http://localhost:16686`), mirroring the 
+  existing `docker-compose-metrics.yml`.
+- **RabbitMQ publisher confirms**: new `rabbitmq.WithPublisherConfirms(buffer uint)` option on `AutoRetry`, 
+  applied uniformly to every publisher an `ARetry` creates (`Publish`, `Retry`, and the delay/DLQ republish it 
+  triggers, as well as DLQ replay). With this enabled, a broker-level nack surfaces as a returned error instead of 
+  being indistinguishable from a successful hand-off to the TCP connection. `buffer` caps in-flight confirms across 
+  the publisher pool; `0` defaults to 100. Off by default—no behavior change for existing callers unless opted in.
+- **Kafka SASL/SCRAM authentication**: `kafka.ConsumerConfig` gained `SecurityProtocol`, `SASLMechanism`, 
+  `SASLUsername`, `SASLPassword`, and `SSLCALocation` fields (plus `kafka.SecurityProtocolSASLPlaintext`/
+  `SecurityProtocolSASLSSL` and `kafka.SASLMechanismScramSHA256`/`SASLMechanismScramSHA512` constants), letting a 
+  `kafka.ConsumerGroup` authenticate via SASL/SCRAM so broker-side ACLs apply.
+- Defaults, both overridable: `SASLMechanism` defaults to `SASLMechanismScramSHA512` when credentials are 
+  provided without an explicit mechanism; `SecurityProtocol` defaults to `SecurityProtocolSASLPlaintext` whenever 
+  SASL credentials are configured.
+- `kafka.ConsumerConfig.Validate() error`: validates configuration fields before `ConsumerGroup.Consume` starts 
+  any worker or attempts a connection. Exported so callers can validate configuration at startup.
+- `mw/prometheus`: new `ziggurat_go_retry_published_total{queue}`, `ziggurat_go_retry_dlq_published_total{queue}`, 
+  and `ziggurat_go_retry_replay_total{queue,result}` counters, wired into `mw/rabbitmq`'s retry/DLQ publish and 
+  DLQ-replay paths.
 
-## [v2.1.0] 2026-10-17
+### Changed
 
-# Added
-
-- New `mw/otelemetry` package: OpenTelemetry-based distributed tracing middleware
-  (`TraceHandler`), following the same `ziggurat.Use`-compatible shape as
-  `mw/prometheus`/`mw/event`. It extracts/starts a span as a child of any trace context
-  found in a message's headers; a panic is recorded on the span as an error and then
-  re-panicked, same never-swallow contract as the metrics middleware.
-  - `otelemetry.Setup(ctx, serviceName, otlpEndpoint string, enabled bool)` wires a
-    `TracerProvider` exporting via OTLP/gRPC (sampling: `AlwaysSample` - revisit if
-    Kafka throughput makes this too expensive). Tracing is opt-in and off by default:
-    when `enabled` is `false`, `Setup` does no OTLP dial and registers nothing,
-    returning a no-op shutdown - safe to call unconditionally from `main`, gated purely
-    by the `enabled` flag (e.g. sourced from a `TRACING_ENABLED` env var, so an unset
-    var disables it by default).
-  - Nothing in this package runs unless the application explicitly imports it and adds
-    `TraceHandler` to its own `ziggurat.Use(...)` chain.
-  - `go.opentelemetry.io/otel` (and its SDK/OTLP-exporter submodules) added as a direct
-    dependency of the root module.
-  - `docker-compose-tracing.yml` + `otel-collector-config.yml`: a local OTel Collector +
-    Jaeger stack for development (`docker compose -f docker-compose-tracing.yml up`,
-    traces visible at `http://localhost:16686`), mirroring the existing
-    `docker-compose-metrics.yml`.
-- RabbitMQ publisher confirms: new `rabbitmq.WithPublisherConfirms(buffer uint)` option
-  on `AutoRetry`, applied uniformly to every publisher an `ARetry` creates (`Publish`,
-  `Retry` and the delay/DLQ republish it triggers, and DLQ replay). With this enabled, a
-  broker-level nack surfaces as a returned error instead of being indistinguishable from
-  a successful hand-off to the TCP connection. `buffer` caps in-flight confirms across
-  the publisher pool; `0` defaults to 100. Off by default - no behavior change for
-  existing callers unless they opt in. The README's old `[!WARNING]` about missing
-  publisher confirms is replaced with a `[!NOTE]` documenting this.
-- Kafka SASL/SCRAM authentication: `kafka.ConsumerConfig` gained `SecurityProtocol`,
-  `SASLMechanism`, `SASLUsername`, `SASLPassword`, and `SSLCALocation` fields (plus
-  `kafka.SecurityProtocolSASLPlaintext`/`SecurityProtocolSASLSSL` and
-  `kafka.SASLMechanismScramSHA256`/`SASLMechanismScramSHA512` constants), letting a
-  `kafka.ConsumerGroup` authenticate via SASL/SCRAM so that broker-side ACLs configured
-  for that principal actually apply. This package has no ACL logic of its own - ACLs
-  are authorized by the broker; this only handles client-side authentication.
-  - Defaults, both overridable: `SASLMechanism` defaults to `SASLMechanismScramSHA512`
-    when `SASLUsername`/`SASLPassword` are set but `SASLMechanism` is left empty;
-    `SecurityProtocol` defaults to `SecurityProtocolSASLPlaintext` whenever SASL is
-    configured and left empty.
-  - `kafka.ConsumerConfig.Validate() error`: validates these fields before
-    `ConsumerGroup.Consume` starts any worker or attempts a connection, rejecting an
-    incomplete SASL config (only one of `SASLUsername`/`SASLPassword` set, or
-    `SASLMechanism` set with neither credential), an unsupported `SASLMechanism`, or a
-    `SecurityProtocol` incompatible with SASL once SASL is configured. Exported so
-    callers can also validate configuration at startup, ahead of calling `Consume`.
-  - No behavior change for existing callers that don't set any of these fields.
-- `mw/prometheus`: new `ziggurat_go_retry_published_total{queue}`,
-  `ziggurat_go_retry_dlq_published_total{queue}`, and
-  `ziggurat_go_retry_replay_total{queue,result}` counters, wired into `mw/rabbitmq`'s
-  retry/DLQ publish and DLQ-replay paths (previously uninstrumented).
-
-# Changed
-
-- `mw/prometheus` handler metrics now carry an `outcome` label (`success`/`panic` -
-  `ziggurat.Handler.Handle` has no error return, so "error" isn't an outcome this
-  middleware can observe). A panic is recorded (outcome=panic) and then re-panicked,
-  per the decision to revert blanket panic recovery (see the `v2.0.24` entry below).
-  This affects any existing caller of `mw/prometheus.PublishHandlerMetrics` - the
-  metric gains a new label dimension with no way to opt out.
-- `kafka` and `mw/rabbitmq` consumers now capture native transport message headers
-  (Kafka record headers, AMQP headers) into `Event.Metadata[ziggurat.MetadataKeyHeaders]`
-  (`map[string]string`) - previously read by nothing. This is unconditional: for
-  RabbitMQ consumers specifically, a message that previously arrived with a `nil`
-  `Metadata` can now arrive with a non-nil map, if the producer set native AMQP headers
-  - worth checking any code that does `Metadata == nil`/`len(Metadata) == 0`.
-- `mw/rabbitmq`'s retry/DLQ republish paths (`ARetry.Publish`, and the delay/DLQ
-  republish `Retry` triggers) now inject the active span's trace context into the
-  outgoing message's headers alongside the existing `retry-origin` header, so a
-  republished message continues the same trace as its original consume. This runs
-  unconditionally on every retry/DLQ publish, but is a true no-op when the application
-  never set up `mw/otelemetry` (OTel's default no-op propagator adds nothing).
-  `mw/rabbitmq` now has a direct import dependency on `mw/otelemetry`.
-- The new retry/DLQ/replay prometheus counters above increment unconditionally whenever
-  `AutoRetry` publishes/replays, regardless of whether the application calls
-  `prometheus.Register()` - harmless no-op if it doesn't, since an unregistered counter
-  is never scraped.
+- `mw/prometheus` handler metrics now carry an `outcome` label (`success`/`panic`). A panic is recorded 
+  (`outcome=panic`) and then re-panicked. This affects existing callers of `mw/prometheus.PublishHandlerMetrics` as 
+  the metric gains a new label dimension.
+- `kafka` and `mw/rabbitmq` consumers now capture native transport message headers (Kafka record headers, AMQP 
+  headers) into `Event.Metadata[ziggurat.MetadataKeyHeaders]` (`map[string]string`).
+- `mw/rabbitmq`'s retry/DLQ republish paths (`ARetry.Publish` and delay/DLQ republish `Retry`) now inject the 
+  active span's trace context into outgoing message headers alongside the existing `retry-origin` header. `mw/rabbitmq` 
+  now has a direct import dependency on `mw/otelemetry`.
+- The retry/DLQ/replay Prometheus counters increment unconditionally whenever `AutoRetry` publishes/replays; safe 
+  no-op if `prometheus.Register()` is not called.
 
 ## [v2.0.24] 2026-10-01
 

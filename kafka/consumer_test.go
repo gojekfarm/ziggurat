@@ -25,7 +25,7 @@ func TestWorkerOrchestration(t *testing.T) {
 				Topics:           []string{"foo"},
 				ConsumerCount:    5,
 			},
-			consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string) confluentConsumer {
+			consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string, _ rebalanceLogger) confluentConsumer {
 				return &mc
 			},
 		}
@@ -69,7 +69,7 @@ func TestConsumerGroup_FatalErrorIsNotSwallowed(t *testing.T) {
 			Topics:           []string{"foo"},
 			ConsumerCount:    1,
 		},
-		consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string) confluentConsumer {
+		consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string, _ rebalanceLogger) confluentConsumer {
 			return &mc
 		},
 	}
@@ -137,7 +137,7 @@ func TestConsumerGroup_EachWorkerGetsOwnConsumerInstance(t *testing.T) {
 			Topics:           []string{"foo"},
 			ConsumerCount:    consumerCount,
 		},
-		consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string) confluentConsumer {
+		consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string, _ rebalanceLogger) confluentConsumer {
 			mu.Lock()
 			defer mu.Unlock()
 
@@ -208,7 +208,7 @@ func TestConsumerGroup_Consume_InvalidSASLConfig_FailsFastWithoutStartingWorkers
 			// Incomplete SASL config: password set, username is not.
 			SASLPassword: "s3cret",
 		},
-		consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string) confluentConsumer {
+		consumerMakeFunc: func(configMap *kafka.ConfigMap, strings []string, _ rebalanceLogger) confluentConsumer {
 			consumerMakeFuncCalled = true
 			return &MockConsumer{}
 		},

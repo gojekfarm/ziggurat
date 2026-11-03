@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/gojekfarm/ziggurat/v2"
 	"github.com/gojekfarm/ziggurat/v2/logger"
-	"sync"
 )
 
 var ErrCleanShutdown = errors.New("error: clean shutdown of kafka consumers")
@@ -18,7 +19,7 @@ type ConsumerGroup struct {
 	GroupConfig      ConsumerConfig
 	wg               *sync.WaitGroup
 	c                confluentConsumer
-	consumerMakeFunc func(*kafka.ConfigMap, []string) confluentConsumer
+	consumerMakeFunc func(*kafka.ConfigMap, []string, rebalanceLogger) confluentConsumer
 }
 
 func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) error {
@@ -60,7 +61,7 @@ func (cg *ConsumerGroup) Consume(ctx context.Context, handler ziggurat.Handler) 
 		// always looked like it should do: create N genuinely independent members of the
 		// same Kafka consumer group, exactly as Kafka's own group-coordination protocol
 		// (and the partition-sizing guidance in the README) already assumes.
-		confCons := cg.consumerMakeFunc(&cm, cg.GroupConfig.Topics)
+		confCons := cg.consumerMakeFunc(&cm, cg.GroupConfig.Topics, cg.Logger)
 
 		if i == 0 {
 			// Preserved for ConsumerHandle's existing public API. With ConsumerCount > 1
