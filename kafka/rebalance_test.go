@@ -73,6 +73,7 @@ func (l *rebalanceLogCapture) Error(msg string, _ error, _ ...map[string]interfa
 // the rebalance-specific methods so testify can record/assert on them.
 type rebalanceMockConsumer struct {
 	mock.Mock
+	protocol string
 }
 
 func (m *rebalanceMockConsumer) IncrementalAssign(partitions []kafka.TopicPartition) error {
@@ -88,53 +89,28 @@ func (m *rebalanceMockConsumer) Commit() ([]kafka.TopicPartition, error) {
 	return args.Get(0).([]kafka.TopicPartition), args.Error(1)
 }
 
-// rebalanceConsumerActions is the interface the callback body actually uses.
-// It is deliberately narrow so tests don't need to stub methods they don't
-// exercise.
-type rebalanceConsumerActions interface {
-	Commit() ([]kafka.TopicPartition, error)
-	IncrementalAssign([]kafka.TopicPartition) error
-	IncrementalUnassign([]kafka.TopicPartition) error
+// rebalanceMockConsumer implements rebalanceActor. protocol is what
+// GetRebalanceProtocol reports; empty means the cooperative-sticky default these
+// tests were written for.
+func (m *rebalanceMockConsumer) Assign(partitions []kafka.TopicPartition) error {
+	return m.Called(partitions).Error(0)
 }
 
-// invokeRebalanceCb drives the same logic as rebalanceCb but through
-// rebalanceConsumerActions instead of *kafka.Consumer, enabling unit testing
-// without a live broker. tracker and key let a test isolate pause-tracking state
-// (and simulate distinct consumer instances) rather than sharing defaultPauseTracker
-// across test cases.
-//
-// The implementation must stay a faithful mirror of rebalanceCb's inner body
-// (kafkahelper.go). If you change rebalanceCb, update this too and vice-versa.
-func invokeRebalanceCb(log rebalanceLogger, tracker *rebalancePauseTracker, key any, memberID string, c rebalanceConsumerActions, ev kafka.Event) error {
-	switch e := ev.(type) {
-	case kafka.AssignedPartitions:
-		now := time.Now()
-		pause, hadPause := tracker.assigned(key, now)
-		log.Info("rebalance: partitions assigned", assignedPartitionsLogFields(now, memberID, e.Partitions, pause, hadPause))
-		if err := c.IncrementalAssign(e.Partitions); err != nil {
-			return err
-		}
+func (m *rebalanceMockConsumer) Unassign() error {
+	return m.Called().Error(0)
+}
 
-	case kafka.RevokedPartitions:
-		now := time.Now()
-		tracker.revoked(key, now)
-		log.Info("rebalance: partitions revoked — committing stored offsets", revokedPartitionsLogFields(now, memberID, e.Partitions))
-		if _, err := c.Commit(); err != nil {
-			if kErr, ok := err.(kafka.Error); ok && kErr.Code() == kafka.ErrNoOffset {
-				log.Info("rebalance: no stored offsets to commit on revocation (ErrNoOffset — benign)")
-			} else {
-				log.Error("rebalance: synchronous commit on revocation failed", err)
-				// Proceed to unassign regardless — a commit failure must not
-				// stall the rebalance.
-			}
-		}
-		if len(e.Partitions) > 0 {
-			if err := c.IncrementalUnassign(e.Partitions); err != nil {
-				return err
-			}
-		}
+func (m *rebalanceMockConsumer) GetRebalanceProtocol() string {
+	if m.protocol == "" {
+		return "COOPERATIVE"
 	}
-	return nil
+	return m.protocol
+}
+
+// invokeRebalanceCb runs the production handleRebalance against a mock consumer.
+// tracker and key let a test isolate pause-tracking state.
+func invokeRebalanceCb(log rebalanceLogger, tracker *rebalancePauseTracker, key any, memberID string, c rebalanceActor, ev kafka.Event) error {
+	return handleRebalance(log, tracker, key, memberID, c, ev)
 }
 
 // ---------------------------------------------------------------------------
@@ -324,5 +300,52 @@ func TestRebalanceCb_PauseTracker_IsolatedPerKey(t *testing.T) {
 	fields := log.infoFields[len(log.infoFields)-1]
 	if _, present := fields["pause_duration_ms"]; present {
 		t.Errorf("expected no pause_duration_ms for consumer-b (only consumer-a was revoked), got fields: %+v", fields)
+	}
+}
+
+func TestRebalanceCb_Eager_AssignedPartitions_CallsAssignNotIncremental(t *testing.T) {
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{protocol: "EAGER"}
+	partitions := []kafka.TopicPartition{{Partition: 0}, {Partition: 1}}
+	mc.On("Assign", partitions).Return(nil)
+
+	err := invokeRebalanceCb(log, newRebalancePauseTracker(), "c1", "m1", mc, kafka.AssignedPartitions{Partitions: partitions})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	mc.AssertCalled(t, "Assign", partitions)
+	mc.AssertNotCalled(t, "IncrementalAssign", partitions)
+}
+
+func TestRebalanceCb_Eager_RevokedPartitions_CommitsThenUnassignsAll(t *testing.T) {
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{protocol: "EAGER"}
+	partitions := []kafka.TopicPartition{{Partition: 0}, {Partition: 1}}
+	mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
+	mc.On("Unassign").Return(nil)
+
+	err := invokeRebalanceCb(log, newRebalancePauseTracker(), "c1", "m1", mc, kafka.RevokedPartitions{Partitions: partitions})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	mc.AssertCalled(t, "Commit")
+	mc.AssertCalled(t, "Unassign")
+	mc.AssertNotCalled(t, "IncrementalUnassign", partitions)
+}
+
+func TestRebalanceCb_Eager_PauseDurationIsReported(t *testing.T) {
+	log := &rebalanceLogCapture{}
+	mc := &rebalanceMockConsumer{protocol: "EAGER"}
+	tracker := newRebalancePauseTracker()
+	mc.On("Commit").Return([]kafka.TopicPartition{}, nil)
+	mc.On("Unassign").Return(nil)
+	mc.On("Assign", mock.Anything).Return(nil)
+
+	_ = invokeRebalanceCb(log, tracker, "c1", "m1", mc, kafka.RevokedPartitions{Partitions: []kafka.TopicPartition{{Partition: 0}}})
+	_ = invokeRebalanceCb(log, tracker, "c1", "m1", mc, kafka.AssignedPartitions{Partitions: []kafka.TopicPartition{{Partition: 0}}})
+
+	last := log.infoFields[len(log.infoFields)-1]
+	if _, ok := last["pause_duration_ms"]; !ok {
+		t.Fatalf("expected pause_duration_ms on assignment after a revoke, got %v", last)
 	}
 }

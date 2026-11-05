@@ -108,72 +108,72 @@ func revokedPartitionsLogFields(now time.Time, memberID string, partitions []kaf
 	}
 }
 
-// rebalanceCb returns a kafka.RebalanceCb for use with SubscribeTopics.
-//
-// When the consumer group uses a cooperative assignor ("cooperative-sticky"),
-// the broker sends incremental assignment/revocation events rather than
-// revoking ALL partitions and re-assigning from scratch on every membership
-// change. This callback handles both sides of that protocol:
-//
-//   - AssignedPartitions: calls IncrementalAssign so that only newly-granted
-//     partitions are added to this consumer's assignment without touching the
-//     ones it is already consuming. librdkafka will not start fetching from
-//     the new partitions until IncrementalAssign is called.
-//
-//   - RevokedPartitions: synchronously commits any in-memory stored offsets
-//     before calling IncrementalUnassign. The synchronous commit is the key
-//     safety step: the auto-commit timer (auto.commit.interval.ms) may not have
-//     fired yet, so StoreOffsets-only offsets would be lost if we handed the
-//     partitions back to the coordinator without flushing them first. A lost
-//     stored offset means the next owner of that partition restarts from the
-//     last *committed* position, producing duplicates.
-//
-// If the group is running with an eager assignor (e.g. during a rolling upgrade
-// where some members have not yet switched to cooperative-sticky), librdkafka
-// delivers a RevokedPartitions event with an empty Partitions slice to signal
-// "revoke everything". The nil-check on ev.Partitions handles that case: we
-// still commit synchronously but skip the no-op IncrementalUnassign call.
+// rebalanceCb returns a kafka.RebalanceCb for use with SubscribeTopics. It supports
+// both rebalance protocols: with a cooperative assignor ("cooperative-sticky") it
+// applies incremental assign/unassign deltas, with an eager one (roundrobin, range)
+// it does a full Assign/Unassign. See handleRebalance.
 func rebalanceCb(logger rebalanceLogger) func(*kafka.Consumer, kafka.Event) error {
 	return func(c *kafka.Consumer, ev kafka.Event) error {
-		switch e := ev.(type) {
-		case kafka.AssignedPartitions:
-			now := time.Now()
-			pause, hadPause := defaultPauseTracker.assigned(c, now)
-			logger.Info("rebalance: partitions assigned", assignedPartitionsLogFields(now, c.String(), e.Partitions, pause, hadPause))
+		return handleRebalance(logger, defaultPauseTracker, c, c.String(), c, ev)
+	}
+}
+
+// rebalanceActor is the subset of *kafka.Consumer that handleRebalance needs.
+type rebalanceActor interface {
+	Commit() ([]kafka.TopicPartition, error)
+	Assign([]kafka.TopicPartition) error
+	Unassign() error
+	IncrementalAssign([]kafka.TopicPartition) error
+	IncrementalUnassign([]kafka.TopicPartition) error
+	GetRebalanceProtocol() string
+}
+
+// handleRebalance picks the assignment API from the protocol the group actually
+// negotiated, not from our own config: IncrementalAssign/IncrementalUnassign are
+// rejected under EAGER, and because calling them marks the event as handled the
+// client's own fallback assign never runs, leaving the consumer with no partitions.
+func handleRebalance(logger rebalanceLogger, tracker *rebalancePauseTracker, key any, memberID string, c rebalanceActor, ev kafka.Event) error {
+	cooperative := c.GetRebalanceProtocol() == "COOPERATIVE"
+	switch e := ev.(type) {
+	case kafka.AssignedPartitions:
+		now := time.Now()
+		pause, hadPause := tracker.assigned(key, now)
+		logger.Info("rebalance: partitions assigned", assignedPartitionsLogFields(now, memberID, e.Partitions, pause, hadPause))
+		if cooperative {
 			if err := c.IncrementalAssign(e.Partitions); err != nil {
 				return fmt.Errorf("kafka: IncrementalAssign failed: %w", err)
 			}
+		} else if err := c.Assign(e.Partitions); err != nil {
+			return fmt.Errorf("kafka: Assign failed: %w", err)
+		}
 
-		case kafka.RevokedPartitions:
-			now := time.Now()
-			defaultPauseTracker.revoked(c, now)
-			logger.Info("rebalance: partitions revoked — committing stored offsets", revokedPartitionsLogFields(now, c.String(), e.Partitions))
-			// Synchronously flush in-memory stored offsets before handing
-			// partitions back to the coordinator. This closes the window where
-			// the auto-commit timer has not yet fired but partitions are being
-			// moved away, which would otherwise produce duplicates for the next
-			// consumer that picks them up.
-			if _, err := c.Commit(); err != nil {
-				// ErrNoOffset is benign: it means there were no stored offsets
-				// to commit (e.g. no messages have been processed yet on these
-				// partitions). Treat it as a non-fatal informational event.
-				if kErr, ok := err.(kafka.Error); ok && kErr.Code() == kafka.ErrNoOffset {
-					logger.Info("rebalance: no stored offsets to commit on revocation (ErrNoOffset — benign)")
-				} else {
-					logger.Error("rebalance: synchronous commit on revocation failed", err)
-					// Return the error so librdkafka can log it; the unassign
-					// still proceeds — a commit failure must not block the
-					// rebalance or the group will stall.
-				}
+	case kafka.RevokedPartitions:
+		now := time.Now()
+		tracker.revoked(key, now)
+		logger.Info("rebalance: partitions revoked — committing stored offsets", revokedPartitionsLogFields(now, memberID, e.Partitions))
+		// Synchronously flush in-memory stored offsets before handing partitions
+		// back: the auto-commit timer may not have fired yet, and a lost stored
+		// offset makes the next owner re-process from the last committed position.
+		if _, err := c.Commit(); err != nil {
+			// ErrNoOffset is benign: nothing was stored on these partitions yet.
+			if kErr, ok := err.(kafka.Error); ok && kErr.Code() == kafka.ErrNoOffset {
+				logger.Info("rebalance: no stored offsets to commit on revocation (ErrNoOffset — benign)")
+			} else {
+				// A commit failure must not block the rebalance or the group stalls.
+				logger.Error("rebalance: synchronous commit on revocation failed", err)
 			}
+		}
+		if cooperative {
 			if len(e.Partitions) > 0 {
 				if err := c.IncrementalUnassign(e.Partitions); err != nil {
 					return fmt.Errorf("kafka: IncrementalUnassign failed: %w", err)
 				}
 			}
+		} else if err := c.Unassign(); err != nil {
+			return fmt.Errorf("kafka: Unassign failed: %w", err)
 		}
-		return nil
 	}
+	return nil
 }
 
 // createConsumer builds a *kafka.Consumer, subscribes it to topics with the
