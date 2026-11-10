@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gojekfarm/ziggurat/v2"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	"github.com/gojekfarm/ziggurat/v2"
 
 	zl "github.com/gojekfarm/ziggurat/v2/logger"
 	"github.com/gojekfarm/ziggurat/v2/mw/otelemetry"
@@ -42,7 +43,7 @@ type dsReplayResp struct {
 type ARetry struct {
 	publishDialer *amqpextra.Dialer
 	consumeDialer *amqpextra.Dialer
-	once          sync.Once
+	initMu        sync.Mutex
 	hosts         []string
 	amqpURLs      []string
 	username      string
@@ -98,11 +99,27 @@ func AutoRetry(qc Queues, opts ...Opts) *ARetry {
 	for _, o := range opts {
 		o(r)
 	}
-	AMQPURLs := make([]string, 0, len(r.hosts))
+	r.amqpURLs = make([]string, 0, len(r.hosts))
 	for _, h := range r.hosts {
-		r.amqpURLs = append(AMQPURLs, constructAMQPURL(h, r.username, r.password))
+		r.amqpURLs = append(r.amqpURLs, constructAMQPURL(h, r.username, r.password))
 	}
 	return r
+}
+
+// ensurePublishers initialises the publishers on first use and, unlike a sync.Once,
+// tries again on the next call if that initialisation failed - a broker that is down
+// when the first retry happens must not disable retries for the life of the process.
+func (r *ARetry) ensurePublishers(ctx context.Context) error {
+	r.initMu.Lock()
+	defer r.initMu.Unlock()
+	if r.publishDialer != nil {
+		return nil
+	}
+	r.ogLogger.Info("[amqp] initialising publishers")
+	if err := r.InitPublishers(ctx); err != nil {
+		return fmt.Errorf("could not start RabbitMQ publishers: %w", err)
+	}
+	return nil
 }
 
 func (r *ARetry) publish(c context.Context, event *ziggurat.Event, queue string) error {
@@ -121,23 +138,17 @@ func (r *ARetry) publish(c context.Context, event *ziggurat.Event, queue string)
 
 // Publish can be called from anywhere and messages can be sent to any queue
 func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey string, queueType string, expirationMS string) error {
-	r.once.Do(func() {
-		r.ogLogger.Info("[amqp] init from publish")
-		err := r.InitPublishers(ctx)
-		if err != nil {
-			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
-		}
-	})
-	var err error
-	exchange := fmt.Sprintf("%s_%s", queueKey, "exchange")
+	if err := r.ensurePublishers(ctx); err != nil {
+		return err
+	}
+
 	p, err := r.publisherPool.get(ctx)
 	if err != nil {
 		return err
 	}
+
 	defer r.publisherPool.put(p)
-	if err != nil {
-		return err
-	}
+
 	eb, err := json.Marshal(event)
 	if err != nil {
 		return err
@@ -150,53 +161,62 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 		headers[k] = v
 	}
 
+	exchange := fmt.Sprintf("%s_%s", queueKey, "exchange")
 	msg := publisher.Message{
 		Exchange: exchange,
 		Key:      queueType,
 		Publishing: amqp.Publishing{
-			Expiration: expirationMS,
-			Body:       eb,
-			Headers:    headers,
+			DeliveryMode: amqp.Persistent,
+			Expiration:   expirationMS,
+			Body:         eb,
+			Headers:      headers,
 		},
 	}
 	return p.Publish(msg)
 }
 
 func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey string) error {
-	r.once.Do(func() {
-		r.ogLogger.Info("[amqp] running init function from retry")
-		err := r.InitPublishers(ctx)
-		if err != nil {
-			panic(fmt.Sprintf("could not start RabbitMQ publishers:%v", err))
-		}
-	})
+	if err := r.ensurePublishers(ctx); err != nil {
+		return err
+	}
 	return r.publish(ctx, event, queueKey)
 }
 
+// InitPublishers binds the publish connection to a context that is never cancelled.
+// The caller's ctx is usually a handler's, and that is cancelled at shutdown exactly
+// while in-flight messages still need to be retried; tying the publishers to it would
+// close them and drop those messages.
 func (r *ARetry) InitPublishers(ctx context.Context) error {
+	ctx = context.WithoutCancel(ctx)
 	dialer, err := newDialer(ctx, r.amqpURLs, r.logger)
 	if err != nil {
 		return err
 	}
-	r.publishDialer = dialer
-	r.publisherPool, err = newPubPool(10, dialer, r.logger, r.publisherOptions()...)
+	pool, err := newPubPool(10, dialer, r.logger, r.publisherOptions()...)
 	if err != nil {
+		dialer.Close()
 		return err
 	}
 
-	ch, err := getChannelFromDialer(ctx, r.publishDialer, r.connTimeout)
+	ch, err := getChannelFromDialer(ctx, dialer, r.connTimeout)
 	if err != nil {
+		dialer.Close()
 		return err
 	}
 
 	for _, qc := range r.queueConfig {
 		if err := createQueuesAndExchanges(ch, qc.QueueKey, r.ogLogger); err != nil {
 			r.ogLogger.Error("error creating queues and exchanges", err)
-			return fmt.Errorf("error iniitializing publishers:%w", err)
+			_ = ch.Close()
+			dialer.Close()
+			return fmt.Errorf("error initializing publishers:%w", err)
 		}
 	}
-	err = ch.Close()
-	r.ogLogger.Error("error closing channel", err)
+	if err := ch.Close(); err != nil {
+		r.ogLogger.Error("error closing channel", err)
+	}
+	r.publisherPool = pool
+	r.publishDialer = dialer
 	return nil
 }
 
@@ -228,11 +248,12 @@ func (r *ARetry) Consume(ctx context.Context, h ziggurat.Handler) error {
 			wg.Add(1)
 			go func(qc QueueConfig) {
 				cons, err := startConsumer(ctx, r.consumeDialer, qc, h, r.logger, r.ogLogger)
+				defer wg.Done()
 				if err != nil {
-					r.ogLogger.Error("error starting consumer", err)
+					r.ogLogger.Error("error starting consumer", err, map[string]any{"queue": qc.QueueKey})
+					return
 				}
 				<-cons.NotifyClosed()
-				wg.Done()
 			}(qc)
 		}
 	}
@@ -391,7 +412,8 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 			Key:      QueueTypeInstant,
 			Exchange: fmt.Sprintf("%s_%s", queue, "exchange"),
 			Publishing: amqp.Publishing{
-				Body: m.Body,
+				DeliveryMode: amqp.Persistent,
+				Body:         m.Body,
 				// Forward the original message's headers (including any traceparent set
 				// when it was first published to retry/DLQ) rather than dropping them -
 				// a replayed message should continue the trace it was already part of,

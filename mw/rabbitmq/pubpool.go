@@ -30,7 +30,9 @@ func (c *publisherPool) get(ctx context.Context) (*publisher.Publisher, error) {
 	case pub := <-c.pool:
 		return pub, nil
 	default:
-		pub, err := getPublisher(ctx, c.d, c.l, c.opts...)
+		// Pooled publishers outlive the call that created them, so they must not
+		// close when that caller's context is cancelled.
+		pub, err := getPublisher(context.WithoutCancel(ctx), c.d, c.l, c.opts...)
 		if err != nil {
 			return nil, fmt.Errorf("could not get a channel from publisher pool:%v\n", err)
 		}

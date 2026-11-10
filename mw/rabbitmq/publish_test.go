@@ -28,8 +28,9 @@ func Test_publish(t *testing.T) {
 			Exchange: "foo_exchange",
 			Key:      "delay",
 			Publishing: amqp.Publishing{
-				Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
-				Expiration: "100",
+				DeliveryMode: amqp.Persistent,
+				Headers:      map[string]interface{}{"retry-origin": "ziggurat-go"},
+				Expiration:   "100",
 				Body: toJSON(ziggurat.Event{
 					Metadata: map[string]any{KeyRetryCount: 1},
 				}),
@@ -44,9 +45,10 @@ func Test_publish(t *testing.T) {
 			Exchange: "foo_exchange",
 			Key:      "dlq",
 			Publishing: amqp.Publishing{
-				Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
-				Expiration: "",
-				Body:       toJSON(ziggurat.Event{Metadata: map[string]any{KeyRetryCount: 0}}),
+				DeliveryMode: amqp.Persistent,
+				Headers:      map[string]interface{}{"retry-origin": "ziggurat-go"},
+				Expiration:   "",
+				Body:         toJSON(ziggurat.Event{Metadata: map[string]any{KeyRetryCount: 0}}),
 			},
 		},
 	}}
@@ -80,7 +82,8 @@ func Test_publish_retries(t *testing.T) {
 			Exchange: "foo_exchange",
 			Key:      QueueTypeDelay,
 			Publishing: amqp.Publishing{
-				Expiration: "100",
+				DeliveryMode: amqp.Persistent,
+				Expiration:   "100",
 				Body: toJSON(ziggurat.Event{
 					Metadata: map[string]any{KeyRetryCount: 1},
 				}),
@@ -97,8 +100,9 @@ func Test_publish_retries(t *testing.T) {
 			Exchange: "foo_exchange",
 			Key:      QueueTypeDelay,
 			Publishing: amqp.Publishing{
-				Expiration: "100",
-				Headers:    map[string]interface{}{"retry-origin": "ziggurat-go"},
+				DeliveryMode: amqp.Persistent,
+				Expiration:   "100",
+				Headers:      map[string]interface{}{"retry-origin": "ziggurat-go"},
 			},
 		},
 	}}

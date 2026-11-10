@@ -57,9 +57,10 @@ func publishInternal(ctx context.Context, p amqpPublisher, queue string, retryCo
 		Exchange: exchange,
 		Key:      routingKey,
 		Publishing: amqp.Publishing{
-			Expiration: expiration,
-			Body:       eb,
-			Headers:    headers,
+			DeliveryMode: amqp.Persistent,
+			Expiration:   expiration,
+			Body:         eb,
+			Headers:      headers,
 		},
 	}
 
