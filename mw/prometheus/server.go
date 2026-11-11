@@ -3,14 +3,10 @@ package prometheus
 import (
 	"context"
 	"net/http"
-
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func startMonitoringServer(ctx context.Context, h http.Handler, opts ...ServerOpts) error {
 	ctxWithCancel, cfn := context.WithCancel(ctx)
-	mux := http.NewServeMux()
-	mux.Handle("/metrics", promhttp.Handler())
 	defer cfn()
 	server := &http.Server{
 		Addr:    "localhost:9090",

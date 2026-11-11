@@ -33,6 +33,27 @@ func amqpHeadersToMap(headers amqp.Table) map[string]string {
 	return m
 }
 
+// decodeDelivery turns a delivery body into the event handed to the handler and stamps
+// the metadata that says where it was just delivered from.
+//
+// The queue key is always (re)set: a retried event is the original event re-serialised
+// with its Metadata, so without this a message coming off RabbitMQ would still look like
+// it came from Kafka to metrics, tracing and logging middlewares.
+func decodeDelivery(body []byte, headers amqp.Table, queue string) (*ziggurat.Event, error) {
+	var event ziggurat.Event
+	if err := json.Unmarshal(body, &event); err != nil {
+		return nil, err
+	}
+	if event.Metadata == nil {
+		event.Metadata = map[string]interface{}{}
+	}
+	event.Metadata[ziggurat.MetadataKeyRabbitMQQueue] = queue
+	if h := amqpHeadersToMap(headers); h != nil {
+		event.Metadata[ziggurat.MetadataKeyHeaders] = h
+	}
+	return &event, nil
+}
+
 func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h ziggurat.Handler, l logger.Logger, ogl ziggurat.StructuredLogger) (*consumer.Consumer, error) {
 	pfc := 1
 
@@ -49,21 +70,13 @@ func startConsumer(ctx context.Context, d *amqpextra.Dialer, c QueueConfig, h zi
 		consumer.WithLogger(l),
 		consumer.WithQos(pfc, false),
 		consumer.WithHandler(consumer.HandlerFunc(func(ctx context.Context, msg amqp.Delivery) interface{} {
-			bb := msg.Body
-			var event ziggurat.Event
-			err := json.Unmarshal(bb, &event)
+			event, err := decodeDelivery(msg.Body, msg.Headers, qname)
 			if err != nil {
 				ogl.Error("amqp unmarshal error", err)
 				return msg.Reject(true)
 			}
-			if headers := amqpHeadersToMap(msg.Headers); headers != nil {
-				if event.Metadata == nil {
-					event.Metadata = map[string]interface{}{}
-				}
-				event.Metadata[ziggurat.MetadataKeyHeaders] = headers
-			}
 			ogl.Info("amqp processing message", map[string]interface{}{"consumer": consumerName})
-			h.Handle(ctx, &event)
+			h.Handle(ctx, event)
 			return msg.Ack(false)
 		})),
 	)

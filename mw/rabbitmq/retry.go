@@ -12,7 +12,6 @@ import (
 	"time"
 
 	zl "github.com/gojekfarm/ziggurat/v2/logger"
-	"github.com/gojekfarm/ziggurat/v2/mw/otelemetry"
 	"github.com/gojekfarm/ziggurat/v2/mw/prometheus"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
@@ -143,23 +142,15 @@ func (r *ARetry) Publish(ctx context.Context, event *ziggurat.Event, queueKey st
 		return err
 	}
 
-	carrier := otelemetry.HeaderCarrier{"retry-origin": "ziggurat-go"}
-	otelemetry.InjectTraceContext(ctx, carrier)
-	headers := make(map[string]interface{}, len(carrier))
-	for k, v := range carrier {
-		headers[k] = v
-	}
-
 	msg := publisher.Message{
 		Exchange: exchange,
 		Key:      queueType,
 		Publishing: amqp.Publishing{
 			Expiration: expirationMS,
 			Body:       eb,
-			Headers:    headers,
 		},
 	}
-	return p.Publish(msg)
+	return publishObserved(ctx, p, queueKey, outcomePublish, RetryCountFor(event), msg)
 }
 
 func (r *ARetry) Retry(ctx context.Context, event *ziggurat.Event, queueKey string) error {
@@ -397,7 +388,11 @@ func (r *ARetry) replay(ctx context.Context, queue string, count int) (int, erro
 				// a replayed message should continue the trace it was already part of,
 				// not lose its lineage or start a new, disconnected one tied to whoever
 				// happened to call the replay HTTP handler.
-				Headers: m.Headers,
+				//
+				// The ziggurat-replay marker makes otelemetry.TraceHandler start a new
+				// trace linked to the original instead of a child of it, since this can
+				// run long after the original consume.
+				Headers: replayHeaders(m.Headers),
 			},
 		})
 		if err != nil {

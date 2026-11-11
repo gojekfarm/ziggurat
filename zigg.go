@@ -11,6 +11,13 @@ import (
 
 var ErrCleanShutdown = errors.New("clean shutdown of streams")
 
+// ErrShutdownTimeout is returned by Run when the consumers did not stop within
+// ShutdownTimeout after the context was cancelled. It is a sentinel so callers can
+// tell a stuck shutdown (alert on it) from a clean one. The process normally exits right
+// after Run returns, so a metric would never be scraped: alert on this error / the
+// "consumer orchestration wait timeout" warning log instead.
+var ErrShutdownTimeout = errors.New("shutdown timeout")
+
 // Ziggurat serves as a container for message consumers to run in
 // can be used without initialization
 // var z ziggurat.Ziggurat
@@ -54,8 +61,11 @@ func (z *Ziggurat) Run(ctx context.Context, handler Handler, consumers ...Messag
 		case <-allDone:
 			// consumers happened to finish right as ctx was cancelled — treat as clean
 		case <-time.After(z.ShutdownTimeout):
-			z.Logger.Info("ziggurat consumer orchestration wait timeout")
-			return errors.New("shutdown timeout")
+			z.Logger.Warn("ziggurat consumer orchestration wait timeout", map[string]any{
+				"shutdown_timeout_ms": z.ShutdownTimeout.Milliseconds(),
+				"consumers":           len(consumers),
+			})
+			return ErrShutdownTimeout
 		}
 	}
 
