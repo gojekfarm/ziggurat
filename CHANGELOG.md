@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.1.0] 2026-11-03
+## [v2.0.26] 2026-11-03
 
 # Added
 
@@ -13,6 +13,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   defaulting to `cooperative-sticky` (replacing `librdkafka`'s eager `range,roundrobin` default). This enables 
   Kafka's incremental cooperative rebalance protocol, ensuring unaffected partitions continue message consumption 
   uninterrupted during rolling updates, canaries, and scaling events.
+  - **Structured rebalance pause logging**: The rebalance callback now logs `partitions_assigned` and 
+    `partitions_revoked` events with sub-millisecond precision (`timestamp_ns`, `timestamp`, `member_id`, 
+    assigned/revoked partitions). When regaining partitions, it records `pause_duration_ms`/`pause_duration_ns` 
+    to directly measure stop-the-world pause latency at the source instead of relying on coarse CLI polling.
 - **Synchronous Rebalance Callback & Offset Commit**: Registered a dedicated `rebalanceCb` in `SubscribeTopics`. 
   On `kafka.RevokedPartitions`, pending in-memory stored offsets are flushed and committed synchronously before 
   partitions are unassigned, eliminating the duplicate processing window inherent in asynchronous commit timers 
