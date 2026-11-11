@@ -128,6 +128,9 @@ func TestZiggurat_Run(t *testing.T) {
 			return
 		}
 
+		if !errors.Is(err, ErrShutdownTimeout) {
+			t.Errorf("expected ErrShutdownTimeout, got %v", err)
+		}
 		if err.Error() != "shutdown timeout" {
 			t.Errorf("expected error:%s got %s\n", "shutdown timeout", err.Error())
 			return

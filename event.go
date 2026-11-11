@@ -9,6 +9,19 @@ import "time"
 // propagation across consume/republish hops.
 const MetadataKeyHeaders = "headers"
 
+// Well-known Event.Metadata keys set by the bundled consumers. Middlewares (metrics,
+// tracing, logging) read these instead of parsing RoutingPath.
+//
+// Note: a message republished through mw/rabbitmq is serialised with its Metadata, so a
+// retried Kafka event still carries MetadataKeyKafkaTopic/Partition from its origin.
+// mw/rabbitmq overwrites MetadataKeyRabbitMQQueue on every consume, so its presence
+// means "delivered by RabbitMQ right now".
+const (
+	MetadataKeyKafkaTopic     = "kafka-topic"
+	MetadataKeyKafkaPartition = "kafka-partition"
+	MetadataKeyRabbitMQQueue  = "rabbitmq-queue"
+)
+
 // Event is a generic event
 // ReceivedTimestamp holds the timestamp of the message when it was received
 // ProducerTimestamp holds the timestamp of the message as given by the producer

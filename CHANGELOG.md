@@ -5,11 +5,60 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres
 to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+# Added
+
+- **Kafka metrics** (all `ziggurat_go_kafka_*`, registered by `prometheus.Register()`):
+  - `rebalance_total{group,protocol,event}` and `rebalance_pause_seconds{group,protocol}`: how long a partition
+    was unowned between being revoked and re-assigned on the same member.
+  - `revoke_commit_errors_total{group,kind}` (`error` / `no_offset`).
+  - `errors_total{group,code,fatal}`: errors from the poll loop, by librdkafka error code.
+  - `worker_exits_total{group,reason}` and `workers_running{group}`.
+  - `consumer_lag{group,topic,partition}`: fed by librdkafka statistics. New `ConsumerConfig.StatisticsIntervalMS`
+    (default 15000; negative disables statistics and the gauge). Series of partitions a member no longer owns are removed.
+- **RabbitMQ metrics**: `ziggurat_go_retry_publish_errors_total{queue,reason}` (`nack` / `marshal` / `publish`),
+  `ziggurat_go_retry_publish_duration_seconds{queue,result}` (includes the confirm wait when publisher confirms are on)
+  and `ziggurat_go_retry_publisher_pool_in_use`.
+- **Handler metrics**: `topic` and `group` labels; `prometheus.HandlerMetrics(WithoutPartitionInRoute())` drops the
+  partition from the `route` label to cut cardinality; `prometheus.SetHandlerDurationBuckets`; the duration histogram
+  carries a `trace_id` exemplar for sampled traces (`/metrics` now serves OpenMetrics when the scraper asks for it);
+  `prometheus.SetAppVersion` exports `ziggurat_go_app_info{version}`.
+- **Tracing**: `otelemetry.Setup` takes options: `WithSampleRatio`, `WithSampler`, `WithTLSConfig`,
+  `WithServiceVersion`, `WithEnvironment`, `WithResourceAttributes`, `WithBatchOptions`. Resources now include
+  `host.name` and anything in `OTEL_RESOURCE_ATTRIBUTES`. Retry/DLQ publishes get their own PRODUCER span
+  (`<queue> publish`, `ziggurat.retry.outcome`, `ziggurat.retry.count`). A DLQ replay starts a new trace linked to
+  the original (`ziggurat-replay` header) instead of extending it.
+- `event.Logger` adds `trace_id` / `span_id` when a span is active.
+- `ziggurat.ErrShutdownTimeout`; the shutdown timeout is now logged at Warn with its settings.
+- `ziggurat.MetadataKeyKafkaTopic`, `MetadataKeyKafkaPartition`, `MetadataKeyRabbitMQQueue`.
+
+# Changed
+
+- **Tracing sampling default is now `ParentBased(TraceIDRatioBased(0.1))`** (was `AlwaysSample`). Pass
+  `otelemetry.WithSampler(sdktrace.AlwaysSample())` to keep the old behaviour. Tracing is still off unless enabled.
+- **Span names are now `<topic> process` / `<queue> process`** (were the full routing path, which includes the
+  partition). Spans are kind CONSUMER, carry `messaging.destination.name`, `messaging.kafka.consumer.group` and
+  `messaging.kafka.destination.partition`, and set `error.type=panic` on a panic. The old `messaging.destination`
+  attribute is kept for now.
+- Events delivered by `mw/rabbitmq` have `Metadata["rabbitmq-queue"]` set, so a retried Kafka event is reported
+  as `messaging.system=rabbitmq` while `Event.EventType` still names where it came from.
+- `ziggurat_go_retry_published_total` and `..._dlq_published_total` now count only publishes that succeeded.
+  Failures are in `publish_errors_total`.
+- The rebalance pause is tracked per partition and a revoke older than 5 minutes is dropped, so a partition that
+  returns to the same member much later is no longer reported as a long pause. The `pause_duration_ms` log field is
+  the longest pause among the regained partitions; logs also carry `group`, `protocol` and `regained_count`.
+- **librdkafka `debug` is no longer set by default** (was `consumer`). Set `ConsumerConfig.DebugLevel` to get it back.
+- Default handler duration buckets are now 5ms to ~41s (were 5ms to 10s).
+- `prometheus.Register()` can be called more than once. `StartMonitoringServer` still listens on `localhost:9090`
+  unless `WithAddr` is given, so a scraper outside the pod needs `WithAddr(":9090")`.
+- `go.opentelemetry.io` / `google.golang.org/grpc` are direct dependencies of the root module.
+
 ## [v2.0.26] 2026-11-03
 
 # Added
 
-- **Incremental Cooperative Rebalancing for Kafka**: `kafka.ConsumerConfig` gained `PartitionAssignmentStrategy`, 
+- **Incremental Cooperative Rebalancing for Kafka**: `kafka.ConsumerConfig` gained `PartitionAssignment`, 
   defaulting to `cooperative-sticky` (replacing `librdkafka`'s eager `range,roundrobin` default). This enables 
   Kafka's incremental cooperative rebalance protocol, ensuring unaffected partitions continue message consumption 
   uninterrupted during rolling updates, canaries, and scaling events.

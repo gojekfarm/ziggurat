@@ -110,7 +110,7 @@ func (m *rebalanceMockConsumer) GetRebalanceProtocol() string {
 // invokeRebalanceCb runs the production handleRebalance against a mock consumer.
 // tracker and key let a test isolate pause-tracking state.
 func invokeRebalanceCb(log rebalanceLogger, tracker *rebalancePauseTracker, key any, memberID string, c rebalanceActor, ev kafka.Event) error {
-	return handleRebalance(log, tracker, key, memberID, c, ev)
+	return handleRebalance(log, tracker, "test-group", key, memberID, c, ev)
 }
 
 // ---------------------------------------------------------------------------

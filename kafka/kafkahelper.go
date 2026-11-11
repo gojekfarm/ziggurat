@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"github.com/gojekfarm/ziggurat/v2/mw/prometheus"
 )
 
 // rebalanceLogger is the subset of ziggurat.StructuredLogger that the rebalance
@@ -17,47 +18,97 @@ type rebalanceLogger interface {
 	Info(string, ...map[string]interface{})
 }
 
-// rebalancePauseTracker records, per consumer instance (keyed by any comparable
-// value - normally the *kafka.Consumer pointer itself), the timestamp of the most
-// recent RevokedPartitions event, so a later AssignedPartitions event on the same
-// key can report how long that member went without actively holding any partitions.
+// pauseTrackerTTL bounds how long a revoked partition is remembered. A partition that
+// comes back to the same member later than this is a different rebalance, not the
+// "pause" of the one that revoked it (with cooperative rebalancing a member can revoke a
+// partition and only regain it hours later), so it is neither reported nor kept.
+const pauseTrackerTTL = 5 * time.Minute
+
+// pauseKey identifies one partition on one consumer instance.
+type pauseKey struct {
+	consumer  any
+	topic     string
+	partition int32
+}
+
+func newPauseKey(consumer any, tp kafka.TopicPartition) pauseKey {
+	k := pauseKey{consumer: consumer, partition: tp.Partition}
+	if tp.Topic != nil {
+		k.topic = *tp.Topic
+	}
+	return k
+}
+
+// rebalancePauseTracker records, per partition on each consumer instance (the consumer
+// is any comparable value - normally the *kafka.Consumer pointer itself), when it was
+// last revoked, so a later AssignedPartitions event that hands the same partition back
+// to the same consumer can report how long that partition went unowned by it.
+//
+// Tracking per partition (not per consumer) matters under cooperative rebalancing: a
+// member keeps most of its partitions and only gives up a few, so "time since this
+// consumer last had a revoke" says nothing about the partitions that never stopped.
 //
 // This measures the pause at its source, with whatever timestamp resolution Go's
-// time.Now() gives (effectively sub-microsecond on any platform this runs on),
-// instead of inferring it from periodic `kafka-consumer-groups --describe` polling,
-// which is typically only run every several seconds and can miss short pauses
-// entirely or report their duration with only poll-interval precision.
+// time.Now() gives, instead of inferring it from periodic `kafka-consumer-groups
+// --describe` polling, which can miss short pauses entirely.
 //
 // Exposed as its own type (rather than a bare package-level map) so tests can
 // construct an isolated instance instead of sharing defaultPauseTracker's state
 // across test cases.
 type rebalancePauseTracker struct {
 	mu        sync.Mutex
-	revokedAt map[any]time.Time
+	revokedAt map[pauseKey]time.Time
 }
 
 func newRebalancePauseTracker() *rebalancePauseTracker {
-	return &rebalancePauseTracker{revokedAt: make(map[any]time.Time)}
+	return &rebalancePauseTracker{revokedAt: make(map[pauseKey]time.Time)}
 }
 
-func (t *rebalancePauseTracker) revoked(key any, at time.Time) {
+// revoked remembers the revocation time of each partition for key, and drops entries
+// older than pauseTrackerTTL so partitions that never come back do not accumulate.
+func (t *rebalancePauseTracker) revoked(key any, partitions []kafka.TopicPartition, at time.Time) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.revokedAt[key] = at
-}
-
-// assigned reports the elapsed time since the most recent revoked() call for key,
-// and clears it. ok is false if there was no matching revoked() call (e.g. the very
-// first assignment this consumer ever receives, with no prior revocation).
-func (t *rebalancePauseTracker) assigned(key any, at time.Time) (pause time.Duration, ok bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	revokedAt, had := t.revokedAt[key]
-	if !had {
-		return 0, false
+	for k, ts := range t.revokedAt {
+		if at.Sub(ts) > pauseTrackerTTL {
+			delete(t.revokedAt, k)
+		}
 	}
-	delete(t.revokedAt, key)
-	return at.Sub(revokedAt), true
+	for _, tp := range partitions {
+		t.revokedAt[newPauseKey(key, tp)] = at
+	}
+}
+
+// assigned returns one pause per assigned partition that was previously revoked on the
+// same key, and forgets them. Partitions with no matching revoke (e.g. the first
+// assignment a consumer ever receives) and entries older than pauseTrackerTTL yield
+// nothing.
+func (t *rebalancePauseTracker) assigned(key any, partitions []kafka.TopicPartition, at time.Time) []time.Duration {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	var pauses []time.Duration
+	for _, tp := range partitions {
+		k := newPauseKey(key, tp)
+		revokedAt, had := t.revokedAt[k]
+		if !had {
+			continue
+		}
+		delete(t.revokedAt, k)
+		if d := at.Sub(revokedAt); d <= pauseTrackerTTL {
+			pauses = append(pauses, d)
+		}
+	}
+	return pauses
+}
+
+func maxDuration(ds []time.Duration) time.Duration {
+	var m time.Duration
+	for _, d := range ds {
+		if d > m {
+			m = d
+		}
+	}
+	return m
 }
 
 // defaultPauseTracker is shared by every rebalanceCb closure created via
@@ -112,9 +163,9 @@ func revokedPartitionsLogFields(now time.Time, memberID string, partitions []kaf
 // both rebalance protocols: with a cooperative assignor ("cooperative-sticky") it
 // applies incremental assign/unassign deltas, with an eager one (roundrobin, range)
 // it does a full Assign/Unassign. See handleRebalance.
-func rebalanceCb(logger rebalanceLogger) func(*kafka.Consumer, kafka.Event) error {
+func rebalanceCb(logger rebalanceLogger, group string) func(*kafka.Consumer, kafka.Event) error {
 	return func(c *kafka.Consumer, ev kafka.Event) error {
-		return handleRebalance(logger, defaultPauseTracker, c, c.String(), c, ev)
+		return handleRebalance(logger, defaultPauseTracker, group, c, c.String(), c, ev)
 	}
 }
 
@@ -132,13 +183,27 @@ type rebalanceActor interface {
 // negotiated, not from our own config: IncrementalAssign/IncrementalUnassign are
 // rejected under EAGER, and because calling them marks the event as handled the
 // client's own fallback assign never runs, leaving the consumer with no partitions.
-func handleRebalance(logger rebalanceLogger, tracker *rebalancePauseTracker, key any, memberID string, c rebalanceActor, ev kafka.Event) error {
+func handleRebalance(logger rebalanceLogger, tracker *rebalancePauseTracker, group string, key any, memberID string, c rebalanceActor, ev kafka.Event) error {
 	cooperative := c.GetRebalanceProtocol() == "COOPERATIVE"
+	protocol := "eager"
+	if cooperative {
+		protocol = "cooperative"
+	}
 	switch e := ev.(type) {
 	case kafka.AssignedPartitions:
 		now := time.Now()
-		pause, hadPause := tracker.assigned(key, now)
-		logger.Info("rebalance: partitions assigned", assignedPartitionsLogFields(now, memberID, e.Partitions, pause, hadPause))
+		pauses := tracker.assigned(key, e.Partitions, now)
+		prometheus.RebalanceCounter.WithLabelValues(group, protocol, "assigned").Inc()
+		for _, p := range pauses {
+			prometheus.RebalancePauseHistogram.WithLabelValues(group, protocol).Observe(p.Seconds())
+		}
+		fields := assignedPartitionsLogFields(now, memberID, e.Partitions, maxDuration(pauses), len(pauses) > 0)
+		fields["group"] = group
+		fields["protocol"] = protocol
+		if len(pauses) > 0 {
+			fields["regained_count"] = len(pauses)
+		}
+		logger.Info("rebalance: partitions assigned", fields)
 		if cooperative {
 			if err := c.IncrementalAssign(e.Partitions); err != nil {
 				return fmt.Errorf("kafka: IncrementalAssign failed: %w", err)
@@ -149,17 +214,23 @@ func handleRebalance(logger rebalanceLogger, tracker *rebalancePauseTracker, key
 
 	case kafka.RevokedPartitions:
 		now := time.Now()
-		tracker.revoked(key, now)
-		logger.Info("rebalance: partitions revoked — committing stored offsets", revokedPartitionsLogFields(now, memberID, e.Partitions))
+		tracker.revoked(key, e.Partitions, now)
+		prometheus.RebalanceCounter.WithLabelValues(group, protocol, "revoked").Inc()
+		fields := revokedPartitionsLogFields(now, memberID, e.Partitions)
+		fields["group"] = group
+		fields["protocol"] = protocol
+		logger.Info("rebalance: partitions revoked — committing stored offsets", fields)
 		// Synchronously flush in-memory stored offsets before handing partitions
 		// back: the auto-commit timer may not have fired yet, and a lost stored
 		// offset makes the next owner re-process from the last committed position.
 		if _, err := c.Commit(); err != nil {
 			// ErrNoOffset is benign: nothing was stored on these partitions yet.
 			if kErr, ok := err.(kafka.Error); ok && kErr.Code() == kafka.ErrNoOffset {
+				prometheus.RevokeCommitErrorsCounter.WithLabelValues(group, "no_offset").Inc()
 				logger.Info("rebalance: no stored offsets to commit on revocation (ErrNoOffset — benign)")
 			} else {
 				// A commit failure must not block the rebalance or the group stalls.
+				prometheus.RevokeCommitErrorsCounter.WithLabelValues(group, "error").Inc()
 				logger.Error("rebalance: synchronous commit on revocation failed", err)
 			}
 		}
@@ -188,7 +259,8 @@ func createConsumer(consumerConfig *kafka.ConfigMap, topics []string, log rebala
 	if err != nil {
 		panic("error creating consumer:" + err.Error())
 	}
-	subscribeErr := consumer.SubscribeTopics(topics, rebalanceCb(log))
+	group, _ := (*consumerConfig)["group.id"].(string)
+	subscribeErr := consumer.SubscribeTopics(topics, rebalanceCb(log, group))
 	if subscribeErr != nil {
 		panic("error subscribing to topics:" + subscribeErr.Error())
 	}

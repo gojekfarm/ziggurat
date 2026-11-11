@@ -25,12 +25,7 @@ import (
 // documented no-op by the OpenTelemetry spec - this test is what actually exercises the
 // non-no-op path.
 func TestPublishInternal_InjectsTraceContextWhenSpanActive(t *testing.T) {
-	prevTP := otel.GetTracerProvider()
-	prevProp := otel.GetTextMapPropagator()
-	t.Cleanup(func() {
-		otel.SetTracerProvider(prevTP)
-		otel.SetTextMapPropagator(prevProp)
-	})
+	t.Cleanup(resetOTel)
 
 	tp := sdktrace.NewTracerProvider(sdktrace.WithSampler(sdktrace.AlwaysSample()))
 	otel.SetTracerProvider(tp)

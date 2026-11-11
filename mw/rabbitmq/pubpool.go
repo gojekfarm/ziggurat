@@ -3,6 +3,7 @@ package rabbitmq
 import (
 	"context"
 	"fmt"
+	"github.com/gojekfarm/ziggurat/v2/mw/prometheus"
 	"github.com/makasim/amqpextra"
 	"github.com/makasim/amqpextra/logger"
 	"github.com/makasim/amqpextra/publisher"
@@ -28,17 +29,20 @@ func newPubPool(size int, d *amqpextra.Dialer, logger logger.Logger, opts ...pub
 func (c *publisherPool) get(ctx context.Context) (*publisher.Publisher, error) {
 	select {
 	case pub := <-c.pool:
+		prometheus.RetryPubpoolInUseGauge.Inc()
 		return pub, nil
 	default:
 		pub, err := getPublisher(ctx, c.d, c.l, c.opts...)
 		if err != nil {
 			return nil, fmt.Errorf("could not get a channel from publisher pool:%v\n", err)
 		}
+		prometheus.RetryPubpoolInUseGauge.Inc()
 		return pub, nil
 	}
 }
 
 func (c *publisherPool) put(p *publisher.Publisher) {
+	prometheus.RetryPubpoolInUseGauge.Dec()
 	select {
 	case c.pool <- p:
 	default:

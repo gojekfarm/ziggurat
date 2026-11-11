@@ -100,6 +100,35 @@ lib.test-coverage-html
 - Do not write an interface first and then implement, write a struct first and add your methods, **discover interfaces do not invent them**. A premature abstraction is mostly going to be a leaky one.
 - Last but not the least, Keep it simple stupid.
 
+## Observability
+
+Ziggurat ships Prometheus metrics (`mw/prometheus`), OpenTelemetry tracing (`mw/otelemetry`) and an event logger
+(`mw/event`). All of it is opt-in.
+
+```go
+prometheus.Register()                      // safe to call more than once
+prometheus.SetAppVersion("v1.2.3")         // ziggurat_go_app_info{version}
+go prometheus.StartMonitoringServer(ctx, prometheus.WithAddr(":9090")) // default is localhost:9090
+
+shutdown, _ := otelemetry.Setup(ctx, "my-service", "otel-collector.example.com:4317", true,
+	otelemetry.WithSampleRatio(0.05),
+	otelemetry.WithServiceVersion("v1.2.3"),
+	otelemetry.WithEnvironment("production"),
+)
+defer shutdown(ctx)
+
+handler := ziggurat.Use(router,
+	otelemetry.TraceHandler("my-service"),                           // outermost: starts the span
+	event.Logger(log),                                               // logs get trace_id/span_id
+	prometheus.HandlerMetrics(prometheus.WithoutPartitionInRoute()), // exemplars link to the span
+)
+```
+
+Metrics worth alerting on: `ziggurat_go_handler_events_total{outcome="panic"}` (a panic ends the process, so also watch
+pod restarts), `ziggurat_go_kafka_consumer_lag`, `ziggurat_go_kafka_rebalance_pause_seconds`,
+`ziggurat_go_kafka_revoke_commit_errors_total`, `ziggurat_go_kafka_errors_total`, `ziggurat_go_retry_dlq_published_total`
+and `ziggurat_go_retry_publish_errors_total`. Trace exemplars need an OpenMetrics scrape and Prometheus exemplar storage.
+
 ## Features
 
 - Ziggurat-Go enables you to orchestrate multiple message consumers by decoupling the consumer implementation from the

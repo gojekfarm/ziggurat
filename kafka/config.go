@@ -51,8 +51,14 @@ const (
 )
 
 type ConsumerConfig struct {
-	BootstrapServers      string
-	DebugLevel            string
+	BootstrapServers string
+	// DebugLevel sets librdkafka's "debug" contexts (e.g. "consumer,cgrp"). Empty (the
+	// default) leaves debug logging off; earlier versions defaulted to "consumer".
+	DebugLevel string
+	// StatisticsIntervalMS is how often (ms) librdkafka emits statistics, which feed the
+	// ziggurat_go_kafka_consumer_lag gauge. 0 uses DefaultStatisticsIntervalMS (15s) and a
+	// negative value disables statistics and therefore the lag gauge.
+	StatisticsIntervalMS  int
 	GroupID               string
 	Topics                []string
 	AutoCommitInterval    int
@@ -163,7 +169,6 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 		"bootstrap.servers":             c.BootstrapServers,
 		"group.id":                      c.GroupID,
 		"enable.auto.commit":            true,
-		"debug":                         "consumer",
 		"go.logs.channel.enable":        true,
 		"enable.auto.offset.store":      false,
 		"auto.commit.interval.ms":       5000,
@@ -180,8 +185,19 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 		kafkaConfMap["partition.assignment.strategy"] = c.PartitionAssignment
 	}
 
+	// librdkafka debug contexts are verbose (one line per fetch/commit/state change), so
+	// they are off unless explicitly requested via DebugLevel.
 	if c.DebugLevel != "" {
 		kafkaConfMap["debug"] = c.DebugLevel
+	}
+
+	// statistics.interval.ms drives the consumer_lag gauge (see lag.go). 0 means the
+	// default, a negative value disables statistics (and therefore the lag gauge).
+	switch {
+	case c.StatisticsIntervalMS > 0:
+		kafkaConfMap["statistics.interval.ms"] = c.StatisticsIntervalMS
+	case c.StatisticsIntervalMS == 0:
+		kafkaConfMap["statistics.interval.ms"] = DefaultStatisticsIntervalMS
 	}
 
 	if c.AutoCommitInterval > 0 {

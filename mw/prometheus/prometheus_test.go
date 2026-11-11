@@ -18,6 +18,8 @@ func TestPublishHandlerMetrics_Success(t *testing.T) {
 	got := testutil.ToFloat64(HandlerEventsCounter.With(map[string]string{
 		RouteLabel:   event.RoutingPath,
 		OutcomeLabel: OutcomeSuccess,
+		TopicLabel:   "",
+		GroupLabel:   "",
 	}))
 	if got != 1 {
 		t.Errorf("expected events counter with outcome=success to be 1, got %v", got)
@@ -49,6 +51,8 @@ func TestPublishHandlerMetrics_PanicIsObservedNotSwallowed(t *testing.T) {
 		got := testutil.ToFloat64(HandlerEventsCounter.With(map[string]string{
 			RouteLabel:   event.RoutingPath,
 			OutcomeLabel: OutcomePanic,
+			TopicLabel:   "",
+			GroupLabel:   "",
 		}))
 		if got != 1 {
 			t.Errorf("expected events counter with outcome=panic to be 1, got %v", got)
