@@ -25,22 +25,20 @@ const (
 // but SASLMechanism is left empty.
 const DefaultSASLMechanism = SASLMechanismScramSHA512
 
-// DefaultPartitionAssignmentStrategy is the partition.assignment.strategy that
-// toConfigMap sets when ConsumerConfig.PartitionAssignment is left empty.
+// CooperativeStickyAssignment is the value to set ConsumerConfig.PartitionAssignment
+// to for opting in to incremental cooperative rebalancing. It is NOT the default:
+// when PartitionAssignment is empty, partition.assignment.strategy is left unset and
+// librdkafka's own default (eager "range,roundrobin") applies.
 //
-// "cooperative-sticky" (COOPERATIVE_STICKY in the Kafka protocol) eliminates
-// stop-the-world eager rebalances: instead of revoking ALL partitions on every
-// group-membership change and re-assigning them from scratch, the coordinator
-// only moves the partitions that actually need to be reassigned. Every other
-// partition keeps being consumed without interruption, so a single pod restart
-// or scale event no longer freezes the entire consumer group.
+// "cooperative-sticky" (COOPERATIVE_STICKY in the Kafka protocol) avoids
+// stop-the-world rebalances: only partitions that actually move are revoked, the
+// rest keep being consumed.
 //
-// Rolling-upgrade note: a consumer group can only use cooperative rebalancing
-// once ALL members have switched to a cooperative assignor. During a rolling
-// deploy a transitional rebalance occurs (all partitions are temporarily
-// revoked) and then cooperative mode kicks in for subsequent rebalances. This
-// is safe and automatic - no coordinator-side changes are needed.
-const DefaultPartitionAssignmentStrategy = "cooperative-sticky"
+// Rolling-upgrade note: a consumer group can only use cooperative rebalancing once
+// ALL members have switched to a cooperative assignor. Switching an existing group
+// causes one transitional eager rebalance (all partitions revoked), then cooperative
+// mode applies to later rebalances.
+const CooperativeStickyAssignment = "cooperative-sticky"
 
 // SASL mechanisms this package has been exercised against. librdkafka (the C library
 // confluent-kafka-go binds to) implements SCRAM natively, so no extra system
@@ -58,13 +56,16 @@ type ConsumerConfig struct {
 	// StatisticsIntervalMS is how often (ms) librdkafka emits statistics, which feed the
 	// ziggurat_go_kafka_consumer_lag gauge. 0 uses DefaultStatisticsIntervalMS (15s) and a
 	// negative value disables statistics and therefore the lag gauge.
-	StatisticsIntervalMS  int
-	GroupID               string
-	Topics                []string
-	AutoCommitInterval    int
-	ConsumerCount         int
-	PollTimeout           int
-	AutoOffsetReset       string
+	StatisticsIntervalMS int
+	GroupID              string
+	Topics               []string
+	AutoCommitInterval   int
+	ConsumerCount        int
+	PollTimeout          int
+	AutoOffsetReset      string
+	// PartitionAssignment sets partition.assignment.strategy. Empty (default) keeps
+	// librdkafka's eager "range,roundrobin". Set to CooperativeStickyAssignment to opt in
+	// to incremental cooperative rebalancing.
 	PartitionAssignment   string
 	MaxPollIntervalMS     int
 	AllowAutoCreateTopics bool
@@ -166,14 +167,13 @@ func (c ConsumerConfig) Validate() error {
 func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 
 	kafkaConfMap := kafka.ConfigMap{
-		"bootstrap.servers":             c.BootstrapServers,
-		"group.id":                      c.GroupID,
-		"enable.auto.commit":            true,
-		"go.logs.channel.enable":        true,
-		"enable.auto.offset.store":      false,
-		"auto.commit.interval.ms":       5000,
-		"auto.offset.reset":             "latest",
-		"partition.assignment.strategy": DefaultPartitionAssignmentStrategy,
+		"bootstrap.servers":        c.BootstrapServers,
+		"group.id":                 c.GroupID,
+		"enable.auto.commit":       true,
+		"go.logs.channel.enable":   true,
+		"enable.auto.offset.store": false,
+		"auto.commit.interval.ms":  5000,
+		"auto.offset.reset":        "latest",
 	}
 
 	if c.AutoOffsetReset != "" {
@@ -181,7 +181,7 @@ func (c ConsumerConfig) toConfigMap() kafka.ConfigMap {
 	}
 
 	if c.PartitionAssignment != "" {
-		// Explicit caller override wins over the default above.
+		// Opt-in only: left unset, librdkafka's default assignor applies.
 		kafkaConfMap["partition.assignment.strategy"] = c.PartitionAssignment
 	}
 

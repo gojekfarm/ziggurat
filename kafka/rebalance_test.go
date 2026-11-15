@@ -13,22 +13,32 @@ import (
 // Config tests: partition.assignment.strategy default and override
 // ---------------------------------------------------------------------------
 
-func TestToConfigMap_DefaultPartitionAssignment_IsCooperativeSticky(t *testing.T) {
-	// When PartitionAssignment is left empty, toConfigMap must set the strategy
-	// to DefaultPartitionAssignmentStrategy ("cooperative-sticky") so that the
-	// librdkafka client uses incremental rebalancing without any caller having
-	// to opt in explicitly.
+func TestToConfigMap_DefaultPartitionAssignment_IsUnset(t *testing.T) {
+	// Cooperative-sticky is opt-in: with PartitionAssignment empty the key must not
+	// be set, so librdkafka's default assignor applies.
 	cm := ConsumerConfig{
 		BootstrapServers: "localhost:9092",
 		GroupID:          "g1",
 	}.toConfigMap()
 
-	assertConfigValue(t, cm, "partition.assignment.strategy", DefaultPartitionAssignmentStrategy)
+	if _, ok := cm["partition.assignment.strategy"]; ok {
+		t.Fatalf("partition.assignment.strategy must be unset by default")
+	}
 }
 
-func TestToConfigMap_ExplicitPartitionAssignment_OverridesDefault(t *testing.T) {
+func TestToConfigMap_CooperativeSticky_OptIn(t *testing.T) {
+	cm := ConsumerConfig{
+		BootstrapServers:    "localhost:9092",
+		GroupID:             "g1",
+		PartitionAssignment: CooperativeStickyAssignment,
+	}.toConfigMap()
+
+	assertConfigValue(t, cm, "partition.assignment.strategy", "cooperative-sticky")
+}
+
+func TestToConfigMap_ExplicitPartitionAssignment_SetsStrategy(t *testing.T) {
 	// A caller that explicitly sets PartitionAssignment must be able to override
-	// the default — e.g. to roll back to "range" during a canary or incident.
+	// the default.
 	const override = "range,roundrobin"
 	cm := ConsumerConfig{
 		BootstrapServers:    "localhost:9092",

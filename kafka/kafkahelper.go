@@ -251,7 +251,7 @@ func handleRebalance(logger rebalanceLogger, tracker *rebalancePauseTracker, gro
 // cooperative rebalance callback wired in, and returns it as a confluentConsumer.
 //
 // The rebalance callback (see rebalanceCb) is what makes cooperative-sticky
-// actually work at runtime. Without a non-nil callback, librdkafka silently
+// (opt-in via ConsumerConfig.PartitionAssignment) actually work at runtime. Without a non-nil callback, librdkafka silently
 // falls back to eager (full-revoke) semantics even when
 // partition.assignment.strategy is set to "cooperative-sticky".
 func createConsumer(consumerConfig *kafka.ConfigMap, topics []string, log rebalanceLogger) confluentConsumer {
