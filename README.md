@@ -174,6 +174,22 @@ func main() {
  
 
 
+### Cooperative incremental rebalancing
+
+Cooperative rebalancing is **opt-in**. By default `ConsumerConfig.PartitionAssignment` is empty and librdkafka's
+eager `range,roundrobin` assignor is used. To avoid stop-the-world rebalances, set it explicitly:
+
+```go
+kafka.ConsumerConfig{
+	// ...
+	PartitionAssignment: kafka.CooperativeStickyAssignment, // "cooperative-sticky"
+}
+```
+
+Switching an existing group needs a rolling deploy: while old and new members share the group, Kafka does one
+eager rebalance, then goes cooperative. All members must use a cooperative assignor. To roll back, set
+`PartitionAssignment` to the previous value (e.g. `range,roundrobin`) or leave it empty.
+
 #### TODO
 - [x] Balanced Consumer groups
 - [x] RabbitMQ retries

@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+# Changed
+
+- **Cooperative-sticky is no longer the default assignor.** `ConsumerConfig.PartitionAssignment` left empty now leaves
+  `partition.assignment.strategy` unset, so librdkafka's eager `range,roundrobin` applies (as before v2.0.26). Opt in
+  with `PartitionAssignment: kafka.CooperativeStickyAssignment`. `DefaultPartitionAssignmentStrategy` is removed.
+  The rebalance callback still supports both protocols.
+
 # Added
 
 - **Kafka metrics** (all `ziggurat_go_kafka_*`, registered by `prometheus.Register()`):
@@ -59,8 +66,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 # Added
 
 - **Incremental Cooperative Rebalancing for Kafka**: `kafka.ConsumerConfig` gained `PartitionAssignment`, 
-  defaulting to `cooperative-sticky` (replacing `librdkafka`'s eager `range,roundrobin` default). This enables 
-  Kafka's incremental cooperative rebalance protocol, ensuring unaffected partitions continue message consumption 
+  defaulting to `cooperative-sticky` (replacing `librdkafka`'s eager `range,roundrobin` default; **no longer the
+  default, see Unreleased**). This enables Kafka's incremental cooperative rebalance protocol, ensuring unaffected partitions continue message consumption 
   uninterrupted during rolling updates, canaries, and scaling events.
   - **Structured rebalance pause logging**: The rebalance callback now logs `partitions_assigned` and 
     `partitions_revoked` events with sub-millisecond precision (`timestamp_ns`, `timestamp`, `member_id`, 
